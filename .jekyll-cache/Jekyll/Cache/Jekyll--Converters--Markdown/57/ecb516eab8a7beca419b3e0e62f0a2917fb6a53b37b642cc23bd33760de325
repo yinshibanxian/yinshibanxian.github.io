@@ -1,0 +1,183 @@
+I"�<p><a href="https://codeforces.com/blog/entry/68079">官方题解</a></p>
+
+<h2 id="keanu-reeves"><a href="https://vjudge.net/problem/CodeForces-1189A">Keanu Reeves</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int n, cnt[2];
+string s;
+int main()
+{
+	cin &gt;&gt; n &gt;&gt; s;
+	for (auto c : s)
+		++cnt[c - '0'];
+	if (cnt[0] == cnt[1])
+		cout &lt;&lt; 2 &lt;&lt; "\n", s.insert(1, "\n");
+	else
+		cout &lt;&lt; 1 &lt;&lt; "\n";
+	cout &lt;&lt; s;
+}
+</code></pre>
+
+<h2 id="number-circle"><a href="https://vjudge.net/problem/CodeForces-1189B">Number Circle</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+int n, a[N];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;a[i]);
+	sort(a, a + n);
+	if (a[n - 1] &gt;= a[n - 2] + a[n - 3])
+		return printf("NO"), 0;
+	printf("YES\n");
+	swap(a[n - 1], a[n - 2]);
+	for (int i = 0; i &lt; n; ++i)
+		printf("%d ", a[i]);
+}
+</code></pre>
+
+<h2 id="candies"><a href="https://vjudge.net/problem/CodeForces-1189C">Candies!</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+int n, s[N];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1; i &lt;= n; ++i)
+		scanf("%d", &amp;s[i]), s[i] += s[i - 1];
+	scanf("%d", &amp;n);
+	for (int i = 0, l, r; i &lt; n; ++i)
+	{
+		scanf("%d%d", &amp;l, &amp;r);
+		printf("%d\n", (s[r] - s[l - 1]) / 10);
+	}
+}
+</code></pre>
+
+<h2 id="add-on-a-tree"><a href="https://vjudge.net/problem/CodeForces-1189D1">Add on a Tree</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+vector&lt;int&gt; g[N];
+int n;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, u, v; i &lt; n; ++i)
+	{
+		scanf("%d%d", &amp;u, &amp;v);
+		g[u].push_back(v);
+		g[v].push_back(u);
+	}
+	for (int i = 1; i &lt;= n; ++i)
+		if (g[i].size() == 2)
+			return printf("NO"), 0;
+	printf("YES");
+}
+</code></pre>
+
+<h2 id="add-on-a-tree-revolution"><a href="https://vjudge.net/problem/CodeForces-1189D2">Add on a Tree: Revolution</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1023;
+struct Edge
+{
+	int u, v, len;
+};
+vector&lt;Edge&gt; e, ans;
+vector&lt;int&gt; g[N];
+int n;
+void dfs(int u, int fa, vector&lt;int&gt; &amp;v)
+{
+	if (g[u].size() == 1)
+		v.push_back(u);
+	for (int to : g[u])
+		if (to != fa)
+			dfs(to, u, v);
+}
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, u, v, len; i &lt; n; ++i)
+	{
+		scanf("%d%d%d", &amp;u, &amp;v, &amp;len);
+		e.push_back({u, v, len});
+		g[u].push_back(v);
+		g[v].push_back(u);
+	}
+	for (int i = 1; i &lt;= n; ++i)
+		if (g[i].size() == 2)
+			return printf("NO"), 0;
+	for (auto &amp;ed : e)
+	{
+		vector&lt;int&gt; v[2];
+		dfs(ed.u, ed.v, v[0]);
+		dfs(ed.v, ed.u, v[1]);
+		ans.push_back({v[0].front(), v[1].back(), ed.len / 2});
+		ans.push_back({v[0].back(), v[1].front(), ed.len / 2});
+		if (v[0].front() != v[0].back())
+			ans.push_back({v[0].front(), v[0].back(), -ed.len / 2});
+		if (v[1].front() != v[1].back())
+			ans.push_back({v[1].front(), v[1].back(), -ed.len / 2});
+	}
+	printf("YES\n%d\n", ans.size());
+	for (auto &amp;ed : ans)
+		printf("%d %d %d\n", ed.u, ed.v, ed.len);
+}
+</code></pre>
+
+<h2 id="count-pairs"><a href="https://vjudge.net/problem/CodeForces-1189E">Count Pairs</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+unordered_map&lt;ll, ll&gt; mp;
+ll n, p, k, a;
+int main()
+{
+	scanf("%lld%lld%lld", &amp;n, &amp;p, &amp;k);
+	for (ll i = 0, t; i &lt; n; ++i)
+	{
+		scanf("%lld", &amp;t);
+		a += mp[(t * t % p * t % p * t % p - k * t % p + p) % p]++;
+	}
+	printf("%lld", a);
+}
+</code></pre>
+
+<h2 id="array-beauty"><a href="https://vjudge.net/problem/CodeForces-1189F">Array Beauty</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1023, M = 998244353;
+int n, k, ans, a[N], f[N][N];
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;k);
+	for (int i = 1; i &lt;= n; ++i)
+		scanf("%d", &amp;a[i]);
+	sort(a + 1, a + n + 1);
+	for (int i = 1e5 / (k - 1); i; --i)
+	{
+		for (int j = 1, l = 1; j &lt;= n; ++j)
+		{
+			while (l &lt; j &amp;&amp; a[j] - a[l] &gt;= i)
+				++l;
+			f[j][2] = (f[j - 1][2] + l - 1) % M;
+			for (int m = 3; m &lt;= k; ++m)
+				f[j][m] = (f[l - 1][m - 1] + f[j - 1][m]) % M;
+		}
+		ans = (ans + f[n][k]) % M;
+	}
+	printf("%d", ans);
+}
+</code></pre>
+:ET

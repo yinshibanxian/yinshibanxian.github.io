@@ -1,0 +1,76 @@
+I"		<pre><code class="language-haskell">--import Test.QuickCheck
+module MyFraction where
+Fraction=(Integer,Integer)
+
+--分式化简
+ratreduction::Fraction-&gt;Fraction
+ratreduction(x,y)=(div x g,div y g)where g=gcd x y
+
+--加法
+ratplus::Fraction-&gt;Fraction-&gt;Fraction
+ratplus(a,b)(c,d)=ratreduction(a*d+b*c,b*d)
+
+--减法，调用加法实现
+ratminus::Fraction-&gt;Fraction-&gt;Fraction
+ratminus(a,b)(c,d)=ratplus(a,b)(-c,d)
+
+--乘法
+rattimes::Fraction-&gt;Fraction-&gt;Fraction
+rattimes(a,b)(c,d)=ratreduction(a*c,b*d)
+
+--除法，调用乘法实现
+ratdiv::Fraction-&gt;Fraction-&gt;Fraction
+ratdiv(a,b)(c,d)=rattimes(a,b)(d,c)
+
+--取整
+ratfloor::Fraction-&gt;Integer
+ratfloor(a,b)=div a b
+
+--转成浮点
+ratfloat::Fraction-&gt;Float
+ratfloat(a,b)=fromInteger a/fromInteger b
+
+--判断相等
+rateq::Fraction-&gt;Fraction-&gt;Bool
+rateq(a,b)(c,d)=a*d==b*c
+
+--重载运算符
+(&lt;+&gt;)::Fraction-&gt;Fraction-&gt;Fraction
+(a,b)&lt;+&gt;(c,d)=ratplus(a,b)(c,d) 
+
+(&lt;-&gt;)::Fraction-&gt;Fraction-&gt;Fraction
+(a,b)&lt;-&gt;(c,d)=ratminus(a,b)(c,d)
+
+(&lt;-*-&gt;)::Fraction-&gt;Fraction-&gt;Fraction
+(a,b)&lt;-*-&gt;(c,d)=rattimes(a,b)(c,d)
+
+(&lt;/&gt;)::Fraction-&gt;Fraction-&gt;Fraction
+(a,b)&lt;/&gt;(c,d)=ratdiv(a,b)(c,d)
+
+(&lt;==&gt;)::Fraction-&gt;Fraction-&gt;Bool
+(a,b)&lt;==&gt;(c,d)=rateq(a,b)(c,d)
+
+--确定运算优先级
+infixl 6 &lt;-*-&gt;,&lt;/&gt;
+infixl 5 &lt;+&gt;,&lt;-&gt;
+infixl 4 &lt;==&gt;
+
+{-
+--检查任意分数+(0,1)之后仍然等于其本身
+prop_ratplus_unit :: Fraction -&gt; Property
+prop_ratplus_unit (a,b) = b &gt; 0 ==&gt;(a, b) &lt;+&gt; (0,1) &lt;==&gt; (a, b)
+
+--检查任意分数加上相反数之后为0
+prop_ratplus_inv :: Fraction -&gt; Property
+prop_ratplus_inv (a,b) = b &gt; 0 ==&gt;(a, b) &lt;+&gt; (-a,b) &lt;==&gt; (0, 1)
+
+--检查任意非零分数乘上倒数之后为1
+prop_rattimes_inv :: Fraction -&gt; Property
+prop_rattimes_inv (a,b) = a/=0&amp;&amp;b &gt; 0 ==&gt;(a, b) &lt;-*-&gt; (b,a) &lt;==&gt; (1, 1)
+
+-- 检查乘法分配律
+prop_rattimes_plus_distr :: Fraction -&gt; Fraction -&gt; Fraction -&gt;Property
+prop_rattimes_plus_distr (a,b) (c,d) (e,f) = b &gt; 0 &amp;&amp; d &gt; 0 &amp;&amp; f &gt; 0 ==&gt; (a,b) &lt;-*-&gt; ((c,d) &lt;+&gt; (e,f)) &lt;==&gt; ((a,b) &lt;-*-&gt; (c,d)) &lt;+&gt; ((a,b) &lt;-*-&gt; (e,f))
+-}
+</code></pre>
+:ET

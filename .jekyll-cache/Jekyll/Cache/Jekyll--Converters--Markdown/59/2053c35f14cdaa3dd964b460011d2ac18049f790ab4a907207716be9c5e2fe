@@ -1,0 +1,134 @@
+I"�<h2 id="功能要求">功能要求</h2>
+
+<ol>
+  <li>使用鼠标在程序窗口内任意选取 4 个控制顶点</li>
+  <li>根据选定的控制顶点，绘制出对应的三次 Bezier 曲线，以及其控制多边形</li>
+  <li>语言不限，开发平台不限。具体效果展示允许略有差异</li>
+</ol>
+
+<h2 id="实现提示">实现提示</h2>
+
+<p>使用鼠标回调函数，捕获屏幕窗口内点的坐标。</p>
+
+<h2 id="开发环境">开发环境</h2>
+
+<h3 id="硬件">硬件</h3>
+
+<p>所用机器型号为VAIO Z Flip 2016</p>
+
+<ul>
+  <li>Intel(R) Core(TM) i7-6567U CPU @3.30GHZ 3.31GHz</li>
+  <li>8.00GB RAM</li>
+</ul>
+
+<h3 id="软件">软件</h3>
+
+<ul>
+  <li>Windows 10, 64-bit (Build 17763) 10.0.17763</li>
+  <li>Visual Studio Code 1.39.2
+    <ul>
+      <li>Remote - WSL 0.39.9：配合WSL，在Windows上获得Linux接近原生环境的体验。</li>
+    </ul>
+  </li>
+  <li>Windows Subsystem for Linux [Ubuntu 18.04.2 LTS]：WSL是以软件的形式运行在Windows下的 Linux子系统，是近些年微软推出来的新工具，可以在Windows系统上原生运行Linux。
+    <ul>
+      <li>gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="实验原理">实验原理</h2>
+
+<ul>
+  <li>三次贝塞尔曲线的公式为$B(t)=P_0(1-t)^3+3P_1t(1-t)^2+3P_2t^2(1-t)+P_3t,t\in [0,1]$</li>
+  <li>使用鼠标回调函数，捕获屏幕窗口内点的坐标</li>
+  <li>实现了一个鼠标点击计数器，根据点击的次数决定是画顶点、折线还是贝塞尔曲线</li>
+</ul>
+
+<h2 id="实现效果">实现效果</h2>
+
+<p>Windows下运行<code>bezier.exe</code>，或Linux下运行<code>bezier.out</code>，得到如下结果。</p>
+
+<p><img src="/public/image/2019-10-16-1.jpg" alt="1" /></p>
+
+<h2 id="源代码bezierc">源代码<code>bezier.c</code></h2>
+
+<pre><code class="language-c">#include &lt;math.h&gt;
+#include &lt;GL/gl.h&gt;
+#include &lt;GL/glut.h&gt;
+GLfloat p[4][2];
+int cnt = 0;
+void mouse(int button, int state, int x, int y)
+{
+	if (state == GLUT_DOWN)
+	{
+		if (cnt &lt; 4)
+		{
+			glBegin(GL_POINTS);
+			glVertex2i(x, 500 - y);
+			glEnd();
+			p[cnt][0] = x;
+			p[cnt][1] = 500 - y;
+		}
+		else if (cnt == 4)
+		{
+			glPointSize(1);
+			for (int i = 1; i &lt; 4; ++i)
+			{
+				glBegin(GL_LINES);
+				glVertex2f(p[i - 1][0], p[i - 1][1]);
+				glVertex2f(p[i][0], p[i][1]);
+				glEnd();
+			}
+		}
+		else if (cnt == 5)
+		{
+			glPointSize(1);
+			for (GLfloat t = 0; t &lt; 1; t += 0.001)
+			{
+				glBegin(GL_POINTS);
+				glVertex2f(
+					p[0][0] * pow(1 - t, 3) + 3 * p[1][0] * t * pow(1 - t, 2) + 3 * p[2][0] * t * t * (1 - t) + p[3][0] * pow(t, 3),
+					p[0][1] * pow(1 - t, 3) + 3 * p[1][1] * t * pow(1 - t, 2) + 3 * p[2][1] * t * t * (1 - t) + p[3][1] * pow(t, 3));
+				glEnd();
+			}
+		}
+		else
+		{
+			glClear(GL_COLOR_BUFFER_BIT);
+			glPointSize(5);
+			cnt = -1;
+		}
+		++cnt;
+		glFlush();
+	}
+}
+void display()
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+	glFlush();
+}
+int main(int argc, char **argv)
+{
+	glutInit(&amp;argc, argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
+	glutInitWindowPosition(0, 0);
+	glutInitWindowSize(500, 500);
+	glutCreateWindow("17341163_吴坎_CG_HW4");
+	glClearColor(0, 0, 0, 0);
+	glPointSize(5);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluOrtho2D(0, 500, 0, 500);
+	glutDisplayFunc(display);
+	glutMouseFunc(mouse);
+	glutMainLoop();
+}
+</code></pre>
+
+<h3 id="编译指令">编译指令</h3>
+
+<pre><code class="language-bash">gcc bezier.c -o bezier.out -lGL -lGLU -lglut -lm
+./bezier.out
+</code></pre>
+:ET

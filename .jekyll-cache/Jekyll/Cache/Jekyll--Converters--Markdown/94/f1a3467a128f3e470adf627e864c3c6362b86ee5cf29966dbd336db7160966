@@ -1,0 +1,295 @@
+I"0<h1 id="problem-b-harvest-of-apples"><a href="https://vjudge.net/problem/HDU-6333">Problem B. Harvest of Apples</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define mul(a,b,c) ((a)*(b)%(c))
+#define inv(a,m) pow(a,m-2,m)
+#define C(n,m) mul(mul(f.fac[n],f.ifac[m],M),f.ifac[(n)-(m)],M)
+using namespace std;
+typedef long long ll;
+const ll N=1e5+7,M=1e9+7,BS=sqrt(N);
+ll t,n,m,ans[N];
+ll pow(ll a,ll b,ll m)
+{
+    ll r=1;
+    for(a%=m; b; b&gt;&gt;=1,a=mul(a,a,m))
+        if(b&amp;1)r=mul(r,a,m);
+    return r;
+}
+struct Factorial
+{
+    vector&lt;ll&gt; fac,ifac;
+    Factorial(int N):fac(N,1),ifac(N,1)
+    {
+        for(int i=1; i&lt;N; ++i)fac[i]=mul(fac[i-1],i,M);
+        ifac[N-1]=inv(fac[N-1],M);
+        for(int i=N-1; i; --i)ifac[i-1]=mul(ifac[i],i,M);
+    }
+} f(N);
+struct Mo
+{
+    struct Query
+    {
+        int l,r,id;
+        bool operator&lt;(const Query&amp; q)const
+        {
+            return l/BS!=q.l/BS?l&lt;q.l:r&lt;q.r;
+        }
+    };
+    vector&lt;Query&gt; q;
+    ll L,R,ANS;
+    void query(int l,int r)
+    {
+        q.push_back(Query {l,r,q.size()});
+    }
+    void cal(int id)
+    {
+        ans[id]=ANS;
+    }
+    void ask()
+    {
+        sort(q.begin(),q.end());
+        ANS=L=1,R=0;
+        for(int i=0; i&lt;q.size(); ++i)
+        {
+            for(; L&lt;q[i].l; ++L)ANS=(2*ANS-C(L,R)+M)%M;
+            for(; R&gt;q[i].r; --R)ANS=(ANS-C(L,R)+M)%M;
+            for(; R&lt;q[i].r; ++R)ANS=(ANS+C(L,R+1))%M;
+            for(; L&gt;q[i].l; --L)ANS=mul((ANS+C(L-1,R))%M,f.ifac[2],M);
+            cal(q[i].id);
+        }
+    }
+} mo;
+int main()
+{
+    for(scanf("%lld",&amp;t); t--; mo.query(n,m))scanf("%lld%lld",&amp;n,&amp;m);
+    mo.ask();
+    for(int i=0; i&lt;mo.q.size(); ++i)printf("%lld\n",ans[i]);
+}
+</code></pre>
+<h1 id="problem-d-nothing-is-impossible"><a href="https://vjudge.net/problem/HDU-6335">Problem D. Nothing is Impossible</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int t,n,m,a,b[127];
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%d%d",&amp;n,&amp;m);
+        for(int i=0; i&lt;n; ++i)scanf("%d%d",&amp;a,&amp;b[i]);
+        sort(b,b+n);
+        b[n]=2e9,a=0;
+        for(long long p=1; p&lt;=m; ++a)p*=b[a]+1;
+        printf("%d\n",a-1);
+    }
+}
+</code></pre>
+<h1 id="problem-e-matrix-from-arrays"><a href="https://vjudge.net/problem/HDU-6336">Problem E. Matrix from Arrays</a></h1>
+<pre><code class="language-cpp">#include&lt;stdio.h&gt;
+typedef long long ll;
+ll t,l,q,a[15],x0,x1,y0,y1,M[999][999],b[31][31];
+void init()
+{
+    ll cursor = 0,T=2*l;
+    for (ll i = 0; i&lt;3*T; ++i)
+    {
+        for (ll j = 0; j &lt;= i; ++j)
+        {
+            M[j][i - j] = a[cursor];
+            cursor = (cursor + 1) % l;
+        }
+    }
+    for(ll i=0; i&lt;T; ++i)
+        for(ll j=0; j&lt;T; ++j)
+            b[i+1][j+1]=M[i][j]+b[i+1][j]+b[i][j+1]-b[i][j];
+}
+ll ask(ll x,ll y)
+{
+    ++x,++y;
+    ll T=2*l,tx=x/T,ty=y/T,dx=x%T,dy=y%T;
+    return tx*ty*b[T][T]+b[dx][T]*ty+b[T][dy]*tx+b[dx][dy];
+}
+int main()
+{
+    for(scanf("%lld",&amp;t); t--;)
+    {
+        scanf("%lld",&amp;l);
+        for(ll i=0; i&lt;l; ++i)scanf("%lld",&amp;a[i]);
+        init();
+        for(scanf("%lld",&amp;q); q--;)
+        {
+            scanf("%lld%lld%lld%lld",&amp;x0,&amp;y0,&amp;x1,&amp;y1);
+            printf("%lld\n",ask(x1,y1)-ask(x0-1,y1)-ask(x1,y0-1)+ask(x0-1,y0-1));
+        }
+    }
+}
+</code></pre>
+<h1 id="problem-j-let-sudoku-rotate"><a href="https://vjudge.net/problem/HDU-6341">Problem J. Let Sudoku Rotate</a></h1>
+<pre><code class="language-cpp">#include &lt;cstdio&gt;
+#include &lt;cstdlib&gt;
+#include &lt;cstring&gt;
+#include &lt;algorithm&gt;
+
+using namespace std;
+
+struct reg
+{
+    int X[4],Y[4];
+}C[20];
+
+void turn(int k)
+{
+    int a=C[k].X[0],b=C[k].X[1],c=C[k].X[2],d=C[k].X[3];
+    C[k].X[0]=C[k].Y[0];
+    C[k].X[1]=C[k].Y[1];
+    C[k].X[2]=C[k].Y[2];
+    C[k].X[3]=C[k].Y[3];
+    C[k].Y[0]=d;C[k].Y[1]=c;C[k].Y[2]=b;C[k].Y[3]=a;
+}
+
+int ans;
+int y[20];
+
+void DFS(int k,int cnt,int x0,int x1,int x2,int x3)
+{
+    if (k&gt;15)
+    {
+        ans=min(ans,cnt);
+        return;
+    }
+    if (k%4==0) x0=x1=x2=x3=0;
+    if (cnt&gt;=ans) return;
+    for (int i=0;i&lt;=3;++i)
+    {
+        bool ok=true;
+        for (int j=k%4*4;j&lt;=k%4*4+3;++j)
+            if (y[j]&amp;C[k].Y[j%4]) {ok=false;break;}
+
+        if (ok &amp;&amp; ((x0&amp;C[k].X[0])==0) &amp;&amp; ((x1&amp;C[k].X[1])==0) &amp;&amp; ((x2&amp;C[k].X[2])==0) &amp;&amp; ((x3&amp;C[k].X[3])==0))
+        {
+            for (int j=k%4*4;j&lt;=k%4*4+3;++j)
+                y[j]|=C[k].Y[j%4];
+
+            DFS(k+1,cnt+i,x0|C[k].X[0],x1|C[k].X[1],x2|C[k].X[2],x3|C[k].X[3]);
+
+            for (int j=k%4*4;j&lt;=k%4*4+3;++j)
+                y[j]-=C[k].Y[j%4];
+        }
+        turn(k);
+    }
+
+}
+
+int n;
+char s[20][20];
+
+int change(char c)
+{
+    if ('0'&lt;=c &amp;&amp; c&lt;='9') return (1&lt;&lt;(c-'0'));
+    return (1&lt;&lt;(c-'A'+10));
+}
+
+int main()
+{
+    scanf("%d",&amp;n);
+    while (n--)
+    {
+        memset(C,0,sizeof(C));
+        ans=50;
+        for (int i=0;i&lt;=15;++i)
+            scanf("%s",s[i]);
+        for (int i=0;i&lt;=15;++i)
+        {
+            int X=i/4,Y=i%4;
+            int x1=X*4,x2=X*4+3,y1=Y*4,y2=Y*4+3;
+            for (int x=x1;x&lt;=x2;++x)
+            for (int y=y1;y&lt;=y2;++y)
+            {
+                C[i].X[x-x1]|=change(s[x][y]);
+                C[i].Y[y-y1]|=change(s[x][y]);
+            }
+        }
+        memset(y,0,sizeof(y));
+        DFS(0,0,0,0,0,0);
+        printf("%d\n",ans);
+    }
+}
+</code></pre>
+<h1 id="problem-k-expression-in-memories"><a href="https://vjudge.net/problem/HDU-6342">Problem K. Expression in Memories</a></h1>
+<pre><code class="language-cpp">#include &lt;cstdio&gt;
+#include &lt;cstdlib&gt;
+
+using namespace std;
+
+int T;
+char s[1000];
+
+int main()
+{
+    scanf("%d",&amp;T);
+    while (T--)
+    {
+        scanf("%s",s+1);
+        bool op=true,zero=false,OK=true;
+        for (int i=1;s[i];++i)
+        {
+            if (s[i]=='?')
+            {
+                if (zero)
+                {
+                    zero=false;op=true;s[i]='+';
+                }else
+                {
+                    op=zero=false;s[i]='1';
+                }
+            }
+            else
+            if (s[i]=='+' || s[i]=='*')
+            {
+                if (op) {OK=false;break;}
+                op=true;zero=false;
+            }
+            else
+            if (s[i]=='0')
+            {
+                if (zero) {OK=false;break;}
+                if (op) zero=true;
+                op=false;
+            }
+            else
+            if ('1'&lt;=s[i] &amp;&amp; s[i]&lt;='9')
+            {
+                if (zero) {OK=false;break;}
+                op=zero=false;
+            }
+        }
+        if (op) OK=false;
+        if (OK) printf("%s\n",s+1);
+        else    printf("IMPOSSIBLE\n");
+    }
+}
+</code></pre>
+<h1 id="problem-l-graph-theory-homework"><a href="https://vjudge.net/problem/HDU-6343">Problem L. Graph Theory Homework</a></h1>
+<pre><code class="language-cpp">#include &lt;cstdio&gt;
+#include &lt;cstdlib&gt;
+#include &lt;cmath&gt;
+
+using namespace std;
+
+int t,n;
+int a[100010];
+
+int main()
+{
+    scanf("%d",&amp;t);
+    while (t--)
+    {
+        scanf("%d",&amp;n);
+        for (int i=1;i&lt;=n;++i) scanf("%d",&amp;a[i]);
+        int del=abs(a[1]-a[n]);
+        for (int i=1;i&lt;=100000;++i)
+        {
+            if (i*i&gt;del) {printf("%d\n",i-1);break;}
+        }
+    }
+}
+</code></pre>
+:ET

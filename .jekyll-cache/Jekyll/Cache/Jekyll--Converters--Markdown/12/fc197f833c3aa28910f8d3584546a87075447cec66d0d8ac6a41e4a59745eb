@@ -1,0 +1,123 @@
+I"Q<h1 id="rikka-with-nash-equilibrium"><a href="https://vjudge.net/problem/HDU-6415">Rikka with Nash Equilibrium</a></h1>
+<p>递推很慢的跑掉了，有的编译器会T掉。</p>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+typedef long long ll;
+ll t,n,m,k,f[2][99][99];
+int main()
+{
+    for(scanf("%lld",&amp;t); t--;)
+    {
+        scanf("%lld%lld%lld",&amp;n,&amp;m,&amp;k);
+        memset(f,0,sizeof(f));
+        f[1][1][1]=n*m;
+        for(int i=2,pre=1; i&lt;=n*m; ++i,pre^=1)
+            for(int x=1; x&lt;=n&amp;&amp;x&lt;=i; ++x)
+                for(int y=1; y&lt;=m&amp;&amp;y&lt;=i; ++y)
+                    f[pre^1][x][y]=((n-x+1)*y*f[pre][x-1][y]+
+                                    (m-y+1)*x*f[pre][x][y-1]+
+                                    (x*y-i+1)*f[pre][x][y])%k;
+        printf("%lld\n",f[n*m%2][n][m]);
+    }
+}
+</code></pre>
+<p>赛后翻题解才知道有现成公式…</p>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+typedef long long ll;
+ll t,n,m,k,ans;
+int main()
+{
+    for(scanf("%lld",&amp;t); t--; printf("%lld\n",ans))
+    {
+        scanf("%lld%lld%lld",&amp;n,&amp;m,&amp;k);
+        for(ll i=ans=1; i&lt;=n; ++i)ans=ans*i%k;
+        for(ll i=1; i&lt;=m; ++i)ans=ans*i%k;
+        for(ll i=n+m; i&lt;=n*m; ++i)ans=ans*i%k;
+    }
+}
+</code></pre>
+<h1 id="rikka-with-stone-paper-scissors"><a href="https://vjudge.net/problem/HDU-6418">Rikka with Stone-Paper-Scissors</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+typedef long long ll;
+ll t,a1,b1,c1,a2,b2,c2;
+ll gcd(ll a,ll b)
+{
+    return b?gcd(b,a%b):a;
+}
+int main()
+{
+    for(scanf("%lld",&amp;t); t--; printf("\n"))
+    {
+        scanf("%lld%lld%lld%lld%lld%lld",&amp;a1,&amp;b1,&amp;c1,&amp;a2,&amp;b2,&amp;c2);
+        ll n=a2*(c1-b1)+b2*(a1-c1)+c2*(b1-a1),d=a1+b1+c1,g;
+        if(n&lt;0)printf("-"),n=-n;
+        g=gcd(n,d),printf("%lld",n/=g);
+        if(d/=g,d&gt;1)printf("/%lld",d);
+    }
+}
+</code></pre>
+<h1 id="rikka-with-time-complexity"><a href="https://vjudge.net/problem/HDU-6424">Rikka with Time Complexity</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int t,a,b,INF=1e9+7;
+vector&lt;int&gt; cal(const vector&lt;int&gt; &amp;A)
+{
+    vector&lt;int&gt; r(4,INF);
+    if(A.size()==1)
+    {
+        r[0]=A[0]+2;
+    }
+    if(A.size()==2)
+    {
+        r[0]=min(A[0]+2,A[1]+1);
+        r[2]=max(A[0]+2,A[1]+1);
+    }
+    if(A.size()==3)
+    {
+        if(A[0]+2&lt;min(A[1]+1,A[2]))
+        {
+            r[0]=A[0]+2;
+            r[2]=min(A[1]+1,A[2]);
+            r[3]=max(A[1]+1,A[2]);
+        }
+        else
+        {
+            r[0]=min(A[1]+1,A[2]);
+            r[1]=max(A[1]+1,A[2]);
+            r[2]=A[0]+2;
+        }
+    }
+    return r;
+}
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%d%d",&amp;a,&amp;b);
+        vector&lt;int&gt; A(a),B(b);
+        for(int i=0,t; i&lt;a; ++i)scanf("%d",&amp;A[i]);
+        for(int i=0,t; i&lt;b; ++i)scanf("%d",&amp;B[i]);
+        printf("%d\n",cal(A)&gt;cal(B)?-1:cal(A)&lt;cal(B));
+    }
+}
+</code></pre>
+<h1 id="rikka-with-badminton"><a href="https://vjudge.net/problem/HDU-6425">Rikka with Badminton</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#define mul(a,b,c) ((a)*(b)%(c))
+typedef long long ll;
+ll M=998244353,t,a,b,c,d;
+ll pow(ll a,ll b,ll m)
+{
+    ll r=1;
+    for(; b; b&gt;&gt;=1,a=mul(a,a,m))
+        if(b&amp;1)r=mul(r,a,m);
+    return r;
+}
+int main()
+{
+    for(scanf("%lld",&amp;t); t--;
+            printf("%lld\n",mul(pow(2,a,M),(pow(2,b,M)-b-1+mul(pow(2,c,M),(b+d+1)%M,M)+M)%M,M)))
+        scanf("%lld%lld%lld%lld",&amp;a,&amp;b,&amp;c,&amp;d);
+}
+</code></pre>
+:ET

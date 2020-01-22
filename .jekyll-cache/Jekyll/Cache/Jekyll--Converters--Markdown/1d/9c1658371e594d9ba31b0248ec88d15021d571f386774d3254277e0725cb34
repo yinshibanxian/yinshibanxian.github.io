@@ -1,0 +1,137 @@
+I"�<h1 id="packets"><a href="https://vjudge.net/problem/CodeForces-1037A">Packets</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int n, ans;
+int main()
+{
+	for (scanf("%d", &amp;n); n; n &gt;&gt;= 1)
+		++ans;
+	printf("%d", ans);
+}
+</code></pre>
+<h2 id="这个为啥错了">这个为啥错了？</h2>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int n;
+int main()
+{
+	scanf("%d", &amp;n);
+	printf("%.0f", floor(log(n) / log(2)) + 1);
+}
+</code></pre>
+<h1 id="reach-median"><a href="https://vjudge.net/problem/CodeForces-1037B">Reach Median</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const ll N = 2e5 + 7;
+ll n, s, m, ans, a[N];
+int main()
+{
+	scanf("%lld%lld", &amp;n, &amp;s);
+	for (ll i = 0; i &lt; n; ++i)
+		scanf("%lld", &amp;a[i]);
+	sort(a, a + n);
+	m = n / 2;
+	if (a[m] &lt; s)
+		while (a[m] &lt; s &amp;&amp; m &lt; n)
+			ans += s - a[m++];
+	else
+		while (a[m] &gt; s &amp;&amp; m &gt;= 0)
+			ans += a[m--] - s;
+	printf("%lld", ans);
+}
+</code></pre>
+<h1 id="equalize"><a href="https://vjudge.net/problem/CodeForces-1037C">Equalize</a></h1>
+<p><code>l[i]+r[i]</code>之后在所有数里的排名就是原来的排名，回代检验即可。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e6 + 9;
+char a[N], b[N];
+int n;
+int main()
+{
+	scanf("%d%s%s", &amp;n, a, b);
+	for (int i = n = 0; a[i]; ++i)
+		if (a[i] != b[i])
+		{
+			++n;
+			if (a[i + 1] != b[i + 1] &amp;&amp; a[i] == b[i + 1])
+				++i;
+		}
+	printf("%d", n);
+}
+</code></pre>
+<h1 id="valid-bfs"><a href="https://vjudge.net/problem/CodeForces-1037D">Valid BFS?</a></h1>
+<p>瞎跑大暴力直接过了…正解应该是用BFS的两个性质：</p>
+<ul>
+  <li>BFS序是关于深度的一个非减序列</li>
+  <li>BFS序是关于父节点深度的一个非减序列</li>
+</ul>
+
+<p>别忘了起点嘚是1…太坑了吧</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e6 + 9;
+unordered_set&lt;int&gt; g[N];
+int n, m = 1, a[N];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, x, y; i &lt; n; ++i)
+	{
+		scanf("%d%d", &amp;x, &amp;y);
+		g[x].insert(y);
+		g[y].insert(x);
+	}
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;a[i]);
+	for (int i = 0; i &lt; n; ++i)
+		while (g[a[i]].count(a[m]))
+			++m;
+	printf(m == n &amp;&amp; a[0] == 1 ? "Yes" : "No");
+}
+</code></pre>
+<h1 id="trips"><a href="https://vjudge.net/problem/CodeForces-1037E">Trips</a></h1>
+<p>倒着处理一波。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e6 + 9;
+unordered_set&lt;int&gt; se, g[N];
+pair&lt;int, int&gt; e[N];
+int n, m, k, vis[N], ans[N], cnt[N];
+void del(int x)
+{
+	if (g[x].size() &lt; k &amp;&amp; se.erase(x))
+		for (auto y : g[x])
+			g[y].erase(x), del(y);
+}
+int main()
+{
+	scanf("%d%d%d", &amp;n, &amp;m, &amp;k);
+	for (int i = 0; i &lt; m; ++i)
+	{
+		int &amp;x = e[i].first, &amp;y = e[i].second;
+		scanf("%d%d", &amp;x, &amp;y);
+		g[x].insert(y);
+		g[y].insert(x);
+	}
+	for (int i = 1; i &lt;= n; ++i)
+		se.insert(i);
+	for (int i = 1; i &lt;= n; ++i)
+		del(i);
+	for (int i = m - 1; ~i; --i)
+	{
+		ans[i] = se.size();
+		if (se.empty())
+			break;
+		int &amp;x = e[i].first, &amp;y = e[i].second;
+		g[x].erase(y);
+		g[y].erase(x);
+		del(x);
+		del(y);
+	}
+	for (int i = 0; i &lt; m; ++i)
+		printf("%d\n", ans[i]);
+}
+</code></pre>
+:ET

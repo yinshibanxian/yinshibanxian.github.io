@@ -1,0 +1,173 @@
+I"<p><a href="https://vjudge.net/contest/205941#overview">overview</a></p>
+<h1 id="试剂配制"><a href="https://vjudge.net/problem/OpenJ_Bailian-2936">试剂配制</a></h1>
+<p>练习使用位运算。</p>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int n,t,a[8]= {0};
+int main()
+{
+    scanf("%d",&amp;n);
+    while(n--)
+    {
+        scanf("%d",&amp;t);
+        a[t-1]=1;
+    }
+    printf("%d",
+           !(a[0]&amp;a[1])&amp;
+           !(a[2]&amp;a[3])&amp;
+           !(a[4]^a[5])&amp;
+           (a[6]|a[7]));
+}
+</code></pre>
+<h1 id="异常细胞检测"><a href="https://vjudge.net/problem/OpenJ_Bailian-2937">异常细胞检测</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int n,cnt=0,a[128][128]= {0};
+int main()
+{
+    scanf("%d",&amp;n);
+    for(int i=0; i&lt;n; ++i)
+        for(int j=0; j&lt;n; ++j)
+            scanf("%d",&amp;a[i][j]);
+    for(int i=1; i&lt;n-1; ++i)
+        for(int j=1; j&lt;n-1; ++j)
+            if(a[i-1][j]&gt;=a[i][j]+50&amp;&amp;
+                    a[i+1][j]&gt;=a[i][j]+50&amp;&amp;
+                    a[i][j-1]&gt;=a[i][j]+50&amp;&amp;
+                    a[i][j+1]&gt;=a[i][j]+50)
+                ++cnt;
+    printf("%d",cnt);
+}
+</code></pre>
+<h1 id="按顺序输出"><a href="https://vjudge.net/problem/OpenJ_Bailian-2938">按顺序输出</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+int a[3];
+int intGreaterCmp(const void *a,const void *b)
+{
+    return *(int*)b-*(int*)a;
+}
+int main()
+{
+    scanf("%d%d%d",&amp;a[0],&amp;a[1],&amp;a[2]);
+    qsort(a,3,sizeof(int),intGreaterCmp);
+    printf("%d %d %d",a[0],a[1],a[2]);
+}
+</code></pre>
+<h1 id="求和"><a href="https://vjudge.net/problem/OpenJ_Bailian-2940">求和</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#include&lt;math.h&gt;
+int a,n,s=0;
+int main()
+{
+    scanf("%d%d",&amp;a,&amp;n);
+    for(int i=1; i&lt;=n; ++i)
+        s+=(pow(10,i)-1)/9*a;
+    printf("%d",s);
+}
+</code></pre>
+<h1 id="满足条件的整数"><a href="https://vjudge.net/problem/OpenJ_Bailian-2941">满足条件的整数</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int main()
+{
+    for(int a=1; a&lt;=100; ++a)
+        for(int b=a; b&lt;=100; ++b)
+            for(int c=b; c&lt;=100; ++c)
+                if(a*a+b*b==c*c)
+                    printf("%d*%d + %d*%d = %d*%d\n",
+                           a,a,b,b,c,c);
+}
+</code></pre>
+<h1 id="吃糖果"><a href="https://vjudge.net/problem/OpenJ_Bailian-2942">吃糖果</a></h1>
+<p>即斐波那契数列第n+1项。</p>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int work(int n)
+{
+    static int f[32]= {1,1};
+    if(f[n])return f[n];
+    return f[n]=work(n-1)+work(n-2);
+}
+int main()
+{
+    int n;
+    scanf("%d",&amp;n);
+    printf("%d",work(n));
+}
+</code></pre>
+<p>也可以像这样不用数组直接递推。</p>
+<pre><code class="language-c">int work(int n)
+{
+    int a=1;
+    for(int i=2,b=1,c; i&lt;=n; ++i)
+    {
+        c=a;
+        a+=b;
+        b=c;
+    }
+    return a;
+}
+</code></pre>
+<h1 id="小白鼠排队"><a href="https://vjudge.net/problem/OpenJ_Bailian-2943">小白鼠排队</a></h1>
+<p>注意到每只小白鼠的体重都不同且范围小，存表比排序更快。</p>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+char color[1024][16]= {0};
+int n,t;
+int main()
+{
+    for(scanf("%d",&amp;n); n--;)
+        scanf("%d%s",&amp;t,color[t]);
+    for(int i=1000; i; --i)
+        if(color[i][0])
+            printf("%s\n",color[i]);
+}
+</code></pre>
+<h1 id="单词替换"><a href="https://vjudge.net/problem/OpenJ_Bailian-2944">单词替换</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+char s[128][128];
+int cnt=0;
+int main()
+{
+    while(scanf("%s",s[cnt++])!=EOF);
+    for(int i=0; i&lt;=cnt-4; ++i)
+        printf("%s ",
+               strcmp(s[i],s[cnt-3])?
+               s[i]:s[cnt-2]);
+}
+</code></pre>
+<h1 id="拦截导弹"><a href="https://vjudge.net/problem/OpenJ_Bailian-2945">拦截导弹</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int k,ans=0,h[32],f[32];
+int main()
+{
+    scanf("%d",&amp;k);
+    for(int i=0; i!=k; ++i)
+    {
+        scanf("%d",&amp;h[i]);
+        for(int j=f[i]=0; j!=i; ++j)
+            if(h[i]&lt;=h[j]&amp;&amp;f[i]&lt;f[j]+1)
+                f[i]=f[j]+1;
+        if(ans&lt;f[i])ans=f[i];
+    }
+    printf("%d",ans+1);
+}
+</code></pre>
+<h1 id="玩游戏"><a href="https://vjudge.net/problem/OpenJ_Bailian-2946">玩游戏</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+int k,n,a;
+int main()
+{
+    for(scanf("%d%d",&amp;k,&amp;n); n--;)
+    {
+        char s[9];
+        scanf("%s%d",s,&amp;a);
+        if(!strcmp(s,"plus"))
+            k+=a;
+        if(!strcmp(s,"minus"))
+            k-=a;
+        if(!strcmp(s,"multiply"))
+            k*=a;
+    }
+    printf("%d",k);
+}
+</code></pre>
+:ET

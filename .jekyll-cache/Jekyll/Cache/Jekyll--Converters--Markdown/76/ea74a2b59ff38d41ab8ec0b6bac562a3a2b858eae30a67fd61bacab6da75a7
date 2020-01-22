@@ -1,0 +1,91 @@
+I"n<h1 id="project1-实现一个多线程并发访问的队列">Project1: 实现一个多线程并发访问的队列</h1>
+<p>Implement a multi-access threaded queue with multiple threads inserting and multiple threads extracting from the queue. Use mutex-locks to synchronize access to the queue. Document the time for 1000 insertions and 1000 extractions each by 64 insertions threads (Producers) and 64 extraction threads (Consumers).
+语言限制：C/C++/Java
+PS：不能直接使用STL或者JDK中现有的并发访问队列，请基于普通的queue或自行实现</p>
+<h2 id="实现思路">实现思路</h2>
+<p>在继承STL中的适配器<code>queue</code>的基础上，每次对容器内元素的访问和修改都需要先上锁，结束后解锁。</p>
+
+<p>由于访问操作可以是<code>const</code>的，因此这个锁需要是<code>mutable</code>的。</p>
+
+<h2 id="运行结果">运行结果</h2>
+<p>所用机器型号为VAIO Z Flip 2016，基本配置如下：</p>
+<ul>
+  <li>Intel(R) Core(TM) i7-6567U CPU @3.30GHZ 3.31GHz</li>
+  <li>8.00GB RAM</li>
+</ul>
+
+<p>编译运行main.cpp后，得到如下运行结果：</p>
+<pre><code>elapsed time: 0.146981s
+</code></pre>
+<p>即进行64个生产者和消费者访问之后一共消耗了约0.146981s。</p>
+<h2 id="源代码">源代码</h2>
+<h3 id="wkmultiaccessqueuehpp">wkMultiAccessQueue.hpp</h3>
+<p>需要开C++11。</p>
+<pre><code class="language-hpp">#ifndef _wkMultiAccessQueue_hpp_
+#define _wkMultiAccessQueue_hpp_
+#include &lt;queue&gt;
+#include &lt;mutex&gt;
+namespace wk
+{
+template &lt;class T&gt;
+class MultiAccessQueue : std::queue&lt;T&gt;
+{
+private:
+	mutable std::mutex mu;
+
+public:
+	void push(T val)
+	{
+		std::lock_guard&lt;std::mutex&gt; guard(mu);
+		std::queue&lt;T&gt;::push(val);
+	}
+	void pop()
+	{
+		std::lock_guard&lt;std::mutex&gt; guard(mu);
+		std::queue&lt;T&gt;::pop();
+	}
+	T front() const
+	{
+		std::lock_guard&lt;std::mutex&gt; guard(mu);
+		return std::queue&lt;T&gt;::front();
+	}
+};
+} // namespace wk
+#endif
+</code></pre>
+<h3 id="maincpp">main.cpp</h3>
+<p>需要开C++11。</p>
+<pre><code class="language-cpp">#include &lt;chrono&gt;
+#include &lt;vector&gt;
+#include &lt;thread&gt;
+#include &lt;iostream&gt;
+#include "wkMultiAccessQueue.hpp"
+wk::MultiAccessQueue&lt;int&gt; q;
+void producer(int cnt)
+{
+	for (int i = 0; i &lt; cnt; ++i)
+		q.push(i);
+}
+void consumer(int cnt)
+{
+	for (int i = 0; i &lt; cnt; ++i)
+		q.pop();
+}
+int main()
+{
+	auto begin = std::chrono::system_clock::now();
+	std::vector&lt;std::thread&gt; vt(64);
+	for (auto &amp;it : vt)
+		it = std::thread(producer, 1000);
+	for (auto &amp;it : vt)
+		it.join();
+	for (auto &amp;it : vt)
+		it = std::thread(consumer, 1000);
+	for (auto &amp;it : vt)
+		it.join();
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration&lt;double&gt; elapsed_seconds = end - begin;
+	std::cout &lt;&lt; "elapsed time: " &lt;&lt; elapsed_seconds.count() &lt;&lt; "s\n";
+}
+</code></pre>
+:ET

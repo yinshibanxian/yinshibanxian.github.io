@@ -1,0 +1,115 @@
+I"è<h1 id="check-the-string"><a href="https://vjudge.net/problem/CodeForces-960A">Check the string</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+char s[8195];
+int c[3];
+int main()
+{
+	scanf("%s", s);
+	for (int i = 0; s[i]; ++i)
+	{
+		++c[s[i] - 'a'];
+		if (i &amp;&amp; s[i] &lt; s[i - 1])
+			return printf("NO"), 0;
+	}
+	printf(c[0] &amp;&amp; c[1] &amp;&amp; (c[2] == c[0] || c[2] == c[1]) ? "YES" : "NO");
+}
+</code></pre>
+<h1 id="minimize-the-error"><a href="https://vjudge.net/problem/CodeForces-960B">Minimize the error</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+priority_queue&lt;ll&gt; q;
+ll n, k, t, a[1023];
+int main()
+{
+	scanf("%lld%lld%lld", &amp;n, &amp;k, &amp;t);
+	k += t;
+	for (ll i = 0; i &lt; n; ++i)
+		scanf("%lld", &amp;a[i]);
+	for (ll i = 0; i &lt; n; ++i)
+	{
+		scanf("%lld", &amp;t);
+		q.push(abs(a[i] - t));
+	}
+	while (k--)
+	{
+		t = q.top();
+		q.pop();
+		q.push(t ? t - 1 : t + 1);
+	}
+	for (t = 0; !q.empty(); q.pop())
+		t += q.top() * q.top();
+	printf("%lld", t);
+}
+</code></pre>
+<h1 id="subsequence-counting"><a href="https://vjudge.net/problem/CodeForces-960C">Subsequence Counting</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+vector&lt;ll&gt; v;
+ll x, d;
+int main()
+{
+	scanf("%lld%lld", &amp;x, &amp;d);
+	for (ll a = 1; x; a += d)
+		for (ll i = 1; i &lt;= x; i &lt;&lt;= 1)
+			v.push_back(a), x -= i;
+	printf("%d\n", v.size());
+	for (auto i : v)
+		printf("%lld ", i);
+}
+</code></pre>
+<h1 id="alternating-tree"><a href="https://vjudge.net/problem/CodeForces-960E">Alternating Tree</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const ll N = 2e5 + 7;
+struct Mod
+{
+	const ll M;
+	Mod(ll M) : M(M) {}
+	ll add(ll a, ll b) const { return ((a + b) % M + M) % M; }
+	ll mul(ll a, ll b) const { return a * b % M; }
+} M(1e9 + 7);
+vector&lt;ll&gt; e[N];
+ll n, ans, v[N], f[N][2], g[N][2];
+void dfs(ll u, ll fa = N)
+{
+	for (auto to : e[u])
+		if (to != fa)
+		{
+			dfs(to, u);
+			f[u][0] = M.add(f[u][0] + f[to][1], -M.mul(g[to][1], v[u]));
+			f[u][1] = M.add(f[u][1] + f[to][0], M.mul(g[to][0], v[u]));
+			g[u][0] = M.add(g[u][0], g[to][1]);
+			g[u][1] = M.add(g[u][1], g[to][0]);
+		}
+	for (auto to : e[u])
+		if (to != fa)
+		{
+			if (g[to][0])
+				ans = M.add(ans, M.mul(g[u][1] - g[to][0], f[to][0] * 2 + g[to][0] * v[u]));
+			if (g[to][1])
+				ans = M.add(ans, M.mul(g[u][0] - g[to][1], f[to][1] * 2 - g[to][1] * v[u]));
+		}
+	ans = M.add(ans, f[u][1] * 2 + v[u]);
+	f[u][1] = M.add(f[u][1], v[u]);
+	g[u][1] = M.add(g[u][1], 1);
+}
+int main()
+{
+	scanf("%lld", &amp;n);
+	for (ll i = 1; i &lt;= n; ++i)
+		scanf("%lld", &amp;v[i]);
+	for (ll i = 1, x, y; i &lt; n; ++i)
+	{
+		scanf("%lld%lld", &amp;x, &amp;y);
+		e[x].push_back(y);
+		e[y].push_back(x);
+	}
+	dfs(1);
+	printf("%lld", ans);
+}
+</code></pre>
+:ET

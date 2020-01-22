@@ -1,0 +1,222 @@
+I"�<p>怒草评测姬</p>
+<h1 id="buy-and-resell"><a href="https://vjudge.net/problem/HDU-6438">Buy and Resell</a></h1>
+<p>维护目前为止购买价格的最小值，若比当前价格低则做一次买入/卖出操作。然而，这个操作可能不是最优的，因此将这一天的价格同时加入所有价格集合作为撤回操作，在价格相同时优先消耗撤回操作，此时不计数。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int t,n;
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%d",&amp;n);
+        priority_queue&lt;int&gt; q;
+        map&lt;int,int&gt; mp;
+        long long ans=0,cnt=0;
+        for(int i=0,a; i&lt;n; q.push(-a),++i)
+        {
+            scanf("%d",&amp;a);
+            if(q.empty())continue;
+            int u=-q.top();
+            if(u&gt;=a)continue;
+            q.pop();
+            if(mp[u])--mp[u];//消耗撤回操作，不计数
+            else cnt+=2;
+            ans+=a-u;
+            q.push(-a);//加入撤回操作
+            ++mp[a];
+        }
+        printf("%lld %lld\n",ans,cnt);
+    }
+}
+</code></pre>
+<h1 id="dream"><a href="https://vjudge.net/problem/HDU-6440">Dream</a></h1>
+<pre><code class="language-cpp">#include&lt;stdio.h&gt;
+int t,p;
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%d",&amp;p);
+        for(int k=0; k&lt;2; ++k)
+            for(int i=0; i&lt;p; ++i,printf("\n"))
+                for(int j=0; j&lt;p; ++j)
+                    printf("%d ",i*j%p);
+    }
+}
+</code></pre>
+<h1 id="find-integer"><a href="https://vjudge.net/problem/HDU-6441">Find Integer</a></h1>
+<pre><code class="language-cpp">#include&lt;stdio.h&gt;
+int t,n,a,b,c;
+int main()
+{
+    for(scanf("%d",&amp;t); t--; printf("%d %d\n",b,c))
+    {
+        scanf("%d%d",&amp;n,&amp;a);
+        if(n==1)b=1,c=a+1;
+        else if(n==2)
+        {
+            for(c=1; a%2==0;)c&lt;&lt;=1,a&gt;&gt;=1;
+            b=a*a/2*c,c*=a*a/2+1;
+        }
+        else b=c=-1;
+    }
+}
+</code></pre>
+<h1 id="nekos-loop"><a href="https://vjudge.net/problem/HDU-6444">Neko’s loop</a></h1>
+<p>单调队列，LCM</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+ll t,n,s,m,k,kase,a[10009];
+int main()
+{
+    for(scanf("%lld",&amp;t); t--;)
+    {
+        scanf("%lld%lld%lld%lld",&amp;n,&amp;s,&amp;m,&amp;k);
+        for(ll i=0; i&lt;n; ++i)scanf("%lld",&amp;a[i]);
+        vector&lt;ll&gt; vis(n,0);
+        ll ans=0;
+        for(ll i=0; i&lt;n; ++i)
+            if(!vis[i])
+            {
+                vector&lt;ll&gt; v;
+                for(ll j=i; !vis[j]; j=(j+k)%n)
+                    v.push_back(a[j]),vis[j]=1;
+                vector&lt;ll&gt; sum(3*v.size()+1,0);
+                for(ll i=0; i+1&lt;sum.size(); ++i)
+                    sum[i+1]=sum[i]+v[i%v.size()];
+                ll r=m%v.size(),p=m/v.size(),tmp=0;
+                if(p)r+=v.size(),--p;//多处理一个循环节
+                deque&lt;ll&gt; q;//单调队列维护区间和
+                for(ll i=0; i+1&lt;sum.size(); ++i)
+                {
+                    while(!q.empty()&amp;&amp;sum[i]-sum[q.back()]&lt;0)q.pop_back();
+                    for(q.push_back(i); q.back()-q.front()+1&gt;r;)q.pop_front();
+                    tmp=max(tmp,sum[i+1]-sum[q.front()]);
+                }
+                ans=max(ans,tmp+max(sum[v.size()]*p,0LL));
+            }
+        printf("Case #%lld: %lld\n",++kase,max(s-ans,0LL));
+    }
+}
+</code></pre>
+<h1 id="tree-and-permutation"><a href="https://vjudge.net/problem/HDU-6446">Tree and Permutation</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define mul(a,b,c) (1LL*(a)*(b)%(c))
+using namespace std;
+typedef int ll;
+const ll M=1e9+7;
+struct Graph
+{
+    struct Vertex
+    {
+        vector&lt;int&gt; a;
+        int siz;
+    };
+    struct Edge
+    {
+        int from,to;
+        ll dist;
+    };
+    vector&lt;Vertex&gt; v;
+    vector&lt;Edge&gt; e;
+    Graph(int n):v(n) {}
+    void add(const Edge &amp;ed)
+    {
+        v[ed.from].a.push_back(e.size());
+        e.push_back(ed);
+    }
+    int build(int u)
+    {
+        int ret=0;
+        v[u].siz=1;
+        for(int i=0,k,to; i&lt;v[u].a.size(); ++i)
+            if(k=v[u].a[i],to=e[k].to,!v[to].siz)
+            {
+                ret=(ret+build(to))%M;
+                v[u].siz+=v[to].siz;
+                ret=(ret+mul(mul(v[to].siz,v.size()-v[to].siz,M),e[k].dist,M))%M;
+            }
+        return ret;
+    }
+};
+int main()
+{
+    for(int n; ~scanf("%d",&amp;n);)
+    {
+        Graph g(n);
+        for(int i=1,x,y,l; i&lt;n; ++i)
+        {
+            scanf("%d%d%d",&amp;x,&amp;y,&amp;l);
+            g.add({x-1,y-1,l}),g.add({y-1,x-1,l});
+        }
+        int ans=mul(g.build(0),2,M);
+        for(int i=2; i&lt;n; ++i)ans=mul(ans,i,M);
+        printf("%d\n",ans);
+    }
+}
+</code></pre>
+<h1 id="yjjs-salesman"><a href="https://vjudge.net/problem/HDU-6447">YJJ’s Salesman</a></h1>
+<p>离散化+树状数组维护区间最大值。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+struct Coord
+{
+    int X,Y,V;
+    bool operator&lt;(const Coord &amp;b)const
+    {
+        return Y!=b.Y?Y&lt;b.Y:X&gt;b.X;
+    }
+};
+struct Ranker:vector&lt;ll&gt;
+{
+    void init()
+    {
+        sort(begin(),end()),resize(unique(begin(),end())-begin());
+    }
+    int ask(ll x)const
+    {
+        return lower_bound(begin(),end(),x)-begin();
+    }
+};
+struct BaseFenwick
+{
+    vector&lt;ll&gt; v;
+    BaseFenwick(int n):v(n,0) {}
+    void set(int x,ll val)
+    {
+        for(int i=x; i&lt;v.size(); i+=i&amp;-i)v[i]=max(v[i],val);
+    }
+    ll ask(int x)
+    {
+        ll r=0;
+        for(int i=x; i; i-=i&amp;-i)r=max(r,v[i]);
+        return r;
+    }
+};
+int main()
+{
+    int t,n,ans;
+    for(scanf("%d",&amp;t); t--; printf("%d\n",ans))
+    {
+        scanf("%d",&amp;n);
+        vector&lt;Coord&gt; p(n);
+        Ranker rk;
+        for(int i=0; i&lt;n; ++i)
+        {
+            scanf("%d%d%d",&amp;p[i].X,&amp;p[i].Y,&amp;p[i].V);
+            rk.push_back(p[i].X);
+        }
+        sort(p.begin(),p.end());
+        rk.init();
+        BaseFenwick f(rk.size()+9);
+        for(int i=ans=0; i&lt;n; ++i)
+        {
+            ans=max(ans,p[i].V+=f.ask((p[i].X=rk.ask(p[i].X)+2)-1));
+            f.set(p[i].X,p[i].V);
+        }
+    }
+}
+</code></pre>
+:ET

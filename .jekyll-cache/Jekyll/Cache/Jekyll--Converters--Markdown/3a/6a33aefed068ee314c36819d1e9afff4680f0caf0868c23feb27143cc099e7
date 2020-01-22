@@ -1,0 +1,85 @@
+I"�
+<p><a href="https://vjudge.net/problem/UVALive-3510">题目链接</a></p>
+
+<p>题意：对一张像素图可以执行旋转、翻转、div、mix等操作，现在给出一个操作序列，问重复进行多少次这个操作序列，可以使得任意n*n的像素图变回原样。</p>
+
+<p>转换一下就是：设操作序列为置换$A$，则求m使得$A^m$为全等置换（所有元素都映射到自己）</p>
+
+<p>对于每个长度为$L$的循环$B$，当$m$为$B$的整数倍时，$B^m$为全等置换，所以只需要把操作序列对应的置换拆解成多个循环，求所有循环长度的LCM即可，然后题目就变成了模拟。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+#define ID(x, y) ((x)*n + (y))
+using namespace std;
+struct Permutation : vector&lt;int&gt;
+{
+	Permutation(int n = 0) : vector&lt;int&gt;(n) {}
+	friend Permutation operator*(const Permutation &amp;f, const Permutation &amp;g)
+	{
+		Permutation ans(f.size());
+		for (int i = 0; i &lt; f.size(); ++i)
+			ans[i] = g[f[i]];
+		return ans;
+	}
+	friend Permutation inv(const Permutation &amp;f)
+	{
+		Permutation ans(f.size());
+		for (int i = 0; i &lt; f.size(); ++i)
+			ans[f[i]] = i;
+		return ans;
+	}
+	friend vector&lt;vector&lt;int&gt;&gt; cycle(const Permutation &amp;f)
+	{
+		vector&lt;int&gt; vis(f.size(), 0);
+		vector&lt;vector&lt;int&gt;&gt; ans;
+		for (int i = 0; i &lt; f.size(); ++i)
+			if (!vis[i])
+			{
+				ans.push_back(vector&lt;int&gt;());
+				for (int j = i; !vis[j]; j = f[j])
+					vis[j] = 1, ans.back().push_back(j);
+			}
+		return ans;
+	}
+};
+int main()
+{
+	int t, n;
+	char s[255] = " ";
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d", &amp;n), gets(s + 1), gets(s + 1);
+		Permutation f(n * n), g(n * n);
+		for (int i = 0; i &lt; n; ++i)
+			for (int j = 0; j &lt; n; ++j)
+				f[ID(i, j)] = ID(i, j);
+		int b = strlen(s);
+		for (s[b] = ' '; b; --b)
+			if (s[b] == ' ' &amp;&amp; s[b - 1] != ' ')
+			{
+				int flag = s[b--] = 0;
+				if (s[b] == '-')
+					flag = 1, s[b--] = 0;
+				while (s[b - 1] != ' ')
+					--b;
+				for (int i = 0; i &lt; n; ++i)
+					for (int j = 0; j &lt; n; ++j)
+						g[ID(i, j)] =
+							s[b] == 'r' ? ID(n - j - 1, i) :
+							s[b] == 's' ? ID(i, n - j - 1) :
+							s[b + 1] == 'h' ? ID(i, i * 2 &lt; n ? j : n - j - 1) :
+							s[b + 1] == 'v' ? ID(i * 2 &lt; n ? i : n + n / 2 - i - 1, j) :
+							s[b] == 'd' ? ID(i % 2 ? i / 2 + n / 2 : i / 2, j) :
+							s[b] == 'm' ? ID(i / 2 * 2 + j / (n / 2), j % (n / 2) * 2 + i % 2) :
+							ID(i, j);
+				f = flag ? f * inv(g) : f * g;
+			}
+		n = 1;
+		vector&lt;vector&lt;int&gt;&gt; c = cycle(f);
+		for (int i = 0; i &lt; c.size(); ++i)
+			n *= c[i].size() / __gcd((int)c[i].size(), n);
+		printf("%d\n", n);
+		if (t)
+			printf("\n");
+	}
+}
+</code></pre>
+:ET

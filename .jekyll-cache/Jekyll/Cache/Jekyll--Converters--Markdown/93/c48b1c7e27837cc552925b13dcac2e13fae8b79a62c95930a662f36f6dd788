@@ -1,0 +1,138 @@
+I"3<h2 id="矩阵">矩阵</h2>
+
+<pre><code class="language-cpp">typedef array&lt;array&lt;ll, N&gt;, N&gt; Mat;
+</code></pre>
+
+<h3 id="乘法和快速幂">乘法和快速幂</h3>
+
+<pre><code class="language-cpp">Mat operator*(const Mat &amp;a, const Mat &amp;b)
+{
+	Mat r;
+	for (int i = 0; i &lt; r.size(); ++i)
+		for (int j = 0; j &lt; r.size(); ++j)
+			for (int k = r[i][j] = 0; k &lt; r.size(); ++k)
+				M.qadd(r[i][j], M.mul(a[i][k], b[k][j]));
+	return r;
+}
+Mat pow(Mat a, ll b)
+{
+	Mat r;
+	for (int i = 0; i &lt; r.size(); ++i)
+		for (int j = 0; j &lt; r[i].size(); ++j)
+			r[i][j] = i == j;
+	for (; b; b &gt;&gt;= 1, a = a * a)
+		if (b &amp; 1)
+			r = r * a;
+	return r;
+}
+</code></pre>
+
+<h3 id="行列式">行列式</h3>
+
+<pre><code class="language-cpp">ll det(Mat a, int n)
+{
+	ll ans = 1;
+	for (int i = 0; i &lt; n; ++i)
+	{
+		for (int j = i + 1; j &lt; n; ++j)
+			while (fabs(a[j][i]) &gt; EPS)
+			{
+				ll t = a[i][i] / a[j][i];
+				for (int k = i; k &lt; n; ++k)
+					a[i][k] -= t * a[j][k], swap(a[i][k], a[j][k]);
+			}
+		if (fabs(ans *= a[i][i]) &lt; EPS)
+			return 0;
+	}
+	return ans;
+}
+</code></pre>
+
+<h3 id="高斯消元">高斯消元</h3>
+
+<pre><code class="language-cpp">void GaussElimination(Mat &amp;a, int n) //a为增广矩阵，要求n*n的系数矩阵可逆，运行结束后a[i][n]为第i个未知数的值
+{
+	for (int i = 0, r; i &lt; n; ++i)
+	{
+		for (int j = r = i; j &lt; n; ++j)
+			if (fabs(a[r][i]) &lt; fabs(a[j][i]))
+				r = j;
+		if (r != i)
+			swap_ranges(a[r].begin(), a[r].begin() + n + 1, a[i]);
+		for (int j = n; j &gt;= i; --j)
+			for (int k = i + 1; k &lt; n; ++k)
+				a[k][j] -= a[k][i] * a[i][j] / a[i][i];
+	}
+	for (int i = n - 1; ~i; --i)
+	{
+		for (int j = i + 1; j &lt; n; ++j)
+			a[i][n] -= a[j][n] * a[i][j];
+		a[i][n] /= a[i][i];
+	}
+}
+</code></pre>
+
+<h2 id="线性基">线性基</h2>
+
+<h3 id="向量线性基">向量线性基</h3>
+
+<p>add返回要插入的向量z是否与已插入的线性无关。</p>
+
+<pre><code class="language-cpp">struct Base
+{
+	vector&lt;vector&lt;double&gt;&gt; v;
+	Base(int N) : v(N, vector&lt;double&gt;(N, 0)) {} //R^N的子空间
+	bool add(vector&lt;double&gt; x)
+	{
+		for (int i = 0; i &lt; x.size(); ++i)
+			if (fabs(x[i]) &gt; EPS)
+			{
+				if (fabs(v[i][i]) &lt; EPS)
+					return v[i] = x, 1;
+				double t = x[i] / v[i][i];
+				for (int j = 0; j &lt; x.size(); ++j)
+					x[j] -= t * v[i][j];
+			}
+		return 0;
+	}
+};
+</code></pre>
+
+<h3 id="异或线性基">异或线性基</h3>
+
+<p>若要查询第k小子集异或和，则把k写成二进制，对于是1的第i位，把从低位到高位第i个不为0的数异或进答案。若要判断是否有非空子集的异或和为0，如果不存在自由基，那么说明只有空集的异或值为0，需要高斯消元来判断。</p>
+
+<pre><code class="language-cpp">struct BaseXOR
+{
+	vector&lt;ll&gt; a;
+	BaseXOR() : a(64, 0) {}
+	ll ask() //查询最大子集异或和
+	{
+		ll t = 0;
+		for (int i = a.size() - 1; ~i; --i)
+			t = max(t, t ^ a[i]);
+		return t;
+	}
+	bool add(ll x)
+	{
+		for (int i = a.size() - 1; ~i; --i)
+			if (x &gt;&gt; i &amp; 1)
+			{
+				if (a[i])
+					x ^= a[i];
+				else
+					return a[i] = x, 1;
+			}
+		return 0;
+	}
+	bool check(ll x) //判断一个数是否能够被异或出，0根据需要特判
+	{
+		for (int i = a.size() - 1; ~i; --i)
+			if (x &gt;&gt; i &amp; 1)
+				if (x ^= a[i], !x)
+					return 1;
+		return 0;
+	}
+};
+</code></pre>
+:ET

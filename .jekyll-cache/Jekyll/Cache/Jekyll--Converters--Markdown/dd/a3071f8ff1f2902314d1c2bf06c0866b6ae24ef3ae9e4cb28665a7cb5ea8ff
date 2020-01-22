@@ -1,0 +1,389 @@
+I"�1<h2 id="httpsvjudgenetproblemhdu-6702">[^&amp;^](https://vjudge.net/problem/HDU-6702)</h2>
+
+<blockquote>
+  <p>签到</p>
+</blockquote>
+
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+unsigned t, a, b;
+int main()
+{
+	for (scanf("%u", &amp;t); t--; printf("%u\n", a &amp; b ? a &amp; b : 1))
+		scanf("%u%u", &amp;a, &amp;b);
+}
+</code></pre>
+
+<h2 id="array"><a href="https://vjudge.net/problem/HDU-6703">array</a></h2>
+
+<blockquote>
+  <p>因为数组中的值唯一，且在1到n的范围内，而询问的r和k也在1到n的范围内。 所以对于任意一个被操 作1修改过的值都不会成为询问的答案，而询问的结果也必然在k到n＋1的范围内。 因为没有被修改过 值是唯一的，所以可以建立权值线段树，维护权值区间内的值所在下标的最大值。而询问则转化为不小 于k的值里面，下标超过r的最小权值是多少。 如何处理询问呢，一种较为暴力的解法是直接在线段树上 询问权值在k到n+1的范围内第一个下标超过r的权值是多少。但复杂度可能会被卡，需要减枝。 再加上 一个额外的判断就可以了，就是在递归查询完左子树内存不存在大于r的下标之后，如果不存在，则先 看一下右子树内的下标的最大值是否大于r。如果不大于r，则不必再进入右子树内查询，否则答案一定 在右子树内。在进左子树之前也利用同样的判断条件来判断是否有必要进入左子树，这样做可以保证单 次查询的复杂度是O(log n) 的。 而对于操作1，则等价于修改某个权值的下标为无穷大。操作复杂度也 是O（log n )的。 综上所述，得到了一个复杂度为O( m * log n )的在线算法，可以较快地通过此题。</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+const int NPOS = -1, N = 1e5 + 9;
+struct SegmentTree
+{
+	struct Seg
+	{
+		int l, r;
+		ll max;
+		void upd(ll mul, ll add) { max = max * mul + add; }
+		friend Seg up(const Seg &amp;lc, const Seg &amp;rc) { return {lc.l, rc.r, std::max(lc.max, rc.max)}; }
+	};
+	struct Node : Seg
+	{
+		int lc, rc;
+		ll mul, add;
+	};
+	vector&lt;Node&gt; v;
+	SegmentTree(int l, int r) { build(l, r); }
+	void build(int l, int r)
+	{
+		int rt = v.size();
+		v.push_back({});
+		v[rt].Seg::operator=({l, r, -1});
+		v[rt].lc = v[rt].rc = NPOS;
+		v[rt].mul = 1, v[rt].add = 0;
+	}
+	void down(int rt)
+	{
+		int m = v[rt].l + v[rt].r &gt;&gt; 1;
+		if (v[rt].lc == NPOS)
+			v[rt].lc = v.size(), build(v[rt].l, m);
+		if (v[rt].rc == NPOS)
+			v[rt].rc = v.size(), build(m + 1, v[rt].r);
+		upd(v[v[rt].lc].l, v[v[rt].lc].r, v[rt].mul, v[rt].add, v[rt].lc);
+		upd(v[v[rt].rc].l, v[v[rt].rc].r, v[rt].mul, v[rt].add, v[rt].rc);
+		v[rt].mul = 1, v[rt].add = 0;
+	}
+	void upd(int l, int r, ll mul, ll add, int rt = 0)
+	{
+		if (l &lt;= v[rt].l &amp;&amp; v[rt].r &lt;= r)
+			return v[rt].mul *= mul, v[rt].add = v[rt].add * mul + add, v[rt].upd(mul, add);
+		down(rt);
+		if (r &lt;= v[v[rt].lc].r)
+			upd(l, r, mul, add, v[rt].lc);
+		else if (l &gt;= v[v[rt].rc].l)
+			upd(l, r, mul, add, v[rt].rc);
+		else
+			upd(l, v[v[rt].lc].r, mul, add, v[rt].lc), upd(v[v[rt].rc].l, r, mul, add, v[rt].rc);
+		v[rt].Seg::operator=(up(v[v[rt].lc], v[v[rt].rc]));
+	}
+	int query(int k, int r, int rt = 0)
+	{
+		if (v[rt].l == v[rt].r)
+			return v[rt].l;
+		int ans = v[0].r + 1;
+		if (ans &gt;= v[0].r + 1 &amp;&amp; v[rt].lc != NPOS &amp;&amp; v[v[rt].lc].r &gt;= k &amp;&amp; v[v[rt].lc].max &gt; r)
+			ans = min(ans, query(k, r, v[rt].lc));
+		if (ans &gt;= v[0].r + 1 &amp;&amp; v[rt].rc != NPOS &amp;&amp; v[v[rt].lc].r &lt; v[0].r &amp;&amp; v[v[rt].rc].max &gt; r)
+			ans = min(ans, query(k, r, v[rt].rc));
+		return ans;
+	}
+};
+int t, n, m, ans, a[N];
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d", &amp;n, &amp;m);
+		SegmentTree t(1, n);
+		for (int i = 1, x; i &lt;= n; ++i)
+		{
+			scanf("%d", &amp;a[i]);
+			t.upd(a[i], a[i], 0, i);
+		}
+		for (int i = ans = 0, r, k; i &lt; m; ++i)
+		{
+			scanf("%d%d", &amp;k, &amp;r);
+			if (k == 1)
+				t.upd(a[r ^ ans], a[r ^ ans], 0, n + 1);
+			else
+			{
+				scanf("%d", &amp;k);
+				printf("%d\n", ans = t.query(k ^ ans, r ^ ans));
+			}
+		}
+	}
+}
+</code></pre>
+
+<h2 id="k-th-occurrence"><a href="https://vjudge.net/problem/HDU-6704">K-th occurrence</a></h2>
+
+<blockquote>
+  <p>涉及到子串之间的关系的大量查询不难想到后缀自动机/后缀树，这里给出一个后缀自动机的做法。
+对串$S$建后缀自动机，扒出parent树。
+考虑将代表第$i$个前缀$S_1S_2\ldots S_i$的点权值设为 ，对于后缀自动机上某个点代表的所有字符串，这些串 在原串中的第 次出现位置（最后一个字符的下标）即为其在parent树的子树上第 大的权值。 在dfs序上建持久化线段树即将其转化为一个经典问题：静态区间第K大。
+在parent树上建倍增数组即可在$O(\log n)$内找到自动机上代表某子串的点，以其为根进行子树询问即 可。</p>
+</blockquote>
+
+<p>队友做的，待补。</p>
+
+<pre><code class="language-cpp">
+</code></pre>
+
+<h2 id="path"><a href="https://vjudge.net/problem/HDU-6705">Path</a></h2>
+
+<blockquote>
+  <p>先把每条边以$(u,v,w)$形式放进堆，堆按路径权值从小到大排序，然后每次取出堆顶，用v的出边扩展新的路径。但是一个点的出度可能会非常大（如菊花图），可以发现，将出边排序之后，每次只需要扩展当前点最小的出边，和扩展到当前点的边的下一条边即可。堆中需要记录当前结点，当前距离，上一节点距离，扩展到当前节点时下一条应该扩展的边。（注意，如果一次性扩展当前点连出去的所有权值相同的边，是会TLE的，实际上也是没有必要的。）
+复杂度$O(k\log (m+k))$</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N = 5e4 + 9;
+ll d[N];
+int t, n, m, k, a[N];
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d%d", &amp;n, &amp;m, &amp;k);
+		priority_queue&lt;pair&lt;ll, int&gt;&gt; q0;
+		priority_queue&lt;int&gt; q1;
+		vector&lt;vector&lt;pair&lt;ll, int&gt;&gt;&gt; g(n);
+		for (int i = 0, u, v, w; i &lt; m; ++i)
+		{
+			scanf("%d%d%d", &amp;u, &amp;v, &amp;w);
+			q0.push({-w, v - 1});
+			q1.push(w);
+			g[u - 1].push_back({w, v - 1});
+		}
+		for (int i = 0; i &lt; k; ++i)
+			scanf("%d", &amp;a[i]);
+		for (int i = 0; i &lt; n; ++i)
+			sort(g[i].begin(), g[i].end());
+		for (int i = 1, mx = *max_element(a, a + k), x; i &lt;= mx; ++i)
+		{
+			d[i] = -q0.top().first;
+			x = q0.top().second;
+			q0.pop();
+			for (int j = 0; j &lt; g[x].size(); ++j)
+			{
+				ll y = g[x][j].second, dis = d[i] + g[x][j].first;
+				if (q1.size() == mx)
+				{
+					if (dis &gt; q1.top())
+						break;
+					q1.pop();
+				}
+				q1.push(dis);
+				q0.push({-dis, y});
+			}
+		}
+		for (int i = 0; i &lt; k; ++i)
+			printf("%lld\n", d[a[i]]);
+	}
+}
+</code></pre>
+
+<h2 id="huntian-oy"><a href="https://vjudge.net/problem/HDU-6706">huntian oy</a></h2>
+
+<p>队友做的，莫比乌斯反演。待补。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N = 4e6 + 9, inv = 166666668, M = 1e9 + 7;
+int t, n, prime[N], a, b, cnt, q, isnprime[N];
+ll sum[N];
+void sieve()
+{
+	sum[1] = isnprime[1] = 1;
+	for (ll i = 1; i &lt; N; ++i)
+	{
+		if (!isnprime[i])
+		{
+			prime[++cnt] = i;
+			sum[i] = -1;
+		}
+		for (int j = 1; j &lt;= cnt &amp;&amp; prime[j] * i &lt; N; j++)
+		{
+			if (i % prime[j] == 0)
+			{
+				isnprime[i * prime[j]] = 1;
+				sum[i * prime[j]] = 0;
+				break;
+			}
+			isnprime[i * prime[j]] = 1;
+			sum[i * prime[j]] = -sum[i];
+		}
+	}
+	for (int i = 1; i &lt; N; ++i)
+		sum[i] = sum[i - 1] + sum[i] * i;
+}
+ll djsg(int n)
+{
+	static map&lt;int, ll&gt; mp;
+	if (n &lt; N)
+		return sum[n];
+	if (q = mp[n])
+		return q;
+	ll ret = 1;
+	for (int l = 2, r; l &lt;= n; l = r + 1)
+	{
+		r = n / (n / l);
+		ret = (ret - djsg(n / l) * (1LL * (r - l + 1) * (l + r) / 2 % M) % M + M) % M;
+	}
+	return mp[n] = ret;
+}
+ll f(int n) { return (1LL * n * n % M * n % M - n + M) % M * inv % M; }
+int main()
+{
+	sieve();
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d%d", &amp;n, &amp;a, &amp;b);
+		ll ans = 0;
+		for (int l = 1, r; l &lt;= n; l = r + 1)
+		{
+			r = n / (n / l);
+			ans = (ans + (djsg(r) - djsg(l - 1) + M) % M * f(n / l) % M) % M;
+		}
+		printf("%lld\n", ans);
+	}
+}
+</code></pre>
+
+<h2 id="shuffle-card"><a href="https://vjudge.net/problem/HDU-6707">Shuffle Card</a></h2>
+
+<blockquote>
+  <p>签到</p>
+</blockquote>
+
+<p>花絮：我校十一队和四川大学校队代码被查重了（显然是误杀）…签到题查重简直了…</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+int n, m, a[N], s[N], vis[N];
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;m);
+	for (int i = 1; i &lt;= n; ++i)
+		scanf("%d", &amp;a[i]);
+	for (int i = 1; i &lt;= m; ++i)
+		scanf("%d", &amp;s[i]);
+	for (int i = m; i; --i)
+		if (!vis[s[i]])
+			printf("%d ", s[i]), vis[s[i]] = 1;
+	for (int i = 1; i &lt;= n; ++i)
+		if (!vis[a[i]])
+			printf("%d ", a[i]);
+}
+</code></pre>
+
+<h2 id="windows-of-ccpc"><a href="https://vjudge.net/problem/HDU-6708">Windows Of CCPC</a></h2>
+
+<blockquote>
+  <p>签到</p>
+</blockquote>
+
+<pre><code class="language-c">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+char s[1 &lt;&lt; 10][1 &lt;&lt; 10];
+int t, k;
+void dfs(int x, int y, int n, char c = 'C')
+{
+	if (n == 1)
+	{
+		s[x][y] = c;
+		return;
+	}
+	n &gt;&gt;= 1;
+	dfs(x, y, n, c);
+	dfs(x, y + n, n, c);
+	dfs(x + n, y + n, n, c);
+	dfs(x + n, y, n, c == 'C' ? 'P' : 'C');
+}
+int main()
+{
+	dfs(0, 0, 1 &lt;&lt; 10);
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d", &amp;k), k = 1 &lt;&lt; k;
+		for (int i = 0; i &lt; k; ++i, printf("\n"))
+			for (int j = 0; j &lt; k; ++j)
+				printf("%c", s[i][j]);
+	}
+}
+</code></pre>
+
+<h2 id="fishing-master"><a href="https://vjudge.net/problem/HDU-6709">Fishing Master</a></h2>
+
+<blockquote>
+  <p>每条鱼都需要被抓上来并且煮足够的时间，而我们能在炖鱼的时候抓鱼，所以至少需要抓一条鱼的时间 和炖所有鱼的时间，也就是$k+\sum_{i=1}^nt_i$。要能在这个时间内就完成，则除了抓第一条鱼以外抓鱼的时 候锅里都必须在炖鱼（假设锅里的鱼一旦炖好就自动取出来），显然如果 都太小的时候这是不能做到 的，会有一些抓鱼的时间锅里没有在炖鱼，我们称锅里没有炖鱼的抓鱼时间为被浪费的时间，所以我们 的优化目标就是使被浪费的总时间$T$最小，答案即为$k+\sum_{i=1}^nt_i+T$。
+对于第$i$条鱼，炖它的时候我们可以不浪费时间抓到$t_i/k$条鱼，或者浪费$k-t_i%k$的时间抓到$t_i/k+1$条鱼。所以如果$\sum_{i=1}^nt_i/k\ge n-1$，则可以不浪费时间完成任务；如果$\sum_{i=1}^nt_i/k&lt;n-1$，则差$m$条鱼就选炖$t_ik$前$m$大的鱼的时候浪费时间多抓一条鱼。</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N = 1e5 + 9;
+int T, n;
+ll k, la[N], sum[N];
+struct Data
+{
+	ll wa, num, tot;
+	bool operator&lt;(const Data &amp;b) const { return wa != b.wa ? wa &gt; b.wa : num &gt; b.num; }
+} a[N];
+int main()
+{
+	for (scanf("%d", &amp;T); T--;)
+	{
+		scanf("%d%lld", &amp;n, &amp;k);
+		for (int i = 1; i &lt;= n; i++)
+		{
+			ll t;
+			scanf("%lld", &amp;t);
+			a[i].num = t / k;
+			a[i].wa = t % k;
+			a[i].tot = t;
+		}
+		sort(a + 1, a + 1 + n);
+		la[n + 1] = 0;
+		sum[n + 1] = 0;
+		for (int i = n; i &gt;= 1; i--)
+		{
+			la[i] = la[i + 1] + a[i].num;
+			sum[i] = sum[i + 1] + a[i].tot;
+		}
+		int ok = 0;
+		ll last = 0, ans = 1e18;
+		for (int i = 1; i &lt;= n; i++)
+		{
+			if (last &lt;= 0)
+				last = a[++ok].tot;
+			if (i != 1)
+				last -= k;
+			if (la[ok + 1] + i &gt;= n)
+				ans = min(ans, k * i + max(last, 0ll) + sum[ok + 1]);
+		}
+		printf("%lld\n", ans);
+	}
+}
+</code></pre>
+
+<h2 id="kaguya"><a href="https://vjudge.net/problem/HDU-6710">Kaguya</a></h2>
+
+<blockquote>
+  <p>$dp[i][j][k][l]$表示从$1$号点开始bfs到第$i$步, 用了白点$i$个, 黑点$j$个, 且第$i$层个数正好为$l$的期望。 通过枚举新层的节点个数进行转移。
+复杂度$O(n^5)$</p>
+</blockquote>
+
+<pre><code class="language-cpp">
+</code></pre>
+
+<h2 id="touma-kazusas-function"><a href="https://vjudge.net/problem/HDU-6711">Touma Kazusa’s function</a></h2>
+
+<pre><code class="language-cpp">
+</code></pre>
+
+<h2 id="sakura"><a href="https://vjudge.net/problem/HDU-6712">sakura</a></h2>
+
+<pre><code class="language-cpp">
+</code></pre>
+:ET

@@ -1,0 +1,85 @@
+I"�	
+<h1 id="elevator-or-stairs"><a href="https://vjudge.net/problem/CodeForces-1054A">Elevator or Stairs?</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int x, y, z, t1, t2, t3;
+int main()
+{
+	scanf("%d%d%d%d%d%d", &amp;x, &amp;y, &amp;z, &amp;t1, &amp;t2, &amp;t3);
+	printf(abs(z - x) * t2 + abs(x - y) * t2 + 3 * t3 &lt;= t1 * abs(x - y) ? "YES" : "NO");
+}
+</code></pre>
+<h1 id="appending-mex"><a href="https://vjudge.net/problem/CodeForces-1054B">Appending Mex</a></h1>
+<p>每一步能得到的值是<code>0,1,...,m+1</code>，其中<code>m</code>是前几步得到的最大的数。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int n;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, m = -1, a; i &lt;= n; ++i)
+	{
+		scanf("%d", &amp;a);
+		if (a &gt; m + 1)
+			return printf("%d", i), 0;
+		m = max(m, a);
+	}
+	printf("-1");
+}
+</code></pre>
+<h1 id="candies-distribution"><a href="https://vjudge.net/problem/CodeForces-1054C">Candies Distribution</a></h1>
+<p><code>l[i]+r[i]</code>之后在所有数里的排名就是原来的排名，回代检验即可。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+const int N = 1023;
+struct Ranker : vector&lt;ll&gt;
+{
+	void init() { sort(begin(), end()), resize(unique(begin(), end()) - begin()); }
+	int ask(ll x) const { return lower_bound(begin(), end(), x) - begin(); }
+} rk;
+int n, l[N], r[N], a[N];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;l[i]);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;r[i]), rk.push_back(l[i] + r[i]);
+	rk.init();
+	for (int i = 0; i &lt; n; ++i)
+	{
+		a[i] = n - rk.ask(l[i] + r[i]);
+		for (int j = 0; j &lt; i; ++j)
+		{
+			l[i] -= a[i] &lt; a[j];
+			r[j] -= a[j] &lt; a[i];
+		}
+	}
+	for (int i = 0; i &lt; n; ++i)
+		if (l[i] || r[i])
+			return printf("NO"), 0;
+	printf("YES\n");
+	for (int i = 0; i &lt; n; ++i)
+		printf("%d ", a[i]);
+}
+</code></pre>
+<h1 id="changing-array"><a href="https://vjudge.net/problem/CodeForces-1054C">Changing Array</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+ll n, k, ans;
+unordered_map&lt;ll, ll&gt; mp{{0, 1}};
+int main()
+{
+	scanf("%lld%lld", &amp;n, &amp;k);
+	for (ll i = 1, a = 0, s = 0; i &lt;= n; ++i)
+	{
+		scanf("%d", &amp;a);
+		ll &amp;x = mp[s ^= a], &amp;y = mp[s ^ ((1LL &lt;&lt; k) - 1)];
+		ans += i - (x &lt; y ? x++ : y++);
+	}
+	printf("%lld", ans);
+}
+</code></pre>
+:ET

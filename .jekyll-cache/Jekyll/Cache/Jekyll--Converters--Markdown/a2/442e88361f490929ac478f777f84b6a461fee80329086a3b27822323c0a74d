@@ -1,0 +1,856 @@
+I"yW<p>以下数据结构均采用ll作为值类型，应用时根据需求调整。</p>
+
+<pre><code class="language-cpp">typedef long long ll;
+const ll INF = 1e9;  //表示（值）正无穷，且两个正无穷相加不会溢出
+const int NPOS = -1; //表示（下标）不存在
+</code></pre>
+
+<h2 id="离散化">离散化</h2>
+
+<p>在vector基础上的离散化，使用push_back()向其中插值，init()排序并离散化，ask查询离散化之后的值，at/[]运算符查离散前的值。</p>
+
+<pre><code class="language-cpp">struct Ranker : vector&lt;ll&gt;
+{
+	void init() { sort(begin(), end()), resize(unique(begin(), end()) - begin()); }
+	int ask(ll x) const { return lower_bound(begin(), end(), x) - begin(); }
+};
+</code></pre>
+
+<h2 id="并查集">并查集</h2>
+
+<pre><code class="language-cpp">struct UnionfindSet : vector&lt;int&gt;
+{
+	UnionfindSet(int n) : vector&lt;int&gt;(n)
+	{
+		for (int i = 0; i &lt; n; ++i)
+			at(i) = i;
+	}
+	void merge(int u, int w)
+	{
+		if (w = ask(w), u = ask(u), w != u)
+			at(w) = u;
+	}
+	int ask(int u) { return at(u) != u ? at(u) = ask(at(u)) : u; }
+};
+</code></pre>
+
+<h2 id="单调队列和单调栈">单调队列和单调栈</h2>
+
+<p><a href="https://vjudge.net/solution/18456407">使用示例</a></p>
+
+<pre><code class="language-cpp">typedef pair&lt;int, ll&gt; pil;
+struct Monotone : deque&lt;pil&gt;
+{
+	void push(const pil &amp;p, int k)
+	{
+		while (!empty() &amp;&amp; back().second &gt;= p.second)
+			pop_back();
+		for (push_back(p); p.first - front().first &gt;= k;)
+			pop_front();
+	}
+};
+</code></pre>
+
+<h2 id="st表">ST表</h2>
+
+<p><a href="https://vjudge.net/solution/14470893">使用示例</a></p>
+
+<p>$O(n\log n)$预处理，$O(1)$求静态区间最小值。</p>
+
+<pre><code class="language-cpp">/*
+//可选优化
+#define log2(n) LOG2[n]
+struct Log : vector&lt;ll&gt;
+{
+	Log(int N, ll E) : vector&lt;ll&gt;(N, -1)
+	{
+		for (int i = 1; i &lt; N; ++i)
+			at(i) = at(i / E) + 1;
+	}
+} LOG2(N, 2);
+*/
+struct SparseTable
+{
+	vector&lt;vector&lt;ll&gt;&gt; f;
+	SparseTable(const vector&lt;ll&gt; &amp;a) : f(log2(a.size()) + 1, a)
+	{
+		for (int k = 0; k + 1 &lt; f.size(); ++k)
+			for (int i = 0; i + (1 &lt;&lt; k) &lt; a.size(); ++i)
+				f[k + 1][i] = min(f[k][i], f[k][i + (1 &lt;&lt; k)]);
+	}
+	ll ask(int l, int r)
+	{
+		int k = log2(r - l + 1);
+		return min(f[k][l], f[k][r + 1 - (1 &lt;&lt; k)]);
+	}
+};
+</code></pre>
+
+<h2 id="树状数组">树状数组</h2>
+
+<p>模板中Base是对应的基础版本，支持单点修改区间查询。</p>
+
+<h3 id="一维">一维</h3>
+
+<pre><code class="language-cpp">struct Fenwick
+{
+	struct BaseFenwick
+	{
+		vector&lt;ll&gt; v;
+		BaseFenwick(int n) : v(n, 0) {}
+		void add(int x, ll w)
+		{
+			for (; x &lt; v.size(); x += x &amp; -x)
+				v[x] += w;
+		}
+		ll ask(int x)
+		{
+			ll ans = 0;
+			for (; x; x -= x &amp; -x)
+				ans += v[x];
+			return ans;
+		}
+	};
+	pair&lt;BaseFenwick, BaseFenwick&gt; p;
+	Fenwick(int n) : p(n, n) {}
+	void add(int x, ll w) { p.first.add(x, w), p.second.add(x, x * w); }
+	void add(int l, int r, ll w) { add(l, w), add(r + 1, -w); }
+	ll ask(int x) { return (x + 1) * p.first.ask(x) - p.second.ask(x); }
+	ll ask(int l, int r) { return ask(r) - ask(l - 1); }
+};
+</code></pre>
+
+<h3 id="二维">二维</h3>
+
+<p>高维的数据结构只要每一维维护低一维的数据（树套树）即可。其余数据结构亦同理。</p>
+
+<pre><code class="language-cpp">struct Fenwick2
+{
+	struct BaseFenwick2
+	{
+		vector&lt;Fenwick&gt; v;
+		BaseFenwick2(int r, int c) : v(r, c) {}
+		void add(int x, int b, int t, ll w)
+		{
+			for (; x &lt; v.size(); x += x &amp; -x)
+				v[x].add(b, t, w);
+		}
+		ll ask(int x, int b, int t)
+		{
+			ll ans = 0;
+			for (; x; x -= x &amp; -x)
+				ans += v[x].ask(b, t);
+			return ans;
+		}
+	};
+	pair&lt;BaseFenwick2, BaseFenwick2&gt; p;
+	Fenwick2(int r, int c) : p(BaseFenwick2(r, c), BaseFenwick2(r, c)) {}
+	void add(int x, int b, int t, ll w) { p.first.add(x, b, t, w), p.second.add(x, b, t, x * w); }
+	void add(int l, int b, int r, int t, ll w) { add(l, b, t, w), add(r + 1, b, t, -w); } //(l,b)~(r,t)
+	ll ask(int x, int b, int t) { return (x + 1) * p.first.ask(x, b, t) - p.second.ask(x, b, t); }
+	ll ask(int l, int b, int r, int t) { return ask(r, b, t) - ask(l - 1, b, t); }
+};
+</code></pre>
+
+<h2 id="动态开点线段树">动态开点线段树</h2>
+
+<p><a href="https://vjudge.net/solution/21600921">使用示例</a>，支持区间线性变换、区间查询（最大值最小值区间和）。</p>
+
+<p>这样写改可持久化也很方便，只要改<code>down</code>函数为每次都新建节点即可，<a href="https://vjudge.net/solution/21600829">示例</a>。</p>
+
+<pre><code class="language-cpp">struct SegmentTree
+{
+	struct Seg
+	{
+		int l, r;
+		ll min, max, sum;
+		void upd(ll mul, ll add) { min = min * mul + add, max = max * mul + add, sum = sum * mul + add * (r - l + 1); }
+		friend Seg operator+(const Seg &amp;lc, const Seg &amp;rc) { return {lc.l, rc.r, std::min(lc.min, rc.min), std::max(lc.max, rc.max), lc.sum + rc.sum}; }
+	};
+	struct Node : Seg
+	{
+		int lc, rc;
+		ll mul, add;
+	};
+	vector&lt;Node&gt; v;
+	SegmentTree(int l, int r) { build(l, r); }
+	void build(int l, int r)
+	{
+		int rt = v.size();
+		v.push_back({});
+		v[rt].Seg::operator=({l, r, 0, 0, 0});
+		v[rt].lc = v[rt].rc = NPOS;
+		v[rt].mul = 1, v[rt].add = 0;
+		//if (l &lt; r) //动态开点的时候注释掉本行和下一行
+		//down(rt), v[rt].Seg::operator=(v[v[rt].lc] + v[v[rt].rc]);
+	}
+	void down(int rt)
+	{
+		int m = v[rt].l + (v[rt].r - v[rt].l &gt;&gt; 1);
+		if (v[rt].lc == NPOS)
+			v[rt].lc = v.size(), build(v[rt].l, m);
+		//else //非可持久化的时候注释掉本行和下一行
+		//v.push_back(v[v[rt].lc]), v[rt].lc = v.size() - 1;
+		if (v[rt].rc == NPOS)
+			v[rt].rc = v.size(), build(m + 1, v[rt].r);
+		//else //非可持久化的时候注释掉本行和下一行
+		//v.push_back(v[v[rt].rc]), v[rt].rc = v.size() - 1;
+		upd(v[v[rt].lc].l, v[v[rt].lc].r, v[rt].mul, v[rt].add, v[rt].lc);
+		upd(v[v[rt].rc].l, v[v[rt].rc].r, v[rt].mul, v[rt].add, v[rt].rc);
+		v[rt].mul = 1, v[rt].add = 0;
+	}
+	void upd(int l, int r, ll mul, ll add, int rt = 0)
+	{
+		if (l &lt;= v[rt].l &amp;&amp; v[rt].r &lt;= r)
+			return v[rt].mul *= mul, v[rt].add = v[rt].add * mul + add, v[rt].upd(mul, add);
+		down(rt);
+		if (r &lt;= v[v[rt].lc].r)
+			upd(l, r, mul, add, v[rt].lc);
+		else if (l &gt;= v[v[rt].rc].l)
+			upd(l, r, mul, add, v[rt].rc);
+		else
+			upd(l, v[v[rt].lc].r, mul, add, v[rt].lc), upd(v[v[rt].rc].l, r, mul, add, v[rt].rc);
+		v[rt].Seg::operator=(v[v[rt].lc] + v[v[rt].rc]);
+	}
+	Seg ask(int l, int r, int rt = 0)
+	{
+		if (l &lt;= v[rt].l &amp;&amp; v[rt].r &lt;= r)
+			return v[rt];
+		down(rt);
+		if (r &lt;= v[v[rt].lc].r)
+			return ask(l, r, v[rt].lc);
+		if (l &gt;= v[v[rt].rc].l)
+			return ask(l, r, v[rt].rc);
+		return ask(l, v[v[rt].lc].r, v[rt].lc) + ask(v[v[rt].rc].l, r, v[rt].rc);
+	}
+};
+</code></pre>
+
+<h2 id="无旋treap">无旋Treap</h2>
+
+<h3 id="按子树大小分裂">按子树大小分裂</h3>
+
+<p><a href="https://vjudge.net/solution/18405379">使用示例</a></p>
+
+<pre><code class="language-cpp">struct FhqTreap
+{
+	struct Node
+	{
+		int ch[2], siz, rev;
+		ll key, val, min, add;
+		void upd(ll v, int r)
+		{
+			val += v, min += v, add += v;
+			if (r)
+				rev ^= 1, swap(ch[0], ch[1]);
+		}
+	};
+	vector&lt;Node&gt; v;
+	int root;
+	FhqTreap() : v(1), root(0) {}
+	void down(int k)
+	{
+		if (!k)
+			return;
+		for (int i = 0, *ch = v[k].ch; i &lt; 2; ++i)
+			if (ch[i])
+				v[ch[i]].upd(v[k].add, v[k].rev);
+		v[k].add = v[k].rev = 0;
+	}
+	void up(int k)
+	{
+		if (!k)
+			return;
+		v[k].siz = 1, v[k].min = v[k].val;
+		for (int i = 0, *ch = v[k].ch; i &lt; 2; ++i)
+			if (ch[i])
+				v[k].siz += v[ch[i]].siz, v[k].min = min(v[k].min, v[ch[i]].min);
+	}
+	int merge(int a, int b)
+	{
+		if (!a || !b)
+			return a + b;
+		if (v[a].key &lt; v[b].key)
+			return down(a), v[a].ch[1] = merge(v[a].ch[1], b), up(a), a;
+		return down(b), v[b].ch[0] = merge(a, v[b].ch[0]), up(b), b;
+	}
+	void split(int a, int s, int &amp;l, int &amp;r)
+	{
+		if (!s)
+			l = 0, r = a;
+		else if (v[v[a].ch[0]].siz &lt; s)
+			down(a), split(v[a].ch[1], s - v[v[a].ch[0]].siz - 1, v[a].ch[1], r), up(l = a);
+		else
+			down(a), split(v[a].ch[0], s, l, v[a].ch[0]), up(r = a);
+	}
+	void push_back(ll d) { v.push_back(Node{{0, 0}, 1, 0, rand(), d, d, d}), root = merge(root, v.size() - 1); }
+	void insert(int x, ll d)
+	{
+		v.push_back(Node{{0, 0}, 1, 0, rand(), d, d, d});
+		int a, b, c;
+		split(root, x - 1, a, b), root = merge(merge(a, v.size() - 1), b);
+	}
+	void erase(int x)
+	{
+		int a, b, c;
+		split(root, x, a, b), split(a, x - 1, a, c), root = merge(a, b);
+	}
+	Node ask(int l, int r)
+	{
+		int a, b, c;
+		split(root, r, b, c), split(b, l - 1, a, b);
+		Node ret = v[b];
+		return root = merge(merge(a, b), c), ret;
+	}
+	void upd(int l, int r, ll add, int rev)
+	{
+		int a, b, c;
+		split(root, r, b, c), split(b, l - 1, a, b), v[b].upd(add, rev), root = merge(merge(a, b), c);
+	}
+	void revolve(int l, int r, int d)
+	{
+		int a, b, c, e = r - l + 1;
+		split(root, r, b, c), split(b, l - 1, a, b), split(b, (e - d % e) % e, b, e), root = merge(merge(a, merge(e, b)), c);
+	}
+};
+</code></pre>
+
+<h3 id="按值大小分裂">按值大小分裂</h3>
+
+<p><a href="https://vjudge.net/solution/18405431">使用示例</a>，即排序树。</p>
+
+<pre><code class="language-cpp">struct FhqTreap
+{
+	struct Node
+	{
+		int ch[2], siz;
+		ll key, val;
+	};
+	vector&lt;Node&gt; v;
+	int root;
+	FhqTreap() : v(1), root(0) {}
+	void up(int k) { v[k].siz = v[v[k].ch[0]].siz + v[v[k].ch[1]].siz + 1; }
+	int merge(int a, int b)
+	{
+		if (!a || !b)
+			return a + b;
+		if (v[a].key &lt; v[b].key)
+			return v[a].ch[1] = merge(v[a].ch[1], b), up(a), a;
+		return v[b].ch[0] = merge(a, v[b].ch[0]), up(b), b;
+	}
+	void splitVal(int a, ll w, int &amp;l, int &amp;r) //按值将树划分，使得左子树上的值恰小于w
+	{
+		if (!a)
+			l = r = 0;
+		else if (v[a].val &gt; w)
+			splitVal(v[a].ch[0], w, l, v[a].ch[0]), up(r = a);
+		else
+			splitVal(v[a].ch[1], w, v[a].ch[1], r), up(l = a);
+	}
+	void insert(ll x)
+	{
+		int a, b;
+		v.push_back(Node{{0, 0}, 1, rand(), x}), splitVal(root, x, a, b), root = merge(merge(a, v.size() - 1), b);
+	}
+	void erase(ll x)
+	{
+		int a, b, c;
+		splitVal(root, x, a, b), splitVal(a, x - 1, a, c), root = merge(merge(a, merge(v[c].ch[0], v[c].ch[1])), b);
+	}
+	ll kth(int k)
+	{
+		for (int u = root, ls;;)
+		{
+			if (ls = v[v[u].ch[0]].siz, ls + 1 == k)
+				return v[u].val;
+			if (ls &lt; k)
+				k -= ls + 1, u = v[u].ch[1];
+			else
+				u = v[u].ch[0];
+		}
+	}
+	int lower_bound(ll x) { return upper_bound(x - 1); }
+	int upper_bound(ll x)
+	{
+		int a, b, ret;
+		return splitVal(root, x, a, b), ret = v[a].siz + 1, root = merge(a, b), ret;
+	}
+};
+</code></pre>
+
+<h2 id="莫队">莫队</h2>
+
+<p><a href="https://vjudge.net/solution/14265915">使用示例</a></p>
+
+<pre><code class="language-cpp">struct Mo
+{
+	struct Query
+	{
+		int l, r, id;
+		bool operator&lt;(const Query &amp;n) const
+		{
+			return l / BS != n.l / BS ? l &lt; n.l : r &lt; n.r;
+		}
+	};
+	vector&lt;Query&gt; q;
+	int L, R;
+	void query(int l, int r) { q.push_back(Query{l, r, q.size()}); }
+	void rev(int x) {}
+	void cal(int id) {}
+	void ask()
+	{
+		L = 0, R = -1;
+		sort(q.begin(), q.end());
+		for (int i = 0; i &lt; q.size(); ++i)
+		{
+			while (L &lt; q[i].l)
+				rev(L++);
+			while (L &gt; q[i].l)
+				rev(--L);
+			while (R &lt; q[i].r)
+				rev(++R);
+			while (R &gt; q[i].r)
+				rev(R--);
+			cal(q[i].id);
+		}
+	}
+};
+</code></pre>
+
+<h3 id="带修莫队">带修莫队</h3>
+
+<p><a href="https://vjudge.net/solution/14269038">使用示例</a></p>
+
+<pre><code class="language-cpp">struct Mo
+{
+	struct Update
+	{
+		int pos, NEW, OLD;
+	};
+	struct Query
+	{
+		int t, l, r, id;
+		bool operator&lt;(const Query &amp;n) const
+		{
+			return l / BS != n.l / BS ? l &lt; n.l : r / BS != n.r / BS ? r &lt; n.r : t &lt; n.t;
+		}
+	};
+	vector&lt;Update&gt; cq;
+	vector&lt;Query&gt; q;
+	int T, L, R;
+	Mo() : cq(1) {}
+	void query(int x, int y) { q.push_back(Query{cq.size() - 1, x, y, q.size()}); }
+	void update(int x, int y) { cq.push_back(Update{x, y, t[x]}), t[x] = y; }
+	void set(int x, int d)
+	{
+		if (vis[x])
+			return rev(x), a[x] = d, rev(x);
+		a[x] = d;
+	}
+	void rev(int x) {}
+	void cal(int id) {}
+	void ask()
+	{
+		T = L = 0, R = -1;
+		sort(q.begin(), q.end());
+		for (int i = 0; i &lt; q.size(); ++i)
+		{
+			while (T &lt; q[i].t)
+				++T, set(cq[T].pos, cq[T].NEW);
+			while (T &gt; q[i].t)
+				set(cq[T].pos, cq[T].OLD), --T;
+			while (L &lt; q[i].l)
+				rev(L++);
+			while (L &gt; q[i].l)
+				rev(--L);
+			while (R &lt; q[i].r)
+				rev(++R);
+			while (R &gt; q[i].r)
+				rev(R--);
+			cal(q[i].id);
+		}
+	}
+};
+</code></pre>
+
+<h3 id="树上莫队">树上莫队</h3>
+
+<p><a href="https://vjudge.net/solution/14284324">使用示例</a></p>
+
+<p>按照欧拉序分块，使用Tarjan在生成欧拉序的同时预处理所有询问的lca，预处理时间复杂度$O(n+q)$。
+h为查询图，即如果有一个询问(u,v)，即在h上连$u\to v,v\to u$。多个询问边有序插入h。</p>
+
+<pre><code class="language-cpp">struct TreeMo : Graph
+{
+	struct Query
+	{
+		int l, r, lca, id;
+		bool operator&lt;(const Query &amp;b) const
+		{
+			return l / BS != b.l / BS ? l &lt; b.l : r &lt; b.r;
+		}
+	};
+	vector&lt;Query&gt; q;
+	vector&lt;int&gt; dfp, dfi, dfo;
+	UnionFindSet ufs;
+	Graph h;
+	int L, R;
+	TreeMo(int n) : Graph(n), h(n), dfp(n * 2 + 1), dfi(n), dfo(n), ufs(n) {}
+	void query(int x, int y)
+	{
+		h.add(Edge{x, y}), h.add(Edge{y, x});
+		q.push_back(Query{0, 0, 0, q.size()});
+	}
+	void rev(int x) {}
+	void cal(int id) {}
+	void dfs(int u, int &amp;cnt)
+	{
+		dfp[dfi[u] = ++cnt] = u;
+		for (int i = 0, k, to; i &lt; v[u].a.size(); ++i)
+			if (k = v[u].a[i], to = e[k].second, !dfi[to])
+				dfs(to, cnt), ufs.merge(u, to);
+		dfp[dfo[u] = ++cnt] = u;
+		for (int i = 0, k, to, id; i &lt; h.v[u].a.size(); ++i)
+			if (k = h.v[u].a[i], id = k / 2, to = h.e[k].second, dfo[to])
+			{
+				q[id].lca = ufs.fa(to);
+				q[id].l = q[id].lca != u ? dfo[u] : dfi[u];
+				q[id].r = dfi[to];
+			}
+	}
+	void ask(int root = 1)
+	{
+		dfs(root, BS = 0), BS = sqrt(BS);
+		sort(q.begin(), q.end());
+		L = 0, R = -1;
+		for (int i = 0; i &lt; q.size(); ++i)
+		{
+			while (L &lt; q[i].l)
+				rev(dfp[L++]);
+			while (L &gt; q[i].l)
+				rev(dfp[--L]);
+			while (R &lt; q[i].r)
+				rev(dfp[++R]);
+			while (R &gt; q[i].r)
+				rev(dfp[R--]);
+			if (q[i].lca != dfp[L])
+				rev(q[i].lca);
+			cal(q[i].id);
+			if (q[i].lca != dfp[L])
+				rev(q[i].lca);
+		}
+	}
+};
+</code></pre>
+
+<h3 id="树上带修莫队">树上带修莫队</h3>
+
+<p><a href="https://vjudge.net/solution/14269069">使用示例</a></p>
+
+<pre><code class="language-cpp">struct CapitalTreeMo : Graph
+{
+	struct Update
+	{
+		int pos, NEW, OLD;
+	};
+	struct Query
+	{
+		int t, l, r, lca, id;
+		bool operator&lt;(const Query &amp;b) const
+		{
+			return l / BS != b.l / BS ? l &lt; b.l : r / BS != b.r / BS ? r &lt; b.r : t &lt; b.t; //在BZOJ4129上去掉r/BS还快100ms?
+		}
+	};
+	vector&lt;Update&gt; cq;
+	vector&lt;Query&gt; q;
+	vector&lt;int&gt; dfp, dfi, dfo;
+	UnionFindSet ufs;
+	Graph h;
+	int T, L, R;
+	CapitalTreeMo(int n) : cq(1), Graph(n), h(n), dfp(n * 2 + 1), dfi(n), dfo(n), ufs(n) {}
+	void query(int x, int y)
+	{
+		h.add(Edge{x, y}), h.add(Edge{y, x});
+		q.push_back(Query{cq.size() - 1, 0, 0, 0, q.size()});
+	}
+	void update(int x, int y)
+	{
+		cq.push_back(Update{x, y, t[x]}), t[x] = y;
+	}
+	void dfs(int u, int &amp;cnt)
+	{
+		dfp[dfi[u] = ++cnt] = u;
+		for (int i = 0, k, to; i &lt; v[u].a.size(); ++i)
+			if (k = v[u].a[i], to = e[k].second, !dfi[to])
+				dfs(to, cnt), ufs.merge(u, to);
+		dfp[dfo[u] = ++cnt] = u;
+		for (int i = 0, k, to, id; i &lt; h.v[u].a.size(); ++i)
+			if (k = h.v[u].a[i], id = k / 2, to = h.e[k].second, dfo[to])
+			{
+				q[id].lca = ufs.fa(to);
+				q[id].l = q[id].lca != u ? dfo[u] : dfi[u];
+				q[id].r = dfi[to];
+			}
+	}
+	void set(int u, int d)
+	{
+		if (vis[u])
+			return rev(u), a[u] = d, rev(u);
+		a[u] = d;
+	}
+	void rev(int u) {}
+	void cal(int id) {}
+	void ask(int root = 1)
+	{
+		dfs(root, BS = 0), BS = sqrt(BS);
+		sort(q.begin(), q.end());
+		T = L = 0, R = -1;
+		for (int i = 0; i &lt; q.size(); ++i)
+		{
+			while (T &lt; q[i].t)
+				++T, set(cq[T].pos, cq[T].NEW);
+			while (T &gt; q[i].t)
+				set(cq[T].pos, cq[T].OLD), --T;
+			while (L &lt; q[i].l)
+				rev(dfp[L++]);
+			while (L &gt; q[i].l)
+				rev(dfp[--L]);
+			while (R &lt; q[i].r)
+				rev(dfp[++R]);
+			while (R &gt; q[i].r)
+				rev(dfp[R--]);
+			if (q[i].lca != dfp[L])
+				rev(q[i].lca);
+			cal(q[i].id);
+			if (q[i].lca != dfp[L])
+				rev(q[i].lca);
+		}
+	}
+};
+</code></pre>
+
+<h2 id="字符串模式匹配">字符串/模式匹配</h2>
+
+<h3 id="hashstring">HashString</h3>
+
+<p><a href="https://vjudge.net/solution/18293901">使用示例</a>，如果要修改模数或者直接使用<code>unsigned long long</code>的自然溢出的话直接修改Mod即可。</p>
+
+<p>使用<code>unsigned long long</code>的自然溢出<a href="https://vjudge.net/solution/18293930">快了5倍</a>，但是容易被卡。</p>
+
+<pre><code class="language-cpp">struct HashString : Mod
+{
+	vector&lt;ll&gt; f, p;
+	HashString(const string &amp;s, ll M = 1e9 + 7, ll P = 131) : Mod(M), f(s.size() + 1), p(s.size() + 1, 1)
+	{
+		for (int i = 0; i &lt; s.size(); ++i)
+		{
+			f[i + 1] = add(mul(f[i], P), s[i]);
+			p[i + 1] = mul(p[i], P);
+		}
+	}
+	ll ask(int pos, int len) { return add(f[pos + len], -mul(f[pos], p[len])); } //从pos位置开始的长度为len的子串的hash值
+};
+</code></pre>
+
+<h3 id="kmp">KMP</h3>
+
+<pre><code class="language-cpp">struct KMP
+{
+	const string s;
+	vector&lt;int&gt; next;
+	KMP(const string &amp;s) : s(s), next(s.size() + 1, 0)
+	{
+		for (int i = 1, j; i &lt; s.size(); ++i)
+		{
+			for (j = next[i]; j &amp;&amp; s[i] != s[j];)
+				j = next[j];
+			next[i + 1] = s[i] == s[j] ? j + 1 : 0;
+		}
+	}
+	bool find_in(const string &amp;t)
+	{
+		for (int i = 0, j = 0; i &lt; t.size(); ++i)
+		{
+			while (j &amp;&amp; s[j] != t[i])
+				j = next[j];
+			if (s[j] == t[i])
+				++j;
+			if (j == s.size())
+				return 1; //不return可得到t中s的所有匹配地址i+1-s.size()
+		}
+		return 0;
+	}
+};
+</code></pre>
+
+<h3 id="ac自动机">AC自动机</h3>
+
+<pre><code class="language-cpp">struct AhoCorasick
+{
+	struct Node
+	{
+		int ch[26], val, f, last;
+		int &amp;to(char c)
+		{
+			return ch[c - 'a'];
+		} //如果不确定c的范围，使用map
+	};
+	vector&lt;Node&gt; v;
+	AhoCorasick() : v(1) {}
+	void getFail()
+	{
+		for (deque&lt;int&gt; q(1, v[0].last = v[0].f = 0); !q.empty(); q.pop_front())
+			for (char c = 'a'; c &lt;= 'z'; ++c)
+			{
+				int r = q.front(), u = v[r].to(c), w = v[r].f;
+				if (!r &amp;&amp; u)
+				{
+					q.push_back(u);
+					v[u].f = v[u].last = 0;
+					continue;
+				}
+				if (!u)
+				{
+					v[r].to(c) = v[w].to(c);
+					continue;
+				}
+				q.push_back(u);
+				while (w &amp;&amp; !v[w].to(c))
+					w = v[w].f;
+				v[u].f = v[w].to(c);
+				v[u].last = v[v[u].f].val ? v[u].f : v[v[u].f].last;
+			}
+	}
+	void add(const string &amp;s, int val, int u = 0)
+	{
+		for (int i = 0; i &lt; s.size(); u = v[u].to(s[i++]))
+			if (!v[u].to(s[i]))
+			{
+				v[u].to(s[i]) = v.size();
+				v.push_back(Node());
+			}
+		v[u].val = val;
+	}
+	bool find_in(const string &amp;s, int u = 0) //调用需要调用`getFail()`生成失配函数。
+	{
+		for (int i = 0; i &lt; s.size(); ++i)
+			if (u = v[u].to(s[i]),
+				v[u].val || v[u].last)
+				return 1;
+		return 0;
+	}
+};
+</code></pre>
+
+<h3 id="暴力回文">暴力回文</h3>
+
+<p><a href="https://vjudge.net/solution/14387201">使用示例</a></p>
+
+<p>时间复杂度$O(n^2)$，常数低，但会被<code>ababababa</code>这样的数据卡。</p>
+
+<pre><code class="language-cpp">int palindrome(const char *s)
+{
+	int ans = 0;
+	for (int i = 0, b, e; s[i]; ++i)
+	{
+		for (b = i; s[i] == s[i + 1];)
+			++i;
+		for (e = i + 1; b &amp;&amp; s[b - 1] == s[e];)
+			--b, ++e;
+		if (ans &lt; e - b)
+			ans = e - b; //此时[b,e)为最大回文区间
+	}
+	return ans;
+}
+</code></pre>
+
+<h3 id="线性回文">线性回文</h3>
+
+<p><a href="https://vjudge.net/solution/14387164">使用示例</a></p>
+
+<p>对于一个位置i，[i−f[i]+1,i+f[i]−1]是最长的以i为中心的奇回文串，g[i]−i是最长的以i为开头的回文串长度。</p>
+
+<pre><code class="language-cpp">struct Manacher
+{
+	vector&lt;int&gt; t, f, g;
+	Manacher(const string &amp;s) : t(s.size() + 1 &lt;&lt; 1, 0), f(t), g(t) //t初始值为s中没有出现过的值，g开始为0
+	{
+		for (int i = 0; i &lt; s.size(); ++i)
+			t[i + 1 &lt;&lt; 1] = s[i];
+		for (int i = 1, p = 0, m = 0; i &lt; t.size(); ++i)
+		{
+			for (f[i] = i &lt; m ? min(f[2 * p - i], m - i) : 1;
+				 0 &lt; i - f[i] &amp;&amp; i + f[i] &lt; t.size() &amp;&amp;
+				 t[i - f[i]] == t[i + f[i]];)
+				++f[i];
+			if (m &lt; i + f[i])
+				m = i + f[p = i];
+		}
+		for (int i = 2; i &lt; t.size(); ++i)
+			if (g[i - f[i] + 1] &lt; i + 1)
+				g[i - f[i] + 1] = i + 1;
+		for (int i = 1; i &lt; t.size(); ++i)
+			if (g[i] &lt; g[i - 1])
+				g[i] = g[i - 1];
+	}
+	int ask(int l, int r) //多次询问可做一个ST表
+	{
+		int ans = 0;
+		for (int i = l + 1 &lt;&lt; 1, e = r + 1 &lt;&lt; 1; i &lt;= e; i += 2)
+			if (ans &lt; g[i] - i)
+				ans = g[i] - i;
+		return ans;
+	}
+};
+</code></pre>
+
+<h3 id="后缀数组">后缀数组</h3>
+
+<p><a href="https://vjudge.net/solution/14316681">使用示例</a></p>
+
+<p>m：字符集大小。</p>
+
+<p>s：字符串，其中最后一位为加入的0。</p>
+
+<p>sa[i]：字典序第i小的是哪个后缀。</p>
+
+<p>rk[i]：后缀i的排名。</p>
+
+<p>h[i]：lcp(sa[i],sa[i−1])。</p>
+
+<pre><code class="language-cpp">struct SufArr
+{
+	vector&lt;int&gt; sa, rk, h;
+	SufArr(const vector&lt;int&gt; &amp;s, int m) : sa(s.size(), 0), rk(s), h(s.size(), 0)
+	{
+		vector&lt;int&gt; cnt(s.size() + m, 0);
+		for (int i = 0; i &lt; s.size(); ++i)
+			++cnt[rk[i]];
+		for (int i = 1; i &lt; m; ++i)
+			cnt[i] += cnt[i - 1];
+		for (int i = 0; i &lt; s.size(); ++i)
+			sa[--cnt[rk[i]]] = i;
+		for (int k = 1, j = 0; k &lt;= s.size() &amp;&amp; j &lt; s.size() - 1; k &lt;&lt;= 1)
+		{
+			for (int i = 0; i &lt; s.size(); ++i)
+			{
+				if (j = sa[i] - k, j &lt; 0)
+					j += s.size();
+				h[cnt[rk[j]]++] = j;
+			}
+			cnt[0] = sa[h[0]] = j = 0;
+			for (int i = 1; i &lt; s.size(); ++i)
+			{
+				if (rk[h[i]] != rk[h[i - 1]] || rk[h[i] + k] != rk[h[i - 1] + k])
+					cnt[++j] = i;
+				sa[h[i]] = j;
+			}
+			swap(rk, sa), swap(sa, h);
+		}
+		for (int i = 0, k = 0, j = rk[0]; i &lt; s.size() - 1; ++i, ++k)
+			for (; ~k &amp;&amp; s[i] != s[sa[j - 1] + k]; j = rk[sa[j] + 1], --k)
+				h[j] = k;
+	}
+};
+</code></pre>
+:ET

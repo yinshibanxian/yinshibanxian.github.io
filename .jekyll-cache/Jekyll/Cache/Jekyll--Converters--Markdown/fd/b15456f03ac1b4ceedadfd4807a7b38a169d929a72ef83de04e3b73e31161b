@@ -1,0 +1,377 @@
+I"5,<p><a href="http://soj.acmm.club/contest_detail.php?cid=2653">overview</a></p>
+<h1 id="tailmons-multiple-30"><a href="http://soj.acmm.club/show_problem.php?pid=1000&amp;cid=2653">Tailmon’s Multiple 30</a></h1>
+<p>算法显而易见，要特判各位数相加为0的情况。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int main()
+{
+	int sum=0;
+	string s;
+	cin&gt;&gt;s;
+	sort(s.rbegin(),s.rend());
+	for(int i=0; i&lt;s.size(); ++i)sum+=s[i]-'0';
+	cout&lt;&lt;(sum&amp;&amp;sum%3==0&amp;&amp;s.back()=='0'?s:"-1")&lt;&lt;'\n';
+}                               
+</code></pre>
+<h1 id="tailmons-fibnacci-sequence"><a href="http://soj.acmm.club/show_problem.php?pid=1001&amp;cid=2653">Tailmon’s Fibnacci Sequence</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespae std;
+typedef long long ll;
+int main()
+{
+	ll n,a=0,b=1,c,sum=1;
+	for(cin&gt;&gt;n; --n;)
+	{
+		c=b;
+		sum+=b+=a;
+		b%=1000000007;
+		sum%=1000000007;
+		a=c;
+	}
+	cout&lt;&lt;sum&lt;&lt;'\n';
+}                                 
+</code></pre>
+<h1 id="tailmons-evolution"><a href="http://soj.acmm.club/show_problem.php?pid=1002&amp;cid=2653">Tailmon’s Evolution</a></h1>
+<p>题面没有说明的是，无论输入单词间有多少空格间隔，输出时统一按一个，结尾也要空格。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int main()
+{
+	for(string s; cin&gt;&gt;s;)
+		cout&lt;&lt;(s!="tailmon"?s:"angewomon")&lt;&lt;' ';
+	cout&lt;&lt;'\n'; 
+}                                 
+</code></pre>
+<h1 id="tailmon-with-god-ye"><a href="http://soj.acmm.club/show_problem.php?pid=1003&amp;cid=2653">Tailmon with God Ye</a></h1>
+<p>判断是否要对时间最长的任务上标签。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int main()
+{
+	int n,sum=0,g=0;
+	cin&gt;&gt;n;
+	for(int i=0,t; i&lt;n; ++i)
+		cin&gt;&gt;t,sum+=t,g=max(g,t);
+	if(g&gt;2)sum-=g-2;
+	cout&lt;&lt;sum&lt;&lt;'\n';
+}                                 
+</code></pre>
+<h1 id="tailmon-compares-numbers"><a href="http://soj.acmm.club/show_problem.php?pid=1004&amp;cid=2653">Tailmon Compares Numbers</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+bool less(const string &amp;s0,
+		  const string &amp;s1)
+{
+	if(s0.size()!=s1.size())return s0.size()&lt;s1.size();
+	for(int i=0; i!=s0.size(); ++i)
+		if(s0[i]!=s1[i])
+			return s0[i]&lt;s1[i];
+	return 0;
+}
+int main()
+{
+	string s[2];
+	for(int i=0,pos; i&lt;2; ++i)
+	{
+		cin&gt;&gt;s[i];
+		for(pos=0;
+				pos&lt;s[i].size()&amp;&amp;
+				s[i][pos]=='0';
+				++pos);
+		s[i]=s[i].substr(pos);
+	}
+	cout&lt;&lt;(less(s[0],s[1])?'&lt;':
+		   less(s[1],s[0])?'&gt;':'=')
+		&lt;&lt;'\n';
+}                                 
+</code></pre>
+<h1 id="tailmon-wants-to-make-a-big-news"><a href="http://soj.acmm.club/show_problem.php?pid=1005&amp;cid=2653">Tailmon Wants to Make a Big News</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int cal(int n)
+{
+	static int f[64]={0,1,2,0};
+	if(f[n])return f[n];
+	return f[n]=cal(n-1)+cal(n-2);
+}
+int main()
+{
+	int n;
+	cin&gt;&gt;n;
+	cout&lt;&lt;cal(n)&lt;&lt;'\n';
+}                                 
+</code></pre>
+<h1 id="tailmon-on-a-chessboard"><a href="http://soj.acmm.club/show_problem.php?pid=1006&amp;cid=2653">Tailmon on a Chessboard</a></h1>
+<p>卡cin读入，换C做这题。</p>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+char chess[111][11111]= {0};
+int n,m,q,t,x,y,pos[111]= {0};
+int main()
+{
+	scanf("%d%d%d",&amp;n,&amp;m,&amp;q);
+	for(int i=1; i&lt;=n; pos[i]=i++)
+		for(int j=1; j&lt;=m; ++j)
+			chess[i][j]='.';
+	while(q--)
+	{
+		scanf("%d",&amp;t);
+		if(t==1)
+		{
+			scanf("%d%d%d",&amp;t,&amp;x,&amp;y);
+			chess[pos[x]][y]=(t==1?'w':'b');
+		}
+		else
+		{
+			scanf("%d%d",&amp;x,&amp;y);
+			t=pos[x];
+			pos[x]=pos[y];
+			pos[y]=t;
+		}
+	}
+	for(int i=1; i&lt;=n; ++i)
+		printf("%s\n",chess[pos[i]]+1);
+}                                 
+</code></pre>
+<h1 id="tailmon-found-hakurei-shrine"><a href="http://soj.acmm.club/show_problem.php?pid=1007&amp;cid=2653">Tailmon Found Hakurei Shrine</a></h1>
+<p>对于询问的每个点，既然没有摧毁并且不能到达源点，那么与它们相邻的每个点一定不可以到达（反证：如果可以到达，那么询问点只需到达该点就可转至源点，与题意矛盾；前提：地震前所有点都连通）。于是强行摧毁所有与询问点联通且非询问点的点，便得到最优解。 <br />
+出题人良心，凭借上述算法过不了第二个样例。原因是当上述点被摧毁后，又有新的点无法到达源点（样例中的9号点）。于是从源点DFS并避开所有询问点和摧毁点，此次DFS中没有访问到的点总数就是所求答案。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+struct Edge
+{
+	int from,to;
+}e_tmp;
+struct Graph:vector&lt;Edge&gt;
+{
+	int n;
+	vector&lt;vector&lt;int&gt; &gt; a;
+	void to_list(int _n)
+	{
+		n=_n;
+		a.assign(n,vector&lt;int&gt;());
+		for(iterator i=begin(); i!=end(); ++i)
+			a[i-&gt;from].push_back(i-begin());
+	}
+}g;
+int m,k,ans=0;
+bool flag[30001]={0},vis[30001]={0}; 
+void dfs(int k)
+{
+	if(flag[k]||vis[k])return;
+	vis[k]=1;
+	for(int i=0;i!=g.a[k].size();++i)
+		dfs(g[g.a[k][i]].to);
+}
+int main()
+{
+	cin&gt;&gt;g.n&gt;&gt;m&gt;&gt;k;
+	while(m--)
+	{
+		cin&gt;&gt;e_tmp.from&gt;&gt;e_tmp.to;
+		g.push_back(e_tmp);
+		swap(e_tmp.from,e_tmp.to);
+		g.push_back(e_tmp);
+	}
+	g.to_list(++g.n);
+	while(k--)
+	{
+		cin&gt;&gt;m;
+		flag[m]=1;
+		for(int i=0;i!=g.a[m].size();++i)
+			flag[g[g.a[m][i]].to]=1;
+	}
+	dfs(1);
+	for(int i=1;i!=g.n;++i)
+		if(flag[i]||!vis[i])
+			++ans;
+	cout&lt;&lt;ans&lt;&lt;'\n';
+}                                 
+</code></pre>
+<h1 id="tailmon-ysx"><a href="http://soj.acmm.club/show_problem.php?pid=1008&amp;cid=2653">Tailmon %%%YSX</a></h1>
+<p>线段树，每个节点维护的值见注释，能过样例（比赛结束所以没办法评测？）。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const ll INF=1e18;
+struct SegmentTree
+{
+	struct Node
+	{
+		ll add,hl,hr;//该点add值，左右端点值
+		int ldown,rup,lman,rman,man;//依次是包含左端点的最长下降序列右端点、右…左、包含左端点的最长人字序列右端点、右…左、最长人字序列长度-1
+	};
+	vector&lt;Node&gt; v;
+	int LAST,L,R;
+	SegmentTree(int n):LAST(n),v(2*n+1) {}
+	Node&amp; lv(int l,int r)
+	{
+		return v[l+r|l!=r];
+	}
+	void push_down(Node &amp;lc,Node &amp;rc,Node &amp;fa)
+	{
+		lc.add+=fa.add;
+		rc.add+=fa.add;
+		fa.add=0;
+	}
+	void push_up(const Node &amp;lc,const Node &amp;rc,Node &amp;fa,int l,int r)//将区间左右相连的lc、rc归并到fa
+	{
+		int m=l+(r-l)/2;
+
+		fa.hl=lc.hl,fa.hr=rc.hr;
+
+		fa.ldown=lc.ldown;
+		if(fa.ldown==m&amp;&amp;lc.hr&gt;rc.hl)
+			fa.ldown=rc.ldown;
+
+		fa.rup=rc.rup;
+		if(fa.rup==m+1&amp;&amp;lc.hr&lt;rc.hl)
+			fa.rup=lc.rup;
+
+		fa.lman=lc.lman;
+		if(fa.lman==m&amp;&amp;lc.hr&gt;rc.hl)
+			fa.lman=max(fa.lman,rc.ldown);
+		if(lc.rup==l&amp;&amp;lc.hr&lt;rc.hl)
+			fa.lman=max(fa.lman,rc.lman);
+
+		fa.rman=rc.rman;
+		if(fa.rman==m+1&amp;&amp;lc.hr&lt;rc.hl)
+			fa.rman=min(fa.rman,lc.rup);
+		if(rc.ldown==r&amp;&amp;lc.hr&gt;rc.hl)
+			fa.rman=min(fa.rman,lc.rman);
+
+		fa.man=max(lc.man,rc.man);
+		fa.man=max(fa.man,rc.ldown-lc.rup);
+		fa.man=max(fa.man,fa.lman-l);
+		fa.man=max(fa.man,r-fa.rman);
+		if(lc.hr&lt;rc.hl)fa.man=max(fa.man,rc.lman-lc.rup);
+		if(lc.hr&gt;rc.hl)fa.man=max(fa.man,rc.ldown-lc.rman);
+	}
+	void maintain(int l,int r)
+	{
+		Node &amp;fa=lv(l,r);
+		if(l&lt;r)
+		{
+			int m=l+(r-l)/2;
+			push_up(lv(l,m),lv(m+1,r),fa,l,r);
+		}
+		else
+		{
+			fa.ldown=fa.rup=fa.lman=fa.rman=l;
+			fa.hl=fa.hr=fa.man=0;
+		}
+		fa.hl+=fa.add,fa.hr+=fa.add;
+	}
+	void add(int l,int r,ll val,bool out=1)
+	{
+		if(out)return L=l,R=r,add(1,LAST,val,0);
+		if(L&lt;=l&amp;&amp;r&lt;=R)lv(l,r).add+=val;
+		else
+		{
+			int m=l+(r-l)/2;
+			push_down(lv(l,m),lv(m+1,r),lv(l,r));
+			if(L&lt;=m)add(l,m,val,0);
+			else maintain(l,m);
+			if(R&gt;m)add(m+1,r,val,0);
+			else maintain(m+1,r);
+		}
+		maintain(l,r);
+	}
+};
+int main()
+{
+	int n,m;
+	cin&gt;&gt;n&gt;&gt;m;
+	SegmentTree teemo(n);
+	for(int i=1,d; i&lt;=n; ++i)
+		cin&gt;&gt;d,teemo.add(i,i,d);
+	for(int i=1,l,r,d; i&lt;=m; ++i)
+	{
+		cin&gt;&gt;l&gt;&gt;r&gt;&gt;d,teemo.add(l,r,d);
+		cout&lt;&lt;teemo.lv(1,n).man+1&lt;&lt;'\n';
+	}
+}
+</code></pre>
+<h2 id="队友的过评测代码">队友的过评测代码</h2>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N=100005;
+const int M=N*5;
+int n,m,mx1L[M],mx1R[M],mx2L[M],mx2R[M],mxL[M],mxR[M],mx[M];
+ll a[N],Left[M],Right[M],tag[M];
+inline void cmax(int&amp;x,int y){if(y&gt;x)x=y;}
+void up(int l,int r,int x){
+	int mid=(l+r)&gt;&gt;1;
+	Left[x]=Left[x&lt;&lt;1];
+	Right[x]=Right[x&lt;&lt;1|1];
+	mx1L[x]=mx1L[x&lt;&lt;1];
+	if(mx1L[x&lt;&lt;1]==mid-l+1&amp;&amp;Right[x&lt;&lt;1]&lt;Left[x&lt;&lt;1|1])mx1L[x]+=mx1L[x&lt;&lt;1|1];
+	mx1R[x]=mx1R[x&lt;&lt;1|1];
+	if(mx1R[x&lt;&lt;1|1]==r-mid&amp;&amp;Right[x&lt;&lt;1]&lt;Left[x&lt;&lt;1|1])mx1R[x]+=mx1R[x&lt;&lt;1];
+	mx2L[x]=mx2L[x&lt;&lt;1];
+	if(mx2L[x&lt;&lt;1]==mid-l+1&amp;&amp;Right[x&lt;&lt;1]&gt;Left[x&lt;&lt;1|1])mx2L[x]+=mx2L[x&lt;&lt;1|1];
+	mx2R[x]=mx2R[x&lt;&lt;1|1];
+	if(mx2R[x&lt;&lt;1|1]==r-mid&amp;&amp;Right[x&lt;&lt;1]&gt;Left[x&lt;&lt;1|1])mx2R[x]+=mx2R[x&lt;&lt;1];
+	mxL[x]=mxL[x&lt;&lt;1];
+	if(mxL[x&lt;&lt;1]==mid-l+1&amp;&amp;Right[x&lt;&lt;1]&gt;Left[x&lt;&lt;1|1])mxL[x]+=mx2L[x&lt;&lt;1|1];
+	if(mx1L[x&lt;&lt;1]==mid-l+1&amp;&amp;Right[x&lt;&lt;1]&lt;Left[x&lt;&lt;1|1])cmax(mxL[x],mid-l+1+mxL[x&lt;&lt;1|1]);
+	mxR[x]=mxR[x&lt;&lt;1|1];
+	if(mxR[x&lt;&lt;1|1]==r-mid&amp;&amp;Right[x&lt;&lt;1]&lt;Left[x&lt;&lt;1|1])mxR[x]+=mx1R[x&lt;&lt;1];
+	if(mx2R[x&lt;&lt;1|1]==r-mid&amp;&amp;Right[x&lt;&lt;1]&gt;Left[x&lt;&lt;1|1])cmax(mxR[x],r-mid+mxR[x&lt;&lt;1]);
+	mx[x]=max(mxL[x],mxR[x]);
+	cmax(mx[x],max(mx[x&lt;&lt;1],mx[x&lt;&lt;1|1]));
+	if(Right[x&lt;&lt;1]&gt;Left[x&lt;&lt;1|1])cmax(mx[x],mxR[x&lt;&lt;1]+mx2L[x&lt;&lt;1|1]);
+	if(Right[x&lt;&lt;1]&lt;Left[x&lt;&lt;1|1])cmax(mx[x],mx1R[x&lt;&lt;1]+mxL[x&lt;&lt;1|1]);
+}
+void down(int l,int r,int x){
+	if(tag[x]){
+		tag[x&lt;&lt;1]+=tag[x];
+		tag[x&lt;&lt;1|1]+=tag[x];
+		Left[x&lt;&lt;1]+=tag[x];
+		Left[x&lt;&lt;1|1]+=tag[x];
+		Right[x&lt;&lt;1]+=tag[x];
+		Right[x&lt;&lt;1|1]+=tag[x];
+		tag[x]=0;
+	}
+}
+void build(int l,int r,int x){
+	if(l==r){
+		Left[x]=Right[x]=a[l];
+		mx1L[x]=mx1R[x]=mx2L[x]=mx2R[x]=mxL[x]=mxR[x]=mx[x]=1;
+		return;
+	}
+	int mid=(l+r)&gt;&gt;1;
+	build(l,mid,x&lt;&lt;1);
+	build(mid+1,r,x&lt;&lt;1|1);
+	up(l,r,x);
+}
+void update(int v,int L,int R,int l,int r,int x){
+	if(l&gt;=L&amp;&amp;r&lt;=R){
+		Left[x]+=v;
+		Right[x]+=v;
+		tag[x]+=v;
+		return;
+	}
+	down(l,r,x);
+	int mid=(l+r)&gt;&gt;1;
+	if(L&lt;=mid)update(v,L,R,l,mid,x&lt;&lt;1);
+	if(R&gt;mid)update(v,L,R,mid+1,r,x&lt;&lt;1|1);
+	if(L==l)Left[x]+=v;
+	if(R==r)Right[x]+=v;
+	up(l,r,x);
+}
+int main(){
+	//freopen("aa.in","r",stdin);
+	int i,j,l,r,x;
+	scanf("%d%d",&amp;n,&amp;m);
+	for(i=1;i&lt;=n;++i)cin&gt;&gt;a[i];
+	build(1,n,1);
+	for(i=1;i&lt;=m;++i){
+		scanf("%d%d%d",&amp;l,&amp;r,&amp;x);
+		update(x,l,r,1,n,1);
+		printf("%d\n",mx[1]);
+	}
+	return 0;
+}
+</code></pre>
+:ET

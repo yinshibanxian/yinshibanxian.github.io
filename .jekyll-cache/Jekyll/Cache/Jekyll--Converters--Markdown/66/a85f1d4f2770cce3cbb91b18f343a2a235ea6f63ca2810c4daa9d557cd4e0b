@@ -1,0 +1,172 @@
+I"�<p><a href="https://codeforces.com/blog/entry/68812">官方题解</a></p>
+
+<p>终于上紫辣。</p>
+
+<h2 id="city-day"><a href="https://vjudge.net/problem/CodeForces-1199A">City Day</a></h2>
+
+<p>拿到题目第一时间想敲一个单调队列的我怕不是个傻子…</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+int n, x, y, a[N];
+int main()
+{
+	scanf("%d%d%d", &amp;n, &amp;x, &amp;y);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;a[i]);
+	for (int d = 0; d &lt; n; ++d)
+	{
+		int ok = 1;
+		for (int j = max(d - x, 0), jend = min(d + y + 1, n); j &lt; jend; ++j)
+			if (j != d &amp;&amp; a[j] &lt;= a[d])
+			{
+				ok = 0;
+				break;
+			}
+		if (ok)
+			return printf("%d", d + 1), 0;
+	}
+}
+</code></pre>
+
+<h2 id="water-lily"><a href="https://vjudge.net/problem/CodeForces-1199B">Water Lily</a></h2>
+
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+double h, l;
+int main() { scanf("%lf%lf", &amp;h, &amp;l), printf("%.9f", (l * l - h * h) * 0.5 / h); }
+</code></pre>
+
+<h2 id="mp3"><a href="https://vjudge.net/problem/CodeForces-1199C">MP3</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 4e5 + 9;
+int n, I, a[N];
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;I);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;a[i]);
+	sort(a, a + n);
+	int ans = n - 1, len = min(1e7, pow(2, I * 8 / n));
+	for (int i = 1, j = 0, c = 1; i &lt; n; ++i)
+	{
+		if (a[i] != a[i - 1])
+			++c;
+		if (c &gt; len)
+		{
+			while (j &lt; n - 1 &amp;&amp; a[j] == a[j + 1])
+				++j;
+			++j;
+			--c;
+		}
+		ans = min(ans, n - (i - j + 1));
+	}
+	printf("%d", ans);
+}
+</code></pre>
+
+<h2 id="welfare-state"><a href="https://vjudge.net/problem/CodeForces-1199D">Welfare State</a></h2>
+
+<p>现场快速码了一个吉司机线段树搞过了这个题，事实上这个题是有很漂亮的离线解法的。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 4e5 + 9;
+int n, m, o[N], b[N], c[N], a[N];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1; i &lt;= n; ++i)
+		o[i] = 1, b[i] = i, scanf("%d", &amp;c[i]);
+	scanf("%d", &amp;m);
+	for (int i = n + 1; i &lt;= n + m; ++i)
+	{
+		scanf("%d%d", &amp;o[i], &amp;b[i]);
+		if (o[i] == 1)
+			scanf("%d", &amp;c[i]);
+	}
+	for (int i = n + m, ma = 0; i; --i)
+	{
+		if (o[i] != 1)
+			ma = max(ma, b[i]);
+		else if (!a[b[i]])
+			a[b[i]] = max(c[i], ma) + 1;
+	}
+	for (int i = 1; i &lt;= n; ++i)
+		printf("%d ", a[i] - 1);
+}
+</code></pre>
+
+<h2 id="matching-vs-independent-set"><a href="https://vjudge.net/problem/CodeForces-1199E">Matching vs Independent Set</a></h2>
+
+<p>现场还是一个小时十分钟毫无进展，想的是“可以用$O(n)$找独立集，我只要再找一个$O(n)$求一个匹配的方法就好了”，这样就走进死胡同了。</p>
+
+<p>还是有点巧妙的，毕竟没想到。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int t, n, m;
+int main()
+{
+	for (scanf("%d", &amp;t); t--; printf("\n"))
+	{
+		scanf("%d%d", &amp;n, &amp;m);
+		vector&lt;int&gt; f(3 * n + 1, 1), ans;
+		for (int i = 1, x, y; i &lt;= m; ++i)
+		{
+			scanf("%d%d", &amp;x, &amp;y);
+			if (f[x] &amp;&amp; f[y])
+				f[x] = f[y] = 0, ans.push_back(i);
+		}
+		if (ans.size() &lt; n)
+		{
+			printf("IndSet\n");
+			for (int i = 1, c = 0; c &lt; n; ++i)
+				if (f[i])
+					printf("%d ", i), ++c;
+		}
+		else
+		{
+			printf("Matching\n");
+			for (int i = 0; i &lt; n; ++i)
+				printf("%d ", ans[i]);
+		}
+	}
+}
+</code></pre>
+
+<h2 id="rectangle-painting-1"><a href="https://vjudge.net/problem/CodeForces-1199F">Rectangle Painting 1</a></h2>
+
+<p>现场只有几个人过了这个题，所以当时根本没看…赛后看这个题马上就想出$O(n^5)$DP的做法了，非常后悔有大把时间想前一题都不知道读一下这一题。哎。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 63;
+char s[N][N];
+int n, f[N][N][N][N], vis[N][N][N][N];
+int dp(int xl, int yl, int xr, int yr)
+{
+	int &amp;v = vis[xl][yl][xr][yr], &amp;w = f[xl][yl][xr][yr];
+	if (v)
+		return w;
+	v = 1;
+	if (xl == xr &amp;&amp; yl == yr)
+		return w = s[xl][yl] == '#';
+	w = max(xr - xl + 1, yr - yl + 1);
+	for (int i = xl; i &lt; xr; ++i)
+		w = min(w, dp(xl, yl, i, yr) + dp(i + 1, yl, xr, yr));
+	for (int i = yl; i &lt; yr; ++i)
+		w = min(w, dp(xl, yl, xr, i) + dp(xl, i + 1, xr, yr));
+	return w;
+}
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%s", s[i]);
+	printf("%d", dp(0, 0, n - 1, n - 1));
+}
+</code></pre>
+:ET

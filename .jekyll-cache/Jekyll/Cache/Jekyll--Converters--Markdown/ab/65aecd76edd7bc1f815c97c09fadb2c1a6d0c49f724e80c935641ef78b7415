@@ -1,0 +1,146 @@
+I"�<p><a href="https://codeforces.com/blog/entry/67484">官方题解</a></p>
+<h2 id="from-hero-to-zero"><a href="https://vjudge.net/problem/CodeForces-1175A">From Hero to Zero</a></h2>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+long long t, n, k, ans;
+int main()
+{
+	for (scanf("%lld", &amp;t); t--; printf("%lld\n", ans))
+		for (scanf("%lld%lld", &amp;n, &amp;k), ans = -1; n; ++ans, n /= k)
+			ans += n % k;
+}
+</code></pre>
+<h2 id="catch-overflow"><a href="https://vjudge.net/problem/CodeForces-1175B">Catch Overflow!</a></h2>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+char s[9];
+int l;
+int main()
+{
+	vector&lt;long long&gt; st(1, 0), stak;
+	for (scanf("%d", &amp;l); l--;)
+	{
+		scanf("%s", s);
+		if (!strcmp(s, "for"))
+		{
+			int n;
+			scanf("%d", &amp;n);
+			stak.push_back(n);
+			st.push_back(0);
+		}
+		else if (!strcmp(s, "end"))
+		{
+			long long t = st.back();
+			st.pop_back();
+			st.back() += t * stak.back();
+			stak.pop_back();
+		}
+		else
+			++st.back();
+		if (st.back() &gt;= 1LL &lt;&lt; 32)
+			return cout &lt;&lt; "OVERFLOW!!!", 0;
+	}
+	cout &lt;&lt; st.back();
+}
+</code></pre>
+<h2 id="electrification"><a href="https://vjudge.net/problem/CodeForces-1175C">Electrification</a></h2>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 2e5 + 9, INF = 1e9;
+int t, n, k, a[N];
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d", &amp;n, &amp;k);
+		for (int i = 0; i &lt; n; ++i)
+			scanf("%d", &amp;a[i]);
+		pair&lt;int, int&gt; p(INF, -1);
+		for (int i = 0; i + k &lt; n; ++i)
+			p = min(p, {a[i + k] - a[i], a[i + k] + a[i] &gt;&gt; 1});
+		printf("%d\n", p.second);
+	}
+}
+</code></pre>
+<h2 id="array-splitting"><a href="https://vjudge.net/problem/CodeForces-1175D">Array Splitting</a></h2>
+<p>k段前缀和，其中$[1,n]$必须得选，其余$[2,n]\ldots [n,n]$选最大的k段即可。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 3e5 + 9;
+long long n, k, a[N];
+int main()
+{
+	scanf("%lld%lld", &amp;n, &amp;k);
+	for (int i = 1; i &lt;= n; ++i)
+		scanf("%lld", &amp;a[i]), a[i] += a[i - 1];
+	a[n] *= k;
+	sort(a + 1, a + n);
+	for (int i = 1; i &lt; k; ++i)
+		a[n] -= a[i];
+	printf("%lld", a[n]);
+}
+</code></pre>
+<h2 id="minimal-segment-cover"><a href="https://vjudge.net/problem/CodeForces-1175E">Minimal Segment Cover</a></h2>
+<p>记$f_{i,j}$为包含坐标$i$点且最多有$2^j$条线段时所能到达的最右端的点，那么是可以倍增的。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int M = 5e5 + 9, K = 21;
+int n, m, f[M][K];
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;m);
+	for (int x, y; n--; f[x][0] = max(f[x][0], y))
+		scanf("%d%d", &amp;x, &amp;y);
+	for (int i = 1; i &lt; M; ++i)
+		f[i][0] = max(f[i][0], f[i - 1][0]);
+	for (int j = 1; j &lt; K; ++j)
+		for (int i = 0; i &lt; M; ++i)
+			f[i][j] = f[f[i][j - 1]][j - 1];
+	for (int x, y; m--;)
+	{
+		int ans = 1;
+		scanf("%d%d", &amp;x, &amp;y);
+		for (int i = K - 1; ~i; --i)
+			if (f[x][i] &lt; y)
+				ans += 1 &lt;&lt; i, x = f[x][i];
+		if (f[x][0] &lt; y)
+			ans = -1;
+		printf("%d\n", ans);
+	}
+}
+</code></pre>
+<h2 id="the-number-of-subpermutations"><a href="https://vjudge.net/problem/CodeForces-1175F">The Number of Subpermutations</a></h2>
+<p>从前往后维护以i为终点的答案。显然区间里的数是互不相同的，可以用<code>la[i]</code>数组记录i上一次出现的位置。由于区间要求值为$[1,len]$，所以很容易发现越短的区间最大值越小，所以从后向前扫时，仅需维护一个单调队列。复杂度O(n)。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N = 3e5 + 9;
+deque&lt;int&gt; q;
+ll ans;
+int n, a[N], la[N], mp[N &lt;&lt; 1];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, p = 0; i &lt;= n; ++i)
+	{
+		for (scanf("%d", &amp;a[i]); p &lt; la[a[i]]; ++p)
+			if (!q.empty())
+			{
+				--mp[a[q.front()] + p];
+				if (q.front() == p + 1)
+					q.pop_front();
+				else
+					++mp[a[q.front()] + p + 1];
+			}
+		for (; !q.empty() &amp;&amp; a[i] &gt; a[q.back()]; q.pop_back())
+			--mp[a[q.back()] + (q.size() &lt; 2 ? p : q[q.size() - 2])];
+		q.push_back(la[a[i]] = i);
+		++mp[a[q.back()] + (q.size() &lt; 2 ? p : q[q.size() - 2])];
+		ans += mp[i];
+	}
+	printf("%lld", ans);
+}
+</code></pre>
+<h2 id="yet-another-partiton-problem"><a href="https://vjudge.net/problem/CodeForces-1175G">Yet Another Partiton Problem</a></h2>
+<pre><code class="language-cpp">
+</code></pre>
+:ET

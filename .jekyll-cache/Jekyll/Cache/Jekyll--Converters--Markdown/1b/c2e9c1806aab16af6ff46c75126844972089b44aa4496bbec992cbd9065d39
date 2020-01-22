@@ -1,0 +1,266 @@
+I"�<h1 id="调查问卷"><a href="https://vjudge.net/solution/15299670">调查问卷</a></h1>
+<p>借助位运算可以很快出解。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1023;
+char s[N];
+int kase, ans, t, n, m, k, a[N];
+int main()
+{
+	for (scanf("%d", &amp;t); t--; printf("Case #%d: %d\n", ++kase, ans))
+	{
+		scanf("%d%d%d", &amp;n, &amp;m, &amp;k);
+		for (int i = ans = 0; i &lt; n; ++i)
+		{
+			scanf("%s", s);
+			for (int j = a[i] = 0; j &lt; m; ++j)
+				a[i] |= (s[j] == 'A') &lt;&lt; j;
+		}
+		for (int p = 1 &lt;&lt; m; --p;)
+		{
+			vector&lt;int&gt; mp(p + 1, 0);
+			for (int i = 0; i &lt; n; ++i)
+				++mp[p &amp; a[i]];
+			for (int i = m = 0; i &lt; mp.size(); ++i)
+				if (m += mp[i] * (n - mp[i]), m &gt;= k * 2)
+				{
+					++ans;
+					break;
+				}
+		}
+	}
+}
+</code></pre>
+<h1 id="子串查询"><a href="https://vjudge.net/solution/15273934">子串查询</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+char s[N];
+int kase, t, n, q, a[N][26];
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		printf("Case #%d:\n", ++kase);
+		scanf("%d%d%s", &amp;n, &amp;q, &amp;s);
+		for (int i = 0; i &lt; n; ++i)
+			copy(a[i], a[i] + 26, a[i + 1]), ++a[i + 1][s[i] - 'A'];
+		for (int i = 0, l, r; i &lt; q; ++i)
+		{
+			scanf("%d%d", &amp;l, &amp;r);
+			for (int j = 0; j &lt; 26; ++j)
+				if (a[r][j] != a[l - 1][j])
+				{
+					printf("%d\n", a[r][j] - a[l - 1][j]);
+					break;
+				}
+		}
+	}
+}
+</code></pre>
+<h1 id="整数规划"><a href="https://vjudge.net/solution/15299912">整数规划</a></h1>
+<p>裸的KM最小权匹配。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N = 255, NPOS = -1;
+const ll INF = 1e18;
+struct Matrix
+{
+	int n;
+	ll a[N][N];
+};
+struct KuhnMunkres : Matrix
+{
+	ll hl[N], hr[N], slk[N];
+	int fl[N], fr[N], vl[N], vr[N], pre[N], q[N], ql, qr;
+	int check(int i)
+	{
+		if (vl[i] = 1, fl[i] != NPOS)
+			return vr[q[qr++] = fl[i]] = 1;
+		while (i != NPOS)
+			swap(i, fr[fl[i] = pre[i]]);
+		return 0;
+	}
+	void bfs(int s)
+	{
+		fill(slk, slk + n, INF), fill(vl, vl + n, 0), fill(vr, vr + n, 0);
+		for (vr[q[ql = 0] = s] = qr = 1;;)
+		{
+			for (ll d; ql &lt; qr;)
+				for (int i = 0, j = q[ql++]; i &lt; n; ++i)
+					if (d = hl[i] + hr[j] - a[i][j], !vl[i] &amp;&amp; slk[i] &gt;= d)
+						if (pre[i] = j, d)
+							slk[i] = d;
+						else if (!check(i))
+							return;
+			ll d = INF;
+			for (int i = 0; i &lt; n; ++i)
+				if (!vl[i] &amp;&amp; d &gt; slk[i])
+					d = slk[i];
+			for (int i = 0; i &lt; n; ++i)
+			{
+				if (vl[i])
+					hl[i] += d;
+				else
+					slk[i] -= d;
+				if (vr[i])
+					hr[i] -= d;
+			}
+			for (int i = 0; i &lt; n; ++i)
+				if (!vl[i] &amp;&amp; !slk[i] &amp;&amp; !check(i))
+					return;
+		}
+	}
+	void ask()
+	{
+		fill(fl, fl + n, NPOS), fill(fr, fr + n, NPOS), fill(hr, hr + n, 0);
+		for (int i = 0; i &lt; n; ++i)
+			hl[i] = *max_element(a[i], a[i] + n);
+		for (int j = 0; j &lt; n; ++j)
+			bfs(j);
+	}
+} km;
+int main()
+{
+	int t, kase = 0;
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d", &amp;km.n);
+		for (int i = 0; i &lt; km.n; ++i)
+			for (int j = 0; j &lt; km.n; ++j)
+				scanf("%lld", &amp;km.a[i][j]), km.a[i][j] *= -1;
+		km.ask();
+		ll ans = 0;
+		for (int i = 0; i &lt; km.n; ++i)
+			ans -= km.a[i][km.fl[i]];
+		printf("Case #%d: %lld\n", ++kase, ans);
+	}
+}
+</code></pre>
+<h1 id="点集划分"><a href="https://vjudge.net/problem/HDU-6347">点集划分</a></h1>
+<pre><code class="language-cpp">//假装这里有代码
+</code></pre>
+<h1 id="序列计数"><a href="https://vjudge.net/solution/15274230">序列计数</a></h1>
+<p>用树状数组维护lis。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e4 + 7, M = 1e9 + 7;
+typedef int ll;
+struct BaseFenwick
+{
+	vector&lt;ll&gt; v;
+	BaseFenwick(int N) : v(N + 1, 0) {}
+	void add(int x, ll w)
+	{
+		for (; x &lt; v.size(); x += x &amp; -x)
+			v[x] = (v[x] + w) % M;
+	}
+	ll ask(int x)
+	{
+		ll r = 0;
+		for (; x; x -= x &amp; -x)
+			r = (r + v[x]) % M;
+		return r;
+	}
+};
+int t, kase, n, c[N], a[N], siz;
+int main()
+{
+	for (scanf("%d", &amp;t); t--; printf("\n"))
+	{
+		scanf("%d", &amp;n);
+		for (int i = 0; i &lt; n; ++i)
+			scanf("%d", &amp;a[i]), c[i] = 1;
+		printf("Case #%d:", ++kase);
+		for (long long r = siz = n; r; --siz)
+		{
+			printf(" %lld", r % M);
+			BaseFenwick t(n);
+			for (int i = r = 0; i &lt; n; ++i)
+				t.add(a[i], c[i]), c[i] = t.ask(a[i] - 1), r = (r + c[i]) % M;
+		}
+		while (siz--)
+			printf(" 0");
+	}
+}
+</code></pre>
+<h1 id="三原色图"><a href="https://vjudge.net/solution/15273965">三原色图</a></h1>
+<p>按两种方法分别求MST然后从小往里加边，对于每个m在两个结果取较优的那个。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int INF = 1e9;
+struct UnionFindSet : vector&lt;int&gt;
+{
+	int siz;
+	UnionFindSet(int n) : siz(n)
+	{
+		for (int i = 0; i &lt; n; ++i)
+			push_back(i);
+	}
+	int fa(int u) { return at(u) != u ? at(u) = fa(at(u)) : u; }
+	void merge(int u, int w)
+	{
+		if (w = fa(w), u = fa(u), w != u)
+			at(w) = u, --siz;
+	}
+};
+struct Edge
+{
+	int id, from, to, dist;
+	bool operator&lt;(const Edge &amp;e) const { return dist &lt; e.dist; }
+};
+void kruskal(int n, int m, const vector&lt;Edge&gt; &amp;ed, vector&lt;Edge&gt; &amp;e, vector&lt;int&gt; &amp;s)
+{
+	int ret = 0;
+	UnionFindSet ufs(n);
+	for (sort(e.rbegin(), e.rend()); !e.empty(); e.pop_back())
+		if (ufs.fa(e.back().from) != ufs.fa(e.back().to))
+		{
+			ufs.merge(e.back().from, e.back().to);
+			ret += e.back().dist;
+			s[e.back().id] = 1;
+		}
+	for (int i = 0; i &lt; ed.size(); ++i)
+		if (!s[ed[i].id])
+			e.push_back(ed[i]);
+	s.assign(m, INF);
+	if (ufs.siz &gt; 1)
+		return;
+	sort(e.rbegin(), e.rend());
+	for (int i = n - 2; i &lt; s.size(); ++i)
+	{
+		if (i &gt;= 0)
+			s[i] = ret;
+		if (e.empty())
+			ret = INF;
+		else
+			ret += e.back().dist, e.pop_back();
+	}
+}
+char s[9];
+int kase, t, n, m;
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d", &amp;n, &amp;m);
+		vector&lt;Edge&gt; rg, gb, e;
+		vector&lt;int&gt; r(m, 0), b(m, 0);
+		for (Edge ed = {0}; ed.id &lt; m; ++ed.id)
+		{
+			scanf("%d%d%d%s", &amp;ed.from, &amp;ed.to, &amp;ed.dist, s);
+			--ed.from, --ed.to, e.push_back(ed);
+			if (s[0] != 'B')
+				rg.push_back(ed);
+			if (s[0] != 'R')
+				gb.push_back(ed);
+		}
+		kruskal(n, m, e, rg, r), kruskal(n, m, e, gb, b);
+		printf("Case #%d:\n", ++kase);
+		for (int i = 0; i &lt; m; ++i)
+			printf("%d\n", min(r[i], b[i]) &lt; INF ? min(r[i], b[i]) : -1);
+	}
+}
+</code></pre>
+:ET

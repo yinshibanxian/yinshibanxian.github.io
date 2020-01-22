@@ -1,0 +1,1798 @@
+I"�<h2 id="实验目的">实验目的</h2>
+
+<ol>
+  <li>掌握单周期CPU数据通路图的构成、原理及其设计方法；</li>
+  <li>掌握单周期CPU的实现方法，代码实现方法；</li>
+  <li>认识和掌握指令与CPU的关系；</li>
+  <li>掌握测试单周期CPU的方法。</li>
+</ol>
+
+<h2 id="实验内容">实验内容</h2>
+
+<p>设计一个单周期CPU，该CPU至少能实现以下指令功能操作，指令与格式如下。</p>
+
+<h3 id="算术运算指令">算术运算指令</h3>
+
+<h4 id="add-rd-rs-rt">add rd rs rt</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>000000</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>rd(5位)</th>
+      <th>reserved</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rd←rs + rt；reserved为预留部分，即未用，一般填“0”。</p>
+
+<h4 id="sub-rd-rs-rt">sub rd rs rt</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>000001</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>rd(5位)</th>
+      <th>reserved</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rd←rs - rt。</p>
+
+<h4 id="addiu-rt-rs-immediate">addiu rt rs immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>000010</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rt←rs + (sign-extend)immediate；immediate符号扩展再参加“加”运算。</p>
+
+<h3 id="逻辑运算指令">逻辑运算指令</h3>
+
+<h4 id="andi-rt-rs-immediate">andi rt rs immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>010000</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rt←rs &amp; (zero-extend)immediate；immediate做“0”扩展再参加“与”运算。</p>
+
+<h4 id="and-rd-rs-rt">and rd rs rt</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>010001</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>rd(5位)</th>
+      <th>reserved</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rd←rs &amp; rt；逻辑与运算。</p>
+
+<h4 id="ori-rt-rs-immediate">ori rt rs immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>010010</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>功能：rt←rs</td>
+      <td>(zero-extend)immediate；immediate做“0”扩展再参加“或”运算。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="or-rd-rs-rt">or rd rs rt</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>010011</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>rd(5位)</th>
+      <th>reserved</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>功能：rd←rs</td>
+      <td>rt；逻辑或运算。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="移位指令">移位指令</h3>
+
+<h4 id="sll-rd-rt-sa">sll rd rt sa</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>011000</th>
+      <th>未用</th>
+      <th>rt(5位)</th>
+      <th>rd(5位)</th>
+      <th>sa(5位)</th>
+      <th>reserved</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rd&lt;－rt«(zero-extend)sa，左移sa位 ，(zero-extend)sa。</p>
+
+<h3 id="比较指令">比较指令</h3>
+
+<h4 id="slti-rt-rs-immediate">slti rt rs immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>011100</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：if (rs&lt; (sign-extend)immediate)  rt =1 else  rt=0, 带符号比较，详见ALU运算功能表。</p>
+
+<h3 id="存储器读写指令">存储器读/写指令</h3>
+
+<h4 id="sw-rt-immediaters">sw rt immediate(rs)</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>100110</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：memory[rs+ (sign-extend)immediate]←rt；immediate符号扩展再相加。即将rt寄存器的内容保存到rs寄存器内容和立即数符号扩展后的数相加作为地址的内存单元中。</p>
+
+<h4 id="lw-rt-immediaters">lw rt immediate(rs)</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>100111</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：rt ← memory[rs + (sign-extend)immediate]；immediate符号扩展再相加。即读取rs寄存器内容和立即数符号扩展后的数相加作为地址的内存单元中的数，然后保存到rt寄存器中。</p>
+
+<h3 id="分支指令">分支指令</h3>
+
+<h4 id="beq-rs-rt-immediate">beq rs rt immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>110000</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：if(rs=rt) pc←pc + 4 + (sign-extend)immediate «2  else pc ←pc + 4</p>
+
+<p>特别说明：immediate是从PC+4地址开始和转移到的指令之间指令条数。immediate符号扩展之后左移2位再相加。为什么要左移2位？由于跳转到的指令地址肯定是4的倍数（每条指令占4个字节），最低两位是“00”，因此将immediate放进指令码中的时候，是右移了2位的，也就是以上说的“指令之间指令条数”。</p>
+
+<h4 id="bne-rs-rt-immediate">bne rs rt immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>110001</th>
+      <th>rs(5位)</th>
+      <th>rt(5位)</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：if(rs!=rt) pc←pc + 4 + (sign-extend)immediate «2  else pc ←pc + 4
+特别说明：与beq不同点是，不等时转移，相等时顺序执行。</p>
+
+<h4 id="bltz-rs-immediate">bltz rs immediate</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>110010</th>
+      <th>rs(5位)</th>
+      <th>00000</th>
+      <th>immediate(16位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：if(rs&lt;$zero) pc←pc + 4 + (sign-extend)immediate «2  else pc ←pc + 4。</p>
+
+<h3 id="跳转指令">跳转指令</h3>
+
+<h4 id="j-addr">j addr</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>111000</th>
+      <th>addr[27:2]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：<code>pc &lt;－{(pc+4)[31:28],addr[27:2],2'b00}</code>，无条件跳转。</p>
+
+<p>说明：由于MIPS32的指令代码长度占4个字节，所以指令地址二进制数最低2位均为0，将指令地址放进指令代码中时，可省掉！这样，除了最高6位操作码外，还有26位可用于存放地址，事实上，可存放28位地址，剩下最高4位由pc+4最高4位拼接上。</p>
+
+<h3 id="停机指令">停机指令</h3>
+
+<h4 id="halt">halt</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>111111</th>
+      <th>00000000000000000000000000(26位)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>功能：停机；不改变PC的值，PC保持不变。</p>
+
+<h2 id="实验原理">实验原理</h2>
+
+<p>单周期CPU指的是一条指令的执行在一个时钟周期内完成，然后开始下一条指令的执行，即一条指令用一个时钟周期完成。电平从低到高变化的瞬间称为时钟上升沿，两个相邻时钟上升沿之间的时间间隔称为一个时钟周期。时钟周期一般也称振荡周期（如果晶振的输出没有经过分频就直接作为CPU的工作时钟，则时钟周期就等于振荡周期。若振荡周期经二分频后形成时钟脉冲信号作为CPU的工作时钟，这样，时钟周期就是振荡周期的两倍）。</p>
+
+<h3 id="cpu在处理指令的几个步骤">CPU在处理指令的几个步骤</h3>
+
+<pre><code class="language-mermaid">graph LR
+取指令IF--&gt;指令译码ID
+指令译码ID--&gt;指令执行EXE
+指令执行EXE--&gt;存储器访问MEM
+存储器访问MEM--&gt;结果写回WB
+结果写回WB--&gt;取指令IF
+</code></pre>
+
+<p>图1 CPU指令处理过程</p>
+
+<h4 id="取指令if">取指令(IF)</h4>
+
+<p>根据程序计数器PC中的指令地址，从存储器中取出一条指令，同时，PC根据指令字长度自动递增产生下一条指令所需要的指令地址，但遇到“地址转移”指令时，则控制器把“转移地址”送入PC，当然得到的“地址”需要做些变换才送入PC。</p>
+
+<h4 id="指令译码id">指令译码(ID)</h4>
+
+<p>对取指令操作中得到的指令进行分析并译码，确定这条指令需要完成的操作，从而产生相应的操作控制信号，用于驱动执行状态中的各种操作。</p>
+
+<h4 id="指令执行exe">指令执行(EXE)</h4>
+
+<p>根据指令译码得到的操作控制信号，具体地执行指令动作，然后转移到结果写回状态。</p>
+
+<h4 id="存储器访问mem">存储器访问(MEM)</h4>
+
+<p>所有需要访问存储器的操作都将在这个步骤中执行，该步骤给出存储器的数据地址，把数据写入到存储器中数据地址所指定的存储单元或者从存储器中得到数据地址单元中的数据。</p>
+
+<h4 id="结果写回wb">结果写回(WB)</h4>
+
+<p>指令执行的结果或者访问存储器中得到的数据写回相应的目的寄存器中。</p>
+
+<p>单周期CPU，是在一个时钟周期内完成这五个阶段的处理。</p>
+
+<h3 id="mips指令的三种格式">MIPS指令的三种格式</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>缩写</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>op</td>
+      <td>操作码</td>
+    </tr>
+    <tr>
+      <td>rs</td>
+      <td>只读，为第1个源操作数寄存器，寄存器地址（编号）是<code>00000~11111，00~1F</code></td>
+    </tr>
+    <tr>
+      <td>rt</td>
+      <td>可读可写，为第2个源操作数寄存器，或目的操作数寄存器，寄存器地址（同上）</td>
+    </tr>
+    <tr>
+      <td>rd</td>
+      <td>只写，为目的操作数寄存器，寄存器地址（同上）</td>
+    </tr>
+    <tr>
+      <td>sa</td>
+      <td>位移量（shift amt），移位指令用于指定移多少位</td>
+    </tr>
+    <tr>
+      <td>funct</td>
+      <td>功能码，在寄存器类型指令中（R类型）用来指定指令的功能与操作码配合使用</td>
+    </tr>
+    <tr>
+      <td>immediate</td>
+      <td>16位立即数，用作无符号的逻辑操作数、有符号的算术操作数、数据加载（Laod）/数据保存（Store）指令的数据地址字节偏移量和分支指令中相对程序计数器（PC）的有符号偏移量；</td>
+    </tr>
+    <tr>
+      <td>address</td>
+      <td>地址</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="r类型">R类型</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>31-26</th>
+      <th>25-21</th>
+      <th>20-16</th>
+      <th>15-11</th>
+      <th>10-6</th>
+      <th>5-0</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>op</td>
+      <td>rs</td>
+      <td>rt</td>
+      <td>rd</td>
+      <td>sa</td>
+      <td>func</td>
+    </tr>
+    <tr>
+      <td>6位</td>
+      <td>5位</td>
+      <td>5位</td>
+      <td>5位</td>
+      <td>5位</td>
+      <td>6位</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="i类型">I类型</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>31-26</th>
+      <th>25-21</th>
+      <th>20-16</th>
+      <th>15-0</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>op</td>
+      <td>rs</td>
+      <td>rt</td>
+      <td>immediate</td>
+    </tr>
+    <tr>
+      <td>6位</td>
+      <td>5位</td>
+      <td>5位</td>
+      <td>16位</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="j类型">J类型</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>31-26</th>
+      <th>25-0</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>op</td>
+      <td>address</td>
+    </tr>
+    <tr>
+      <td>6位</td>
+      <td>26位</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="单周期cpu数据通路和控制线路图">单周期CPU数据通路和控制线路图</h3>
+
+<p><img src="/public/image/2018-11-23-1.jpg" alt="单周期CPU数据通路和控制线路图" /></p>
+
+<p>上图是一个简单的基本上能够在单周期CPU上完成所要求设计的指令功能的数据通路和必要的控制线路图。</p>
+
+<p>指令执行的结果总是在时钟下降沿保存到寄存器和存储器中，PC的改变是在时钟上升沿进行的，这样稳定性较好。另外，值得注意的问题，设计时，用模块化的思想方法设计，关于ALU设计、存储器设计、寄存器组设计等等，也是必须认真考虑的问题。</p>
+
+<p>其中指令和数据各存储在不同存储器中，即有指令存储器和数据存储器。访问存储器时，先给出内存地址，然后由读或写信号控制操作。对于寄存器组，先给出寄存器地址，读操作时不需要时钟信号，输出端就直接输出相应数据；而在写操作时，在 WE使能信号为1时，在时钟边沿触发将数据写入寄存器。</p>
+
+<h3 id="控制信号的作用表">控制信号的作用表</h3>
+
+<p>以上数据通路图是根据要实现的指令功能的要求画出来的，同时，还必须确定ALU的运算功能(当然，以上指令没有完全用到提供的ALU所有功能，但至少必须能实现以上指令功能操作)。从数据通路图上可以看出控制单元部分需要产生各种控制信号，当然，也有些信号必须要传送给控制单元。从指令功能要求和数据通路图的关系得出以上表1，这样，从表1可以看出各控制信号与相应指令之间的相互关系，根据这种关系就可以得出控制信号与指令之间的关系（见下面表中的“相关指令”），从而写出各控制信号的逻辑表达式，这样控制单元部分就可实现了。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>控制信号名</th>
+      <th>状态“0”</th>
+      <th>状态“1”</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Reset</td>
+      <td>初始化PC为0</td>
+      <td>PC接收新地址</td>
+    </tr>
+    <tr>
+      <td>PCWre</td>
+      <td>PC不更改，相关指令：halt</td>
+      <td>PC更改，相关指令：除指令halt外</td>
+    </tr>
+    <tr>
+      <td>ALUSrcA</td>
+      <td>来自寄存器堆data1输出，相关指令：add、sub、addiu、or、and、andi、ori、slti、beq、bne、bltz、sw、lw</td>
+      <td>来自移位数sa，同时，进行(zero-extend)sa，即，相关指令：sll</td>
+    </tr>
+    <tr>
+      <td>ALUSrcB</td>
+      <td>来自寄存器堆data2输出，相关指令：add、sub、or、and、beq、bne、bltz</td>
+      <td>来自sign或zero扩展的立即数，相关指令：addiu、andi、ori、slti、sw、lw</td>
+    </tr>
+    <tr>
+      <td>DBDataSrc</td>
+      <td>来自ALU运算结果的输出，相关指令：add、addiu、sub、ori、or、and、andi、slti、sll</td>
+      <td>来自数据存储器（Data MEM）的输出，相关指令：lw</td>
+    </tr>
+    <tr>
+      <td>RegWre</td>
+      <td>无写寄存器组寄存器，相关指令：beq、bne、bltz、sw、halt</td>
+      <td>寄存器组写使能，相关指令：add、addiu、sub、ori、or、and、andi、slti、sll、lw</td>
+    </tr>
+    <tr>
+      <td>InsMemRW</td>
+      <td>写指令存储器</td>
+      <td>读指令存储器(Ins. Data)</td>
+    </tr>
+    <tr>
+      <td>mRD</td>
+      <td>输出高阻态</td>
+      <td>读数据存储器，相关指令：lw</td>
+    </tr>
+    <tr>
+      <td>mWR</td>
+      <td>无操作</td>
+      <td>写数据存储器，相关指令：sw</td>
+    </tr>
+    <tr>
+      <td>RegDst</td>
+      <td>写寄存器组寄存器的地址，来自rt字段，相关指令：addiu、andi、ori、slti、lw</td>
+      <td>写寄存器组寄存器的地址，来自rd字段，相关指令：add、sub、and、or、sll</td>
+    </tr>
+    <tr>
+      <td>ExtSel</td>
+      <td>(zero-extend)immediate（0扩展），相关指令：andi、ori</td>
+      <td>(sign-extend)immediate（符号扩展），相关指令：addiu、slti、sw、lw、beq、bne、bltz</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="aluop的功能表">ALUOp的功能表</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th><code>ALUOp[2..0]</code></th>
+      <th>功能</th>
+      <th>描述</th>
+      <th>相关指令</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>000</td>
+      <td>Y=A+B</td>
+      <td>加</td>
+      <td>add、addiu、sw、lw、j、halt</td>
+    </tr>
+    <tr>
+      <td>001</td>
+      <td>Y=A–B</td>
+      <td>减</td>
+      <td>sub、beq、bne、bltz</td>
+    </tr>
+    <tr>
+      <td>010</td>
+      <td>Y=B«A</td>
+      <td>B左移A位</td>
+      <td>sll</td>
+    </tr>
+    <tr>
+      <td>011</td>
+      <td>Y=A∨B</td>
+      <td>或</td>
+      <td>ori、or</td>
+    </tr>
+    <tr>
+      <td>100</td>
+      <td>Y=A∧B</td>
+      <td>与</td>
+      <td>andi、and</td>
+    </tr>
+    <tr>
+      <td>101</td>
+      <td>Y=A&lt;B</td>
+      <td>不带符号比较A&lt;B</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>110</td>
+      <td>Y=A[31]!=B[31]?A[31]&gt;B[31]:A&lt;B</td>
+      <td>带符号比较A&lt;B</td>
+      <td>slti</td>
+    </tr>
+    <tr>
+      <td>111</td>
+      <td>Y=A^B</td>
+      <td>异或</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="pcsrc的功能表">PCSrc的功能表</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>PCSrc[1..0]</th>
+      <th>功能</th>
+      <th>相关指令</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>00</td>
+      <td>pc&lt;－pc+4</td>
+      <td>add、addiu、sub、or、ori、and、andi、slti、sll、sw、lw、beq(zero=0)、bne(zero=1)、bltz(sign=0)</td>
+    </tr>
+    <tr>
+      <td>01</td>
+      <td>pc&lt;－pc+4+(sign-extend)immediate«2</td>
+      <td>beq(zero=1)、bne(zero=0)、bltz(sign=1)</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><code>pc&lt;－{(pc+4)[31:28],addr[27:2],2'b00}</code></td>
+      <td>j</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>未用</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="相关部件及引脚说明">相关部件及引脚说明</h3>
+
+<h4 id="instruction-memory">Instruction Memory</h4>
+
+<p>指令存储器。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Iaddr</th>
+      <th>指令存储器地址输入端口</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>IDataIn</td>
+      <td>指令存储器数据输入端口（指令代码输入端口）</td>
+    </tr>
+    <tr>
+      <td>IDataOut</td>
+      <td>指令存储器数据输出端口（指令代码输出端口）</td>
+    </tr>
+    <tr>
+      <td>RW</td>
+      <td>指令存储器读写控制信号，为0写，为1读</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="data-memory">Data Memory</h4>
+
+<p>数据存储器。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Daddr</th>
+      <th>数据存储器地址输入端口</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DataIn</td>
+      <td>数据存储器数据输入端口</td>
+    </tr>
+    <tr>
+      <td>DataOut</td>
+      <td>数据存储器数据输出端口</td>
+    </tr>
+    <tr>
+      <td>RD</td>
+      <td>数据存储器读控制信号，为0读</td>
+    </tr>
+    <tr>
+      <td>WR</td>
+      <td>数据存储器写控制信号，为0写</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="register-file">Register File</h4>
+
+<p>寄存器组。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Read Reg1</th>
+      <th>rs寄存器地址输入端口</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Read Reg2</td>
+      <td>rt寄存器地址输入端口</td>
+    </tr>
+    <tr>
+      <td>Write Reg</td>
+      <td>将数据写入的寄存器端口，其地址来源rt或rd字段</td>
+    </tr>
+    <tr>
+      <td>Write Data</td>
+      <td>写入寄存器的数据输入端口</td>
+    </tr>
+    <tr>
+      <td>Read Data1</td>
+      <td>rs寄存器数据输出端口</td>
+    </tr>
+    <tr>
+      <td>Read Data2</td>
+      <td>rt寄存器数据输出端口</td>
+    </tr>
+    <tr>
+      <td>WE</td>
+      <td>写使能信号，为1时，在时钟边沿触发写入</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="alu">ALU</h4>
+
+<p>算术逻辑单元</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>result</th>
+      <th>ALU运算结果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>zero</td>
+      <td>运算结果标志，结果为0，则zero=1；否则zero=0</td>
+    </tr>
+    <tr>
+      <td>sign</td>
+      <td>运算结果标志，结果最高位为0，则sign=0，正数；否则，sign=1，负数</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="实验器材">实验器材</h2>
+
+<p>电脑一台，Xilinx Vivado 2017.4 软件一套，Basys3实验板一块。</p>
+
+<h2 id="实验过程与结果">实验过程与结果</h2>
+
+<h3 id="代码实现">代码实现</h3>
+
+<h4 id="singlecpuv">SingleCPU.v</h4>
+
+<p>单周期CPU的顶层连接文件，主要是调用下层模块并将它们输入输出连在一起，并计算下一个指令的地址（正常+4或跳转）。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module SingleCPU(
+	input CLK,	//时钟信号
+	input Reset,	//置零信号
+	output[31:0] CurPC,	//当前指令地址
+	output[31:0] newaddress,	//下一个指令地址
+	output[31:0] instcode,	//rs,rt寄存器所在指令
+	output[31:0] Reg1Out,	//寄存器组rs寄存器的值
+	output[31:0] Reg2Out,	//寄存器组rt寄存器的值
+	output[31:0] ALU_Out,	//ALU的result输出值
+	output[31:0] WriteData	//DB总线值
+);
+	wire ExtSel;	//位扩展信号，1为符号扩展，0为0扩展
+	wire PCWre;	//PC工作信号，0不更改，1更改
+	wire InsMemRW;	//指令寄存器信号，0为写，1为读
+	wire RegDst;	//指令读取时判断是rt还是rd进入寄存器组的写数据端，0为rt，1为rd
+	wire RegWre;	//寄存器组是否需要写功能，0为无写功能，1为些功能
+	wire[2:0] ALUOp;	//ALU8种运算功能选择
+	wire[1:0] PCSrc;	//PC正常+4还是要跳转，0为正常+4，1为跳转
+	wire ALUSrcA;	//寄存器组Data1的输出，0为寄存器本身输出，1为指令码的最后16位立即数
+	wire ALUSrcB;	//寄存器组Data2的输出，0位本身的输出，1为扩展后的立即数
+	wire RD;	//读数据存储器功能，0时读取
+	wire WR;	//写数据存储器功能，1时写
+	wire DBDataSrc;	//决定将什么数据传入寄存器组Write Data端，0为ALU结果，1为存储器
+	wire[4:0] WriteRegAddr;	//寄存器组Write Reg输入端
+	wire[31:0] ALU_Input_A;	//ALU的A输入端
+	wire[31:0] ALU_Input_B;	//ALU的B输入端
+	wire zero;	//ALU的zero输出
+	wire sign;	//ALU的sign输出
+	wire[31:0] MemOut;	//存储器的输出
+	wire[31:0] Ext_Imm;	//位扩展后的立即数
+	wire[31:0] CurPC4=CurPC+4;
+	assign newaddress=	(PCSrc==2'b01)?{CurPC4[31:28],instcode[25:0],2'b00}:
+						(PCSrc==2'b10)?CurPC4+(Ext_Imm&lt;&lt;2):CurPC4;
+	PC pc(CLK,Reset,PCWre,newaddress,CurPC);
+	ALU alu(ALU_Input_A,ALU_Input_B,ALUOp,ALU_Out,zero,sign);
+	DataMemory dm(ALU_Out,CLK,RD,WR,Reg2Out,MemOut);
+	SignZeroExtend sze(instcode[15:0],ExtSel,Ext_Imm);
+	Multiplexer5 mux21R(RegDst,instcode[20:16],instcode[15:11],WriteRegAddr);
+	Multiplexer32 mux21A(ALUSrcA,Reg1Out,{27'b000000000000000000000000000,instcode[10:6]},ALU_Input_A);
+	Multiplexer32 mux21B(ALUSrcB,Reg2Out,Ext_Imm,ALU_Input_B);
+	Multiplexer32 mux21RW(DBDataSrc,ALU_Out,MemOut,WriteData);
+	RegisterFile rf(RegWre,CLK,instcode[25:21],instcode[20:16],WriteRegAddr,WriteData,Reg1Out,Reg2Out);
+	ControlUnit cu(ExtSel,PCWre,InsMemRW,RegDst,RegWre,ALUOp,PCSrc,ALUSrcA,ALUSrcB,RD,WR,DBDataSrc,instcode[31:26],zero,sign);
+	InstructionMemory im(CurPC,InsMemRW,instcode);
+endmodule
+</code></pre>
+
+<h4 id="controlunitv">ControlUnit.v</h4>
+
+<p>控制信号模块，通过解析op得到该指令的各种控制信号。定义了很多用到的常量，可读性还是比较高的。</p>
+
+<p>控制单元通过输入的zero零标志位与当前指令中对应的指令部分来确定当前整个CPU程序中各模块的工作和协作情况，根据CPU运行逻辑，事先对整个CPU中控制信号的控制，以此来达到指挥各个模块协同工作的目的。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module ControlUnit(
+	output ExtSel,
+	output PCWre,
+	output InsMemRW,
+	output RegDst,
+	output RegWre,
+	output[2:0] ALUOp,
+	output[1:0] PCSrc,
+	output ALUSrcA,
+	output ALUSrcB,
+	output mRD,
+	output mWR,
+	output DBDataSrc,
+	input[5:0] op,
+	input zero,
+	input sign
+);
+	parameter ADD=	6'b000000;
+	parameter SUB=	6'b000001;
+	parameter ADDIU=	6'b000010;
+	parameter ANDI=	6'b010000;
+	parameter AND=	6'b010001;
+	parameter ORI=	6'b010010;
+	parameter OR=	6'b010011;
+	parameter SLL=	6'b011000;
+	parameter SLTI=	6'b011100;
+	parameter SW=	6'b100110;
+	parameter LW=	6'b100111;
+	parameter BEQ=	6'b110000;
+	parameter BNE=	6'b110001;
+	parameter BLTZ=	6'b110010;
+	parameter J=	6'b111000;
+	parameter HALT=	6'b111111;
+	parameter _ADD=	3'b000;
+	parameter _SUB=	3'b001;
+	parameter _SLL=	3'b010;
+	parameter _OR=	3'b011;
+	parameter _AND=	3'b100;
+	parameter _SLTU=	3'b101;
+	parameter _SLT=	3'b110;
+	parameter _XOR=	3'b111;
+
+	assign PCWre=	op!=HALT;
+	assign ALUSrcA=	op==SLL;
+	assign ALUSrcB=	op==ADDIU||op==ANDI||op==ORI||op==SLTI||op==SW||op==LW;
+	assign DBDataSrc=	op==LW;
+	assign RegWre=	op!=BEQ&amp;&amp;op!=BNE&amp;&amp;op!=BLTZ&amp;&amp;op!=SW&amp;&amp;op!=HALT;
+	assign InsMemRW=	0;
+	assign mRD=	op==LW;
+	assign mWR=	op==SW;
+	assign RegDst=	op!=ADDIU&amp;&amp;op!=ANDI&amp;&amp;op!=ORI&amp;&amp;op!=SLTI&amp;&amp;op!=LW;
+	assign ExtSel=	op!=ANDI&amp;&amp;op!=ORI;
+	assign PCSrc[0]=	op==J;
+	assign PCSrc[1]=	op==BEQ&amp;&amp;zero==1||op==BNE&amp;&amp;zero==0||op==BLTZ&amp;&amp;sign==1;
+	assign ALUOp=	op==SUB||op==BNE||op==BEQ||op==BLTZ?_SUB:
+					op==SLL?_SLL:
+					op==ORI||op==OR?_OR:
+					op==ANDI||op==AND?_AND:
+					op==SLTI?_SLT:_ADD;
+endmodule
+</code></pre>
+
+<h4 id="aluv">ALU.v</h4>
+
+<p>该部分为算术逻辑单元，用于逻辑指令计算和跳转指令比较。ALUOp用于控制算数的类型，A、B为输入数，result为运算结果，zero、sign主要用于beq、bne、bltz等指令的判断。</p>
+
+<p>ALU算术逻辑单元的功能是根据控制信号从输入的数据中选取对应的操作数，根据操作码进行运算并输出结果与零标志位。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module ALU(
+	input[31:0] A,	//输入A
+	input[31:0] B,	//输入B
+	input[2:0] ALUOp,	//ALU操作控制
+	output reg[31:0] result,	//ALU运算结果
+	output zero,	//运算结果result的标志，result为0输出1，否则输出0
+	output sign	//运算结果result的正负性（有符号数的情况），result为负数输出1，否则输出0
+);
+	parameter _ADD=	3'b000;
+	parameter _SUB=	3'b001;
+	parameter _SLL=	3'b010;
+	parameter _OR=	3'b011;
+	parameter _AND=	3'b100;
+	parameter _SLTU=	3'b101;
+	parameter _SLT=	3'b110;
+	parameter _XOR=	3'b111;
+
+	assign zero=	result==0;
+	assign sign=	result[31];
+
+	always@(*)begin	//进行ALU计算
+		case(ALUOp)	//进行运算
+		_ADD:	result=	A+B;  //加法
+		_SUB:	result=	A-B;  //减法
+		_SLL:	result=	B&lt;&lt;A;  //B左移A位
+		_OR:	result=	A|B;  //或
+		_AND:	result=	A&amp;B;  //与
+		_SLTU:	result=	A&lt;B;  //比较A&lt;B不带符号
+		_SLT:	result=	A[31]!=B[31]?A[31]&gt;B[31]:A&lt;B;	//比较A&lt;B带符号
+		_XOR:	result=	A^B;	//异或
+		default:	result=	0;
+		endcase
+	end
+endmodule
+</code></pre>
+
+<h4 id="datamemoryv">DataMemory.v</h4>
+
+<p>该部分控制内存存储，用于内存存储、读写。用255大小的8位寄存器数组模拟内存，采用小端模式。DataMenRW控制内存读写。由于指令为真实地址，所以不需要<code>&lt;&lt;2</code>。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module DataMemory(
+	input[31:0] DAddr,
+	input CLK,
+	input mRD,
+	input mWR,
+	input[31:0] DataIn,
+	output reg[31:0] DataOut
+);
+	reg[7:0] dataMemory [255:0];
+	always@(mRD or DAddr)begin
+		if(mRD)begin
+			DataOut[7:0]=	dataMemory[DAddr+3];
+			DataOut[15:8]=	dataMemory[DAddr+2];
+			DataOut[23:16]=	dataMemory[DAddr+1];
+			DataOut[31:24]=	dataMemory[DAddr];
+		end
+	end
+	always@(negedge CLK)begin	//总是在时钟下降沿到来时触发
+		if(mWR)begin
+			dataMemory[DAddr+3]&lt;=	DataIn[7:0];
+			dataMemory[DAddr+2]&lt;=	DataIn[15:8];
+			dataMemory[DAddr+1]&lt;=	DataIn[23:16];
+			dataMemory[DAddr]&lt;=	DataIn[31:24];
+		end
+	end
+endmodule
+</code></pre>
+
+<h4 id="instructionmemoryv">InstructionMemory.v</h4>
+
+<p>该部分为指令寄存器，通过一个256大小的8位寄存器数组来保存从文件输入的全部指令。然后通过输入的地址，找到相应的指令，输出到IDataOut。</p>
+
+<p>指令存储器的功能是存储读入的所有32-bit位宽的指令，根据程序计数器PC中的指令地址进行取指令操作并对指令类型进行分析，通过指令类型对所取指令的各字段进行区分识别，最后将对应部分传递给其他模块进行后续处理。</p>
+
+<p>指令存储器中每个单元的位宽为8-bit，也就是存储每条32-bit位宽的指令都需要占据4个单元，所以第n（n大于或等于0）条指令所对应的起始地址为4n，且占据第4n，4n+1，4n+2，4n+3这四个单元。取出指令就是将这四个单元分别取出，因为指令的存储服从高位指令存储在低位地址的规则，所以4n单元中的字段是该条指令的最高8位，后面以此类推，并通过左移操作将指令的四个单元部分移动到相对应的位置，以此来得到所存指令。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module InstructionMemory(
+	input[31:0] IAddr,
+	input RW,
+	output reg[31:0] IDataOut
+);
+	reg[7:0] InstMemory[255:0];
+	initial begin	//此处为绝对地址，注意斜杠方向
+		$readmemb("C:/Users/wukan/Documents/VIVADO/SingleCPU/input.txt",InstMemory);
+	end
+	always@(IAddr or RW)begin
+		if(RW==0)begin
+			IDataOut=	{InstMemory[IAddr],InstMemory[IAddr+1],InstMemory[IAddr+2],InstMemory[IAddr+3]};
+		end
+	end
+endmodule
+</code></pre>
+
+<h4 id="multiplexer32v">Multiplexer32.v</h4>
+
+<p>三十二线双路选择器。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module Multiplexer32(
+	input Select,
+	input[31:0] DataIn1,
+	input[31:0] DataIn2,
+	output[31:0] DataOut
+);
+	assign DataOut=	Select?DataIn2:DataIn1;
+endmodule
+</code></pre>
+
+<h4 id="multiplexer5v">Multiplexer5.v</h4>
+
+<p>五线双路选择器。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module Multiplexer5(
+	input Select,
+	input[4:0] DataIn1,
+	input[4:0] DataIn2,
+	output[4:0] DataOut
+);
+	assign DataOut=	Select?DataIn2:DataIn1;
+endmodule
+</code></pre>
+
+<h4 id="pcv">PC.v</h4>
+
+<p>CLK上升沿触发，更改指令地址。由于指令地址存储在寄存器里，一开始需要赋currentAddress为0。Reset是重置信号，当为1时，指令寄存器地址重置。PCWre的作用为保留现场，如果PCWre为0，指令地址不变。</p>
+
+<p>PC程序计数器用于存放当前指令的地址，当PC的值发生改变的时候，CPU会根据程序计数器PC中新得到的指令地址，从指令存储器中取出对应地址的指令。在单周期CPU的运行周期中，PC值的变化是最先的，而且是根据PCSrc控制信号的值选择指令地址是要进行PC+4或者跳转等操作。若PC程序计数器检测到Reset输入信号为0时，则对程序计数器存储的当前指令地址进行清零处理。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module PC(
+	input CLK,
+	input Reset,
+	input PCWre,
+	input[31:0] newAddress,
+	output reg[31:0] PCAddr
+);
+	initial begin
+		PCAddr=	0;
+	end
+	always@(posedge CLK or negedge Reset)begin
+		if(Reset==0)begin
+			PCAddr=	0;
+		end
+		else if(PCWre)begin
+			PCAddr=	newAddress;
+		end
+	end
+endmodule
+</code></pre>
+
+<h4 id="registerfilev">RegisterFile.v</h4>
+
+<p>该部分为寄存器读写单元，储存寄存器组，并根据地址对寄存器组进行读写。WE的作用是控制寄存器是否写入。同上，通过一个32大小的32位寄存器数组来模拟寄存器，开始时全部置0。通过访问寄存器的地址，来获取寄存器里面的值，并进行操作。（由于$0恒为0，所以写入寄存器的地址不能为0）</p>
+
+<p>寄存器组中的每个寄存器位宽32-bit,是存放ALU计算所需要的临时数据的,与数据存储器不同，可能会在程序执行的过程中被多次覆盖，而数据存储器内的数据一般只有sw指令才能进行修改覆盖。寄存器组会根据操作码opCode与rs，rt字段相应的地址读取数据,同时将rs，rt寄存器的地址和其中的数据输出，在CLK的下降沿到来时将数据存放到rd或者rt字段的相应地址的寄存器内。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module RegisterFile(
+	input WE,
+	input CLK,
+	input[4:0] ReadReg1,
+	input[4:0] ReadReg2,
+	input[4:0] WriteReg,
+	input[31:0] WriteData,
+	output[31:0] ReadData1,
+	output[31:0] ReadData2
+);
+	reg[31:0] registers[0:31];
+	integer i;
+	initial begin	//初始时，将32个寄存器全部赋值为0
+		for(i=0; i&lt;32; i=i+1)registers[i]&lt;=	0;
+	end
+	assign ReadData1=	ReadReg1?registers[ReadReg1]:0;
+	assign ReadData2=	ReadReg2?registers[ReadReg2]:0;
+	always@(negedge CLK)begin
+		if(WriteReg&amp;&amp;WE)begin
+			registers[WriteReg]=	WriteData;
+		end
+	end
+endmodule
+</code></pre>
+
+<h4 id="signzeroextendv">SignZeroExtend.v</h4>
+
+<p>比较简单的一个模块，用于立即数的扩展。ExtSel为控制补位信号。判断后，将extendImmediate的前16位全补1或0即可。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module SignZeroExtend(
+	input[15:0] immediate,
+	input ExtSel,
+	output[31:0] extendImmediate
+);
+	assign extendImmediate=	{ExtSel&amp;&amp;immediate[15]?16'hffff:16'h0000,immediate};
+endmodule
+</code></pre>
+
+<h3 id="仿真检验">仿真检验</h3>
+
+<p>将指令转换成二进制代码，如下表：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>地址</th>
+      <th>汇编程序</th>
+      <th>op（6）</th>
+      <th>rs(5)</th>
+      <th>rt(5)</th>
+      <th>rd(5)/immediate(16)</th>
+      <th>16进制数代码</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0x00000000</td>
+      <td><code>addiu $1,$0,8</code></td>
+      <td>000010</td>
+      <td>00000</td>
+      <td>00001</td>
+      <td>00000000 00001000</td>
+      <td>08010008</td>
+    </tr>
+    <tr>
+      <td>0x00000004</td>
+      <td><code>ori $2,$0,2</code></td>
+      <td>010010</td>
+      <td>00000</td>
+      <td>00010</td>
+      <td>00000000 00000010</td>
+      <td>48020002</td>
+    </tr>
+    <tr>
+      <td>0x00000008</td>
+      <td><code>add $3,$2,$1</code></td>
+      <td>000000</td>
+      <td>00010</td>
+      <td>00001</td>
+      <td>00011000 00000000</td>
+      <td>00411800</td>
+    </tr>
+    <tr>
+      <td>0x0000000C</td>
+      <td><code>sub $5,$3,$2</code></td>
+      <td>000001</td>
+      <td>00011</td>
+      <td>00010</td>
+      <td>00101000 00000000</td>
+      <td>04622800</td>
+    </tr>
+    <tr>
+      <td>0x00000010</td>
+      <td><code>and $4,$5,$2</code></td>
+      <td>010001</td>
+      <td>00101</td>
+      <td>00010</td>
+      <td>00100000 00000000</td>
+      <td>44a22000</td>
+    </tr>
+    <tr>
+      <td>0x00000014</td>
+      <td><code>or $8,$4,$2</code></td>
+      <td>010011</td>
+      <td>00100</td>
+      <td>00010</td>
+      <td>01000000 00000000</td>
+      <td>4c824000</td>
+    </tr>
+    <tr>
+      <td>0x00000018</td>
+      <td><code>sll $8,$8,1</code></td>
+      <td>011000</td>
+      <td>00000</td>
+      <td>01000</td>
+      <td>01000000 01000000</td>
+      <td>60084040</td>
+    </tr>
+    <tr>
+      <td>0x0000001C</td>
+      <td><code>bne $8,$1,-2</code></td>
+      <td>110001</td>
+      <td>01000</td>
+      <td>00001</td>
+      <td>11111111 11111110</td>
+      <td>c501fffe</td>
+    </tr>
+    <tr>
+      <td>0x00000020</td>
+      <td><code>slti $6,$2,4</code></td>
+      <td>011100</td>
+      <td>00010</td>
+      <td>00110</td>
+      <td>00000000 00000100</td>
+      <td>70460004</td>
+    </tr>
+    <tr>
+      <td>0x00000024</td>
+      <td><code>slti $7,$6,0</code></td>
+      <td>011100</td>
+      <td>00110</td>
+      <td>00111</td>
+      <td>00000000 00000000</td>
+      <td>70c70000</td>
+    </tr>
+    <tr>
+      <td>0x00000028</td>
+      <td><code>addiu $7,$7,8</code></td>
+      <td>000010</td>
+      <td>00111</td>
+      <td>00111</td>
+      <td>00000000 00001000</td>
+      <td>08e70008</td>
+    </tr>
+    <tr>
+      <td>0x0000002C</td>
+      <td><code>beq $7,$1,-2</code></td>
+      <td>110000</td>
+      <td>00111</td>
+      <td>00001</td>
+      <td>11111111 11111110</td>
+      <td>c0e1fffe</td>
+    </tr>
+    <tr>
+      <td>0x00000030</td>
+      <td><code>sw $2,4($1)</code></td>
+      <td>100110</td>
+      <td>00001</td>
+      <td>00010</td>
+      <td>00000000 00000100</td>
+      <td>98220004</td>
+    </tr>
+    <tr>
+      <td>0x00000034</td>
+      <td><code>lw $9,4($1)</code></td>
+      <td>100111</td>
+      <td>00001</td>
+      <td>01001</td>
+      <td>00000000 00000100</td>
+      <td>9c290004</td>
+    </tr>
+    <tr>
+      <td>0x00000038</td>
+      <td><code>addiu $10,$0,-2</code></td>
+      <td>000010</td>
+      <td>00000</td>
+      <td>01010</td>
+      <td>11111111 11111110</td>
+      <td>080afffe</td>
+    </tr>
+    <tr>
+      <td>0x0000003C</td>
+      <td><code>addiu $10,$10,1</code></td>
+      <td>000010</td>
+      <td>01010</td>
+      <td>01010</td>
+      <td>00000000 00000001</td>
+      <td>094a0001</td>
+    </tr>
+    <tr>
+      <td>0x00000040</td>
+      <td><code>bltz $10,-2</code></td>
+      <td>110010</td>
+      <td>01010</td>
+      <td>00000</td>
+      <td>11111111 11111110</td>
+      <td>c940fffe</td>
+    </tr>
+    <tr>
+      <td>0x00000044</td>
+      <td><code>andi $11,$2,2</code></td>
+      <td>010000</td>
+      <td>00010</td>
+      <td>01011</td>
+      <td>00000000 00000010</td>
+      <td>404b0002</td>
+    </tr>
+    <tr>
+      <td>0x00000048</td>
+      <td><code>j 0x00000050</code></td>
+      <td>111000</td>
+      <td>00000</td>
+      <td>00000</td>
+      <td>00000000 00010100</td>
+      <td>e0000014</td>
+    </tr>
+    <tr>
+      <td>0x0000004C</td>
+      <td><code>or $8,$4,$2</code></td>
+      <td>010011</td>
+      <td>00100</td>
+      <td>00010</td>
+      <td>01000000 00000000</td>
+      <td>4c824000</td>
+    </tr>
+    <tr>
+      <td>0x00000050</td>
+      <td><code>halt</code></td>
+      <td>111111</td>
+      <td>00000</td>
+      <td>00000</td>
+      <td>00000000 00000000</td>
+      <td>fc000000</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="inputtxt">input.txt</h4>
+
+<pre><code class="language-bash">00001000 00000001 00000000 00001000
+01001000 00000010 00000000 00000010
+00000000 01000001 00011000 00000000
+00000100 01100010 00101000 00000000
+01000100 10100010 00100000 00000000
+01001100 10000010 01000000 00000000
+01100000 00001000 01000000 01000000
+11000101 00000001 11111111 11111110
+01110000 01000110 00000000 00000100
+01110000 11000111 00000000 00000000
+00001000 11100111 00000000 00001000
+11000000 11100001 11111111 11111110
+10011000 00100010 00000000 00000100
+10011100 00101001 00000000 00000100
+00001000 00001010 11111111 11111110
+00001001 01001010 00000000 00000001
+11001001 01000000 11111111 11111110
+01000000 01001011 00000000 00000010
+11100000 00000000 00000000 00010100
+01001100 10000010 01000000 00000000
+11111100 00000000 00000000 00000000
+</code></pre>
+
+<h4 id="simv">Sim.v</h4>
+
+<p>仿真模块。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module Sim;
+	reg CLK;	//时钟信号
+	reg Reset;	//置零信号
+	SingleCPU scpu(CLK,Reset);
+	initial begin
+		CLK=	0;
+		Reset=	0;	//刚开始设置pc为0
+
+		#50;	//等待Reset完成
+		CLK=	!CLK;	//下降沿，使PC先清零
+		#50;
+		Reset=	1;	//清除保持信号
+	  	forever #50 begin	//产生时钟信号，周期为50s
+			CLK=	!CLK;
+		end
+	end
+endmodule
+</code></pre>
+
+<h4 id="仿真波形">仿真波形</h4>
+
+<p>波形比较长，分成三部分逐一分析。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181122230102720.png" alt="在这里插入图片描述" /></p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181122230121763.png" alt="在这里插入图片描述" /></p>
+
+<p>前100ps为初始化，各寄存器的值被初始化为0。</p>
+
+<p>第800ps时执行了<code>bne $8,$1,-2</code>，此时寄存器<code>$8</code>的值是4，寄存器<code>$1</code>的值是8，两者不等，发生了一步跳转，于是第900ps的地址跳转到<code>00000018</code>。</p>
+
+<p>在第900ps前寄存器1~11的值依次为（16进制）<code>8,2,a,0,8,0,0,4,0,0,0</code>。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181122230759725.png" alt="在这里插入图片描述" /></p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181122230817389.png" alt="在这里插入图片描述" /></p>
+
+<p>第1000ps时再次执行了<code>bne $8,$1,-2</code>，此时寄存器<code>$8</code>的值是<code>8</code>，寄存器<code>$1</code>的值是<code>8</code>，两者
+相等，pc+4执行下一条指令。</p>
+
+<p>第1400ps时执行了<code>beq $7,$1,-2</code>，此时寄存器<code>$7</code>的值是<code>8</code>，寄存器<code>$1</code>的值是<code>8</code>，两者相等，发生了一步跳转，于是第1500ps的地址跳转到<code>00000028</code>。</p>
+
+<p>第1600ps时再次执行了<code>beq $7,$1,-2</code>，此时寄存器<code>$7</code>的值是<code>10</code>，寄存器<code>$1</code>的值是8，两者不等，pc+4执行下一条指令。</p>
+
+<p>在第1800ps前寄存器1~11的值依次为（16进制）<code>8,2,a,0,8,1,10,8,0,0,0</code>。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123003947684.png" alt="在这里插入图片描述" /></p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123004000191.png" alt="在这里插入图片描述" /></p>
+
+<p>第2100ps时执行了<code>bltz $10,-2</code>，此时寄存器<code>$10</code>的值是<code>ffffffff</code>，小于<code>0</code>，发生了一步跳转，于是第2200ps的地址跳转到<code>0000003c</code>。</p>
+
+<p>第2300ps时再次执行了<code>bltz $10,-2</code>，此时寄存器<code>$10</code>的值是<code>0</code>，不小于<code>0</code>，pc+4执行下一条指令。</p>
+
+<p>第2500ps时执行了<code>j 0x00000050</code>，于是第2600ps的地址跳转到<code>00000050</code>。</p>
+
+<p>第2600ps时执行了<code>halt</code>，程序终止，pc不再跳转。</p>
+
+<p>在第2700ps前寄存器1~11的值依次为（16进制）<code>8,2,a,0,8,1,10,8,2,0,2</code>。</p>
+
+<h3 id="烧写到basys3实验板">烧写到Basys3实验板</h3>
+
+<h4 id="basys3v">Basys3.v</h4>
+
+<p>顶层模块。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module Basys3(
+	input CLK,
+	input[1:0] SW,	//选择输出信号
+	input Reset,	//重置按钮
+	input Button,	//单脉冲
+	output reg[3:0] AN,	//数码管位选择信号
+	output[7:0] Out	//数码管输入信号
+);
+	parameter T1MS=	100000;
+	reg[16:0] showCounter;
+	wire[31:0] ALU_Out;	//ALU的result输出值
+	wire[31:0] CurPC;
+	wire[31:0] WriteData;	//DB总线值
+	wire[31:0] Reg1Out;	//寄存器组rs寄存器的值
+	wire[31:0] Reg2Out;	//寄存器组rt寄存器的值
+	wire[31:0] instcode;
+	wire myCLK;
+	reg[3:0] store;	//记录当前要显示位的值
+	wire[31:0] newAddress;
+
+	SingleCPU scpu(myCLK,Reset,CurPC,newAddress,instcode,Reg1Out,Reg2Out,ALU_Out,WriteData);
+
+	Debounce debounce(CLK,Button,myCLK);
+
+	initial begin
+		showCounter&lt;=	0;
+		AN&lt;=	4'b0111;
+	end
+	always@(posedge CLK)
+		begin
+		if(Reset==0)begin
+		  showCounter&lt;=	0;
+		  AN&lt;=	4'b0000;
+		end else begin
+			showCounter&lt;=	showCounter+1;
+			if(showCounter==T1MS)
+				begin
+					showCounter&lt;=	0;
+					case(AN)
+						4'b1110:	begin
+							AN&lt;=	4'b1101;
+						end
+						4'b1101:	begin
+							AN&lt;=	4'b1011;
+						end
+						4'b1011:	begin
+							AN&lt;=	4'b0111;
+						end
+						4'b0111:	begin
+							AN&lt;=	4'b1110;
+						end
+						4'b0000:	begin
+							AN&lt;=	4'b0111;
+					   end
+					endcase
+				end
+			end
+		end
+	SegLED led(store,Reset,Out);
+	always@(myCLK)begin
+	   case(AN)
+			4'b1110:	begin
+				case(SW)
+					2'b00:	store&lt;=	newAddress[3:0];
+					2'b01:	store&lt;=	Reg1Out[3:0];
+					2'b10:	store&lt;=	Reg2Out[3:0];
+					2'b11:	store&lt;=	WriteData[3:0];
+				endcase
+			end
+			4'b1101:	begin
+				case(SW)
+					2'b00:	store&lt;=	newAddress[7:4];
+					2'b01:	store&lt;=	Reg1Out[7:4];
+					2'b10:	store&lt;=	Reg2Out[7:4];
+					2'b11:	store&lt;=	WriteData[7:4];
+				endcase
+			end
+			4'b1011:	begin
+				case(SW)
+					2'b00:	store&lt;=	CurPC[3:0];
+					2'b01:	store&lt;=	instcode[24:21];
+					2'b10:	store&lt;=	instcode[19:16];
+					2'b11:	store&lt;=	ALU_Out[3:0];
+				endcase
+			end
+			4'b0111 : begin
+				case(SW)
+					2'b00:	store&lt;=	CurPC[7:4];
+					2'b01:	store&lt;=	{3'b000,instcode[25]};
+					2'b10:	store&lt;=	{3'b000,instcode[20]};
+					2'b11:	store&lt;=	ALU_Out[7:4];
+				endcase
+			end
+		endcase
+	end
+endmodule
+
+</code></pre>
+
+<h4 id="debouncev">Debounce.v</h4>
+
+<p>按键消抖模块。Basys3板采用的是机械按键，在按下按键时按键会出现人眼无法观测但是系统会检测到的抖动变化，这可能会使短时间内电平频繁变化，导致程序接收到许多错误的触发信号而出现许多不可知的错误。消抖操作是每当检测到CLK上升沿到来时检测一次当前电平信号并记录，同计数器开始计数，若在计数器达到5000之前电平发生变化，则将计数器清零，若达到5000，则将该记录电平取反输出。</p>
+
+<p>因为程序开始时已经运行第一条指令，为避免跳过第一条指令计算值的写入，我们的输入需要从下降沿开始，因此我们给按键信号取反后再输入。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module Debounce(clk,key_in,key_out);
+	parameter SAMPLE_TIME=	5000;
+	input clk;
+	input key_in;
+	output key_out;
+	reg[21:0] count_low;
+	reg[21:0] count_high;
+	reg key_out_reg;
+
+	always@(posedge clk)begin
+		count_low&lt;=	key_in?0:count_low+1;
+		count_high&lt;=	key_in?0:count_high+1;
+		if(count_high == SAMPLE_TIME)
+			key_out_reg&lt;=	1;
+		else if(count_low == SAMPLE_TIME)
+			key_out_reg&lt;=	0;
+	end
+	assign key_out=!key_out_reg;
+endmodule
+</code></pre>
+
+<h4 id="segledv">SegLED.v</h4>
+
+<p>数码管译码模块。译码模块将CPU运算的结果转换成7段数码管中各个数码管显示所需的高低电平信号,该单元的输入为4-bit位宽的二进制数。其中，七段数码管的八个电平控制输出中最低位是小数点的显示信号，但小数点在CPU运行时没有用到，恰好用于标记Reset状态。</p>
+
+<pre><code class="language-verilog">`timescale 1ns / 1ps
+module SegLED(
+	input[3:0] Store,
+	input Reset,
+	output reg[7:0] Out
+);
+	always@(Store or Reset)begin
+		if(Reset==0)begin
+			Out=	8'b11111110;
+		end
+		else begin
+			case(Store)
+				4'b0000:	Out=	8'b00000011;	//0
+				4'b0001:	Out=	8'b10011111;	//1
+				4'b0010:	Out=	8'b00100101;	//2
+				4'b0011:	Out=	8'b00001101;	//3
+				4'b0100:	Out=	8'b10011001;	//4
+				4'b0101:	Out=	8'b01001001;	//5
+				4'b0110:	Out=	8'b01000001;	//6
+				4'b0111:	Out=	8'b00011111;	//7
+				4'b1000:	Out=	8'b00000001;	//8
+				4'b1001:	Out=	8'b00001001;	//9
+				4'b1010:	Out=	8'b00010001;	//A
+				4'b1011:	Out=	8'b11000001;	//b
+				4'b1100:	Out=	8'b01100011;	//C
+				4'b1101:	Out=	8'b10000101;	//d
+				4'b1110:	Out=	8'b01100001;	//E
+				4'b1111:	Out=	8'b01110001;	//F
+				default:	Out=	8'b00000000;	//all light
+			endcase
+		end
+	end
+endmodule
+</code></pre>
+
+<h4 id="运行结果">运行结果</h4>
+
+<h5 id="端口映射">端口映射</h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181221021436787.png" alt="在这里插入图片描述" /></p>
+
+<h5 id="初始化">初始化</h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000309833.png" alt="在这里插入图片描述" />
+所有寄存器被初始化为0。</p>
+
+<h5 id="第1条指令addiu-108">第1条指令<code>addiu $1,$0,8</code></h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123011128236.png" alt="在这里插入图片描述" /></p>
+
+<p>当前地址00，下一地址04。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000510362.png" alt="在这里插入图片描述" /></p>
+
+<p>0号寄存器，值为0。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000547592.png" alt="在这里插入图片描述" /></p>
+
+<p>1号寄存器，值为0。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000603914.png" alt="在这里插入图片描述" /></p>
+
+<p>ALU结果为8。</p>
+
+<h5 id="第2条指令ori-202">第2条指令<code>ori $2,$0,2</code></h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000721103.png" alt="在这里插入图片描述" /></p>
+
+<p>当前地址04，下一地址08。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001020869.png" alt="在这里插入图片描述" /></p>
+
+<p>0号寄存器，值为0。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000752269.png" alt="在这里插入图片描述" /></p>
+
+<p>2号寄存器，值为0。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123000810549.png" alt="在这里插入图片描述" /></p>
+
+<p>ALU结果为2。</p>
+
+<h5 id="第3条指令add-321">第3条指令<code>add $3,$2,$1</code></h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001052265.png" alt="在这里插入图片描述" /></p>
+
+<p>当前地址08，下一地址0c。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001110157.png" alt="在这里插入图片描述" /></p>
+
+<p>2号寄存器，值为2。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001133547.png" alt="在这里插入图片描述" /></p>
+
+<p>1号寄存器，3号寄存器。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001153288.png" alt="在这里插入图片描述" /></p>
+
+<p>输出结果为0a。</p>
+
+<h5 id="第4条指令sub-532">第4条指令<code>sub $5,$3,$2</code></h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001331443.png" alt="在这里插入图片描述" /></p>
+
+<p>当前地址0c，下一地址10。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001354103.png" alt="在这里插入图片描述" /></p>
+
+<p>3号寄存器，值为0a。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001418748.png" alt="在这里插入图片描述" /></p>
+
+<p>2号寄存器，值为2。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001502544.png" alt="在这里插入图片描述" /></p>
+
+<p>ALU结果为8。</p>
+
+<h5 id="第5条指令and-452">第5条指令<code>and $4,$5,$2</code></h5>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123001916826.png" alt="在这里插入图片描述" /></p>
+
+<p>当前地址10，下一地址14。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123002013589.png" alt="在这里插入图片描述" /></p>
+
+<p>5号寄存器，值为3。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123002039156.png" alt="在这里插入图片描述" /></p>
+
+<p>2号寄存器，值为2。</p>
+
+<p><img src="https://img-blog.csdnimg.cn/20181123002103393.png" alt="在这里插入图片描述" /></p>
+
+<p>ALU结果为0。</p>
+
+<h2 id="实验心得">实验心得</h2>
+
+<p>对于第一次使用verilog语言的我来说，设计单周期CPU是一个不小的挑战。总的来说，从开始构思到真正写板完成大约用了三整天的时间，期间遇到了很多有困难的地方，也翻了很多网上的博客。不得不说，网上能找到的很多博客给出的代码都是有些问题的，确实在一定程度上误导了自己。但是这样一个比较复杂的系统又确实很难什么都不去参考而直接写出来。</p>
+
+<p>因此，还是希望老师能够多做一些有关verilog语言的讲学吧，遇到的很多问题其实都是关于语法方面的，因为vivado并不会对语法错误进行提示（我用的2017.4版会在可能错误的地方画一道波浪线但是并不会提示错在哪里），而我遇到的问题很多都是语法方面的（例如，在readmemb的时候地址的斜杠和操作系统的是反的，这花费了我很多时间检查才发现）。</p>
+:ET

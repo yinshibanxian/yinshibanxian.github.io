@@ -1,0 +1,161 @@
+I"À<h1 id="the-house-of-doctor-dee"><a href="https://vjudge.net/problem/URAL-1767">The House of Doctor Dee</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define X first
+#define Y second
+using namespace std;
+typedef long long ll;
+typedef pair&lt;ll,ll&gt; Coord;
+pair&lt;Coord,Coord&gt; v[2];
+int main()
+{
+	for(int i=0; i&lt;2; ++i)
+	{
+		scanf("%lld%lld%lld%lld",&amp;v[i].X.X,&amp;v[i].X.Y,&amp;v[i].Y.X,&amp;v[i].Y.Y);
+		if(v[i].X&gt;v[i].Y)swap(v[i].X,v[i].Y);
+	}
+	if(v[0]&gt;v[1])swap(v[0],v[1]);
+	if(v[0].X.Y&gt;v[0].Y.Y)
+		for(int i=0; i&lt;2; ++i)
+		{
+			v[i].X.Y*=-1,v[i].Y.Y*=-1;
+			if(v[i].X&gt;v[i].Y)swap(v[i].X,v[i].Y);
+		}
+	if(v[1].X.Y&lt;v[1].Y.Y)
+	{
+		if(v[1].X.X&gt;v[0].Y.X||v[1].X.Y&gt;v[0].Y.Y||v[1].Y.Y&lt;v[0].X.Y)return printf("0"),0;
+		v[0].X.X=max(v[0].X.X,v[1].X.X);
+		v[0].X.Y=max(v[0].X.Y,v[1].X.Y);
+		v[0].Y.X=min(v[0].Y.X,v[1].Y.X);
+		v[0].Y.Y=min(v[0].Y.Y,v[1].Y.Y);
+		return printf("%lld",v[0].Y.X-v[0].X.X+v[0].Y.Y-v[0].X.Y),0;
+	}
+	else
+	{
+		if(v[1].X.X&gt;v[0].Y.X||v[1].X.Y&lt;v[0].X.Y||v[1].Y.Y&gt;v[0].Y.Y)return printf("0"),0;
+		v[0].X.X=max(v[0].X.X,v[1].X.X);
+		v[0].X.Y=max(v[0].X.Y,v[1].Y.Y);
+		v[0].Y.X=min(v[0].Y.X,v[1].Y.X);
+		v[0].Y.Y=min(v[0].Y.Y,v[1].X.Y);
+		return printf("%lld",max(v[0].Y.X-v[0].X.X,v[0].Y.Y-v[0].X.Y)),0;
+	}
+}
+</code></pre>
+<h1 id="circular-strings"><a href="https://vjudge.net/problem/URAL-1768">Circular Strings</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define X real()
+#define Y imag()
+using namespace std;
+typedef double lf;
+typedef complex&lt;lf&gt; Coord;
+lf x,y,z,PI=acos(-1),EPS=1e-11;
+Coord p[127];
+int n;
+int sgn(lf d)
+{
+	return (d&gt;EPS)-(d&lt;-EPS);
+}
+int main()
+{
+	scanf("%d",&amp;n);
+	for(int i=0; i&lt;n; ++i)
+		scanf("%lf%lf",&amp;x,&amp;y),p[i]=Coord(x,y);
+	for(int i=0; i&lt;n; ++i)
+	{
+		x=abs(p[i]-p[(i+1)%n]),y=abs(p[(i+1)%n]-p[(i+2)%n]),z=abs(p[(i+2)%n]-p[i]);
+		if(sgn(x-y)||sgn((n-2)*PI/n-acos((x*x+y*y-z*z)/2/x/y)))return printf("NO"),0;
+	}
+	printf("YES");
+}
+</code></pre>
+<h1 id="old-ural-legend"><a href="https://vjudge.net/problem/URAL-1769">Old Ural Legend</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#define N 1000009
+char s[N],f[N];
+int main()
+{
+	scanf("%s",s);
+	for(int i=0; s[i]; ++i)
+		for(int j=i,p=0; s[j]&amp;&amp;j&lt;i+6; ++j)
+			f[p=p*10+s[j]-'0']=1;
+	for(int i=1; i&lt;N; ++i)if(!f[i])return printf("%d",i),0;
+}
+</code></pre>
+<h1 id="ski-trails-for-robots"><a href="https://vjudge.net/problem/URAL-1772">Ski-Trails for Robots</a></h1>
+<pre><code class="language-c">#include&lt;bits/stdc++.h&gt;
+#define X first
+#define Y second
+using namespace std;
+typedef long long ll;
+const ll INF=1e18;
+int main()
+{
+	int n,s,k;
+	map&lt;int,ll&gt; mp;
+	scanf("%d%d%d",&amp;n,&amp;s,&amp;k);
+	for(int i=mp[s]=0,l,r; i&lt;k; ++i)
+	{
+		scanf("%d%d",&amp;l,&amp;r);
+		if(l&gt;1&amp;&amp;!mp.count(l-1))mp[l-1]=INF;
+		if(r&lt;n&amp;&amp;!mp.count(r+1))mp[r+1]=INF;
+		map&lt;int,ll&gt;::iterator b=mp.lower_bound(l),e=mp.upper_bound(r),it,jt;
+		if(l&gt;1)
+		{
+			jt=mp.find(l-1);
+			--b;
+			jt-&gt;Y=min(jt-&gt;Y,jt-&gt;X-b-&gt;X+b-&gt;Y);
+			++b;
+			for(it=b; it!=e; ++it)
+				jt-&gt;Y=min(jt-&gt;Y,it-&gt;X-jt-&gt;X+it-&gt;Y);
+		}
+		if(r&lt;n)
+		{
+			jt=mp.find(r+1);
+			jt-&gt;Y=min(jt-&gt;Y,e-&gt;X-jt-&gt;X+e-&gt;Y);
+			for(it=b; it!=e; ++it)
+				jt-&gt;Y=min(jt-&gt;Y,jt-&gt;X-it-&gt;X+it-&gt;Y);
+		}
+		mp.erase(b,e);
+	}
+	ll ans=INF;
+	for(map&lt;int,ll&gt;::iterator it=mp.begin(); it!=mp.end(); ++it)
+		ans=min(ans,it-&gt;Y);
+	printf("%lld",ans);
+}
+</code></pre>
+<h1 id="metro-to-every-home"><a href="https://vjudge.net/problem/URAL-1773">Metro to Every Home</a></h1>
+<pre><code class="language-c">#include&lt;bits/stdc++.h&gt;
+#define X first
+#define Y second
+using namespace std;
+const int N=1e5+9;
+pair&lt;pair&lt;int,int&gt;,int&gt; v[N];
+int h,n,vis[N];
+int main()
+{
+	scanf("%d%d",&amp;h,&amp;n);
+	for(int i=0,l,r; i&lt;n; ++i)
+	{
+		scanf("%d%d",&amp;v[2*i].X.X,&amp;v[2*i].X.Y);
+		v[2*i+1].X.X=h-v[2*i].X.Y;
+		v[2*i+1].X.Y=h-v[2*i].X.X;
+		v[2*i].Y=i+1;
+		v[2*i+1].Y=-i-1;
+	}
+	if(v[0].X.X&gt;v[0].X.Y)
+		for(int i=0; i&lt;2*n; ++i)
+			v[i].X.X=h-v[i].X.X,v[i].X.Y=h-v[i].X.Y;
+	sort(v,v+2*n);
+	vector&lt;int&gt; ans;
+	for(int pre=v[0].X.X,d=v[0].X.Y-pre,i=0; i&lt;2*n; ++i)
+		if(v[i].X.X==pre&amp;&amp;!vis[abs(v[i].Y)])
+		{
+			if(v[i].X.Y-v[i].X.X!=d)return printf("0"),0;
+			pre=v[i].X.Y;
+			ans.push_back(v[i].Y);
+			vis[abs(v[i].Y)]=1;
+		}
+	if(*min_element(vis+1,vis+n+1)==0)return printf("0"),0;
+	for(int i=0; i&lt;ans.size(); ++i)printf("%d ",ans[i]);
+}
+</code></pre>
+:ET

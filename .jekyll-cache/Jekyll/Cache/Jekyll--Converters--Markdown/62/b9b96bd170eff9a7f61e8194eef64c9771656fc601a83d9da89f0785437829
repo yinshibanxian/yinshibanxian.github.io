@@ -1,0 +1,445 @@
+I"T<h2 id="accessing-the-database">Accessing the Database</h2>
+
+<p>The first laboratory exercise is to connect to a database, populate it with data, and run very simple SQL queries.</p>
+
+<ul>
+  <li>In case a shared database is provided for course students, user accounts need to be created on the database. Otherwise, the lab should also cover setting up a database system. Information on setting up a database may be found <a href="https://www.db-book.com/db6/lab-dir/index.html">here</a></li>
+  <li>The next step is to connect to the database. Although most databases have their own text-based interface, we recommend using a graphical interface such as the database browser of the Netbeans IDE, or a database specific interface. More information on accessing these interfaces may be found <a href="https://www.db-book.com/db6/lab-dir/index.html">here</a>.</li>
+  <li>The next step is to create tables and load sample data. Scripts for these tasks can be found <a href="http://db-book.com/db6/lab-dir/sample_tables-dir/index.html">here</a>.</li>
+  <li>Try out some queries, and see what they do. Some example queries:
+    <ul>
+      <li>select * from instructor</li>
+      <li>select name from instructor where dept_name = ‘Comp. Sci.’ and salary &gt; 70000</li>
+      <li>select * from instructor, department where instructor.dept_name = department.dept_name</li>
+    </ul>
+  </li>
+</ul>
+
+<pre><code class="language-bash">mysql&gt; CREATE DATABASE school;
+mysql&gt; use school;
+mysql&gt; source \path\to\DDL-MySQL.sql
+mysql&gt; source \path\to\smallRelationsInsertFile.sql
+</code></pre>
+
+<h2 id="basic-sql">Basic SQL</h2>
+
+<p>This lab covers simple SQL queries. A sample lab (for a 2 to 3 hour session) can be found <a href="https://www.db-book.com/db6/lab-dir/labexercises-dir/Lab1.html">here</a>.</p>
+
+<h3 id="find-the-names-of-all-the-instructors-from-biology-department">Find the names of all the instructors from Biology department</h3>
+
+<pre><code class="language-sql">mysql&gt; select name from instructor where dept_name = 'Biology';
++-------+
+| name  |
++-------+
+| Crick |
++-------+
+1 row in set (0.02 sec)
+</code></pre>
+
+<h3 id="find-the-names-of-courses-in-computer-science-department-which-have-3-credits">Find the names of courses in Computer science department which have 3 credits</h3>
+
+<pre><code class="language-sql">mysql&gt; select title from course where credits = 3;
++---------------------------+
+| title                     |
++---------------------------+
+| Computational Biology     |
+| Robotics                  |
+| Image Processing          |
+| Database System Concepts  |
+| Intro. to Digital Systems |
+| Investment Banking        |
+| World History             |
+| Music Video Production    |
++---------------------------+
+8 rows in set (0.00 sec)
+</code></pre>
+
+<h3 id="for-the-student-with-id-12345-or-any-other-value-show-all-course-id-and-title-of-all-courses-registered-for-by-the-student">For the student with ID 12345 (or any other value), show all course id and title of all courses registered for by the student</h3>
+
+<pre><code class="language-sql">mysql&gt; select course_id, title
+    -&gt; from takes natural join course
+    -&gt; where ID = 12345;
++-----------+----------------------------+
+| course_id | title                      |
++-----------+----------------------------+
+| CS-101    | Intro. to Computer Science |
+| CS-190    | Game Design                |
+| CS-315    | Robotics                   |
+| CS-347    | Database System Concepts   |
++-----------+----------------------------+
+4 rows in set (0.02 sec)
+</code></pre>
+
+<h3 id="as-above-but-show-the-total-number-of-credits-for-such-courses-taken-by-that-student-dont-display-the-tot-creds-value-from-the-student-table-you-should-use-sql-aggregation-on-courses-taken-by-the-student">As above, but show the total number of credits for such courses (taken by that student). Don’t display the tot creds value from the student table, you should use SQL aggregation on courses taken by the student</h3>
+
+<pre><code class="language-sql">mysql&gt; select sum(credits)
+    -&gt; from takes natural join course
+    -&gt; where ID = 12345;
++--------------+
+| sum(credits) |
++--------------+
+|           14 |
++--------------+
+1 row in set (0.02 sec)
+</code></pre>
+
+<h3 id="as-above-but-display-the-total-credits-for-each-of-the-students-along-with-the-id-of-the-student-dont-bother-about-the-name-of-the-student-dont-bother-about-students-who-have-not-registered-for-any-course-they-can-be-omitted">As above, but display the total credits for each of the students, along with the ID of the student; don’t bother about the name of the student. (Don’t bother about students who have not registered for any course, they can be omitted)</h3>
+
+<pre><code class="language-sql">mysql&gt; select ID, sum(credits)
+    -&gt; from takes natural join course
+    -&gt; group by ID;
++-------+--------------+
+| ID    | sum(credits) |
++-------+--------------+
+| 98988 |            8 |
+| 00128 |            7 |
+| 12345 |           14 |
+| 45678 |           11 |
+| 54321 |            8 |
+| 76543 |            7 |
+| 98765 |            7 |
+| 76653 |            3 |
+| 23121 |            3 |
+| 19991 |            3 |
+| 55739 |            3 |
+| 44553 |            4 |
++-------+--------------+
+12 rows in set (0.02 sec)
+</code></pre>
+
+<h3 id="find-the-names-of-all-students-who-have-taken-any-comp-sci-course-ever-there-should-be-no-duplicate-names">Find the names of all students who have taken any Comp. Sci. course ever (there should be no duplicate names)</h3>
+
+<pre><code class="language-sql">mysql&gt; select distinct S.name from student as S,
+    -&gt; (select * from takes natural join course) as C
+    -&gt; where S.ID = C.ID and C.dept_name = 'Comp. Sci.';
++----------+
+| name     |
++----------+
+| Zhang    |
+| Shankar  |
+| Levy     |
+| Williams |
+| Brown    |
+| Bourikas |
++----------+
+6 rows in set (0.00 sec)
+</code></pre>
+
+<h3 id="display-the-ids-of-all-instructors-who-have-never-taught-a-couse-note-1-oracle-uses-the-keyword-minus-in-place-of-except-2-interpret-taught-as-taught-or-is-scheduled-to-teach">Display the IDs of all instructors who have never taught a couse. Note: (1) Oracle uses the keyword minus in place of except; (2) interpret ”taught” as ”taught or is scheduled to teach”</h3>
+
+<pre><code class="language-sql">mysql&gt; select ID from instructor
+    -&gt; where ID not in (
+    -&gt;   select ID
+    -&gt;   from instructor natural join teaches);
++-------+
+| ID    |
++-------+
+| 76543 |
+| 58583 |
+| 33456 |
++-------+
+3 rows in set (0.02 sec)
+</code></pre>
+
+<h3 id="as-above-but-display-the-names-of-the-instructors-also-not-just-the-ids">As above, but display the names of the instructors also, not just the IDs</h3>
+
+<pre><code class="language-sql">mysql&gt; select name, ID from instructor
+    -&gt; where ID not in (select ID from instructor natural join teaches);
++-----------+-------+
+| name      | ID    |
++-----------+-------+
+| Gold      | 33456 |
+| Califieri | 58583 |
+| Singh     | 76543 |
++-----------+-------+
+3 rows in set (0.00 sec)
+</code></pre>
+
+<h3 id="you-need-to-create-a-movie-database-create-three-tables-one-for-actorsaid-name-one-for-moviesmid-title-and-one-for-actor-rolemid-aid-rolename-use-appropriate-data-types-for-each-of-the-attributes-and-add-appropriate-primaryforeign-key-constraints">You need to create a movie database. Create three tables, one for actors(AID, name), one for movies(MID, title) and one for actor role(MID, AID, rolename). Use appropriate data types for each of the attributes, and add appropriate primary/foreign key constraints</h3>
+
+<pre><code class="language-sql">create table actors (
+  AID varchar(20),
+  name varchar(50),
+  primary key (AID)
+);
+create table movies (
+  MID varchar(20),
+  title varchar(50),
+  primary key (MID)
+);
+create table actor_role (
+  MID varchar(20),
+  AID varchar(20),
+  rolename varchar(30),
+  primary key (MID,AID,rolename),
+  foreign key (MID) references movies(MID),
+  foreign key (AID) references actors(AID)
+);
+</code></pre>
+
+<h3 id="insert-data-to-the-above-tables-approx-3-to-6-rows-in-each-table-including-data-for-actor-charlie-chaplin-and-for-yourself-using-your-roll-number-as-id">Insert data to the above tables (approx 3 to 6 rows in each table), including data for actor ”Charlie Chaplin”, and for yourself (using your roll number as ID)</h3>
+
+<pre><code class="language-sql">delete from actor_role;
+delete from actors;
+delete from movies;
+insert into actors values ('01','Charlie Chaplin');
+insert into movies values ('M1','City Lights');
+insert into actor_role values ('M1','01','Tramp');
+insert into actors values ('02','Stephen Chow');
+insert into movies values ('M2','Kung Fu Hustle');
+insert into actor_role values ('M2','02','Kung Fu Hustle');
+insert into actors values ('03','Jay Chou');
+insert into movies values ('M3','Initial D');
+insert into actor_role values ('M3','03','Fujiwara Takumi');
+insert into actors values ('04','Kan Wu');
+</code></pre>
+
+<h3 id="write-a-query-to-list-all-movies-in-which-actor-charlie-chaplin-has-acted-along-with-the-number-of-roles-he-had-in-that-movie">Write a query to list all movies in which actor ”Charlie Chaplin” has acted, along with the number of roles he had in that movie</h3>
+
+<pre><code class="language-sql">mysql&gt; select name, title, count(rolename)
+    -&gt; from actor_role natural join movies natural join actors
+    -&gt; where name = 'Charlie Chaplin' group by MID;
++-----------------+-------------+-----------------+
+| name            | title       | count(rolename) |
++-----------------+-------------+-----------------+
+| Charlie Chaplin | City Lights |               1 |
++-----------------+-------------+-----------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<h3 id="write-a-query-to-list-all-actors-who-have-not-acted-in-any-movie">Write a query to list all actors who have not acted in any movie</h3>
+
+<p>没错就是我了。</p>
+
+<pre><code class="language-sql">mysql&gt; select name from actors
+    -&gt; where name not in (
+    -&gt;   select distinct name
+    -&gt;   from actor_role natural join actors);
++--------+
+| name   |
++--------+
+| Kan Wu |
++--------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<h3 id="list-names-of-actors-along-with-titles-of-movies-they-have-acted-in-if-they-have-not-acted-in-any-movie-show-the-movie-title-as-null-do-not-use-sql-outerjoin-syntax-here-write-it-from-scratch">List names of actors, along with titles of movies they have acted in. If they have not acted in any movie, show the movie title as null. (Do not use SQL outerjoin syntax here, write it from scratch.)</h3>
+
+<pre><code class="language-sql">ERROR 1248 (42000): Every derived table must have its own alias
+</code></pre>
+
+<p>这里遇到一个问题，每个子查询都要有一个别名。</p>
+
+<pre><code class="language-sql">mysql&gt; select * from (
+    -&gt; (select name, title
+    -&gt; from actors, movies, actor_role
+    -&gt; where actors.AID = actor_role.AID and movies.MID = actor_role.MID)
+    -&gt; union
+    -&gt; (select name as name, null as title from
+    -&gt; (select name from actors
+    -&gt; where name not in
+    -&gt; (select distinct name
+    -&gt; from actor_role natural join actors)
+    -&gt; ) as alias1)
+    -&gt; ) as alias2;
++-----------------+----------------+
+| name            | title          |
++-----------------+----------------+
+| Charlie Chaplin | City Lights    |
+| Stephen Chow    | Kung Fu Hustle |
+| Jay Chou        | Initial D      |
+| Kan Wu          | NULL           |
++-----------------+----------------+
+4 rows in set (0.00 sec)
+</code></pre>
+
+<h2 id="intermediate-sql">Intermediate SQL</h2>
+
+<p>This lab covers more complex SQL queries. A sample lab (for a 2 to 3 hour session) can be found <a href="https://www.db-book.com/db6/lab-dir/labexercises-dir/Lab2.html">here</a>.</p>
+
+<h3 id="find-the-maximum-and-minimum-enrollment-across-all-sections-considering-only-sections-that-had-some-enrollment-dont-worry-about-those-that-had-no-students-taking-that-section">Find the maximum and minimum enrollment across all sections, considering only sections that had some enrollment, don’t worry about those that had no students taking that section</h3>
+
+<pre><code class="language-sql">mysql&gt; select max(enrollment), min(enrollment)
+    -&gt; from (select sec_id, semester, year, count(distinct id) as enrollment
+    -&gt; from takes
+    -&gt; group by sec_id, semester, year) as alias1;
++-----------------+-----------------+
+| max(enrollment) | min(enrollment) |
++-----------------+-----------------+
+|               7 |               1 |
++-----------------+-----------------+
+1 row in set (0.02 sec)
+</code></pre>
+
+<h3 id="find-all-sections-that-had-the-maximum-enrollment-along-with-the-enrollment-using-a-subquery">Find all sections that had the maximum enrollment (along with the enrollment), using a subquery</h3>
+
+<pre><code class="language-sql">mysql&gt; with T(sec_id, semester, year, enrollment) as (select sec_id, semester, year, count(distinct id)from takes group by sec_id, semester, year)
+    -&gt; select T.sec_id, T.semester, T.year, T.enrollment from T, (select max(enrollment) as ma, min(enrollment) from T) as tmp
+    -&gt; where T.enrollment = tmp.ma;
++--------+----------+------+------------+
+| sec_id | semester | year | enrollment |
++--------+----------+------+------------+
+| 1      | Fall     | 2009 |          7 |
++--------+----------+------+------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<h3 id="as-in-in-q1-but-now-also-include-sections-with-no-students-taking-them-the-enrollment-for-such-sections-should-be-treated-as-0-do-this-in-two-diﬀerent-ways-and-create-require-data-for-testing">As in in Q1, but now also include sections with no students taking them; the enrollment for such sections should be treated as 0. Do this in two diﬀerent ways (and create require data for testing)</h3>
+
+<pre><code class="language-sql">delete from course where course_id = 'CS-001';
+delete from section where sec_id = '1' and semester = 'Fall' and year = '2010';
+insert into course(course_id) values ('CS-001');
+insert into section(course_id, sec_id, semester, year) values ('CS-001','1','Fall','2010');
+</code></pre>
+
+<h4 id="using-a-scalar-subquery">Using a scalar subquery</h4>
+
+<pre><code class="language-sql">mysql&gt; select distinct sec_id, semester, year, (
+    -&gt;   select count(distinct id) from takes
+    -&gt;   where (
+    -&gt;     takes.sec_id, takes.semester, takes.year
+    -&gt;   ) = (
+    -&gt;     section.sec_id, section.semester, section.year))
+    -&gt; as cnt from section;
++--------+----------+------+------+
+| sec_id | semester | year | cnt  |
++--------+----------+------+------+
+| 1      | Fall     | 2010 |    0 |
+| 1      | Fall     | 2009 |    7 |
+| 1      | Spring   | 2010 |    6 |
+| 1      | Summer   | 2009 |    1 |
+| 1      | Summer   | 2010 |    1 |
+| 1      | Spring   | 2009 |    1 |
+| 2      | Spring   | 2009 |    2 |
+| 2      | Spring   | 2010 |    1 |
++--------+----------+------+------+
+8 rows in set (0.00 sec)
+</code></pre>
+
+<h4 id="using-aggregation-on-a-left-outer-join-use-the-sql-natural-left-outer-join-syntax">Using aggregation on a left outer join (use the SQL natural left outer join syntax)</h4>
+
+<pre><code class="language-sql">mysql&gt; select distinct sec_id, semester, year, ifnull(cnt,0)
+    -&gt; from section left outer join (
+    -&gt;   select sec_id, semester, year, count(distinct id) as cnt
+    -&gt;   from takes group by sec_id, semester, year) as T
+    -&gt; using (sec_id, semester, year);
++--------+----------+------+---------------+
+| sec_id | semester | year | ifnull(cnt,0) |
++--------+----------+------+---------------+
+| 1      | Fall     | 2010 |             0 |
+| 1      | Fall     | 2009 |             7 |
+| 1      | Spring   | 2010 |             6 |
+| 1      | Summer   | 2009 |             1 |
+| 1      | Summer   | 2010 |             1 |
+| 1      | Spring   | 2009 |             1 |
+| 2      | Spring   | 2009 |             2 |
+| 2      | Spring   | 2010 |             1 |
++--------+----------+------+---------------+
+8 rows in set (0.00 sec)
+</code></pre>
+
+<h3 id="find-all-courses-whose-identifier-starts-with-the-string-cs-1">Find all courses whose identifier starts with the string ”CS-1”</h3>
+
+<pre><code class="language-sql">mysql&gt; select course_id, title
+    -&gt; from section natural join course
+    -&gt; where course_id like 'CS-1%';
++-----------+----------------------------+
+| course_id | title                      |
++-----------+----------------------------+
+| CS-101    | Intro. to Computer Science |
+| CS-101    | Intro. to Computer Science |
+| CS-190    | Game Design                |
+| CS-190    | Game Design                |
++-----------+----------------------------+
+4 rows in set (0.00 sec)
+</code></pre>
+
+<h3 id="find-instructors-who-have-taught-all-the-above-courses">Find instructors who have taught all the above courses</h3>
+
+<h4 id="using-the-not-exists--except--structure">Using the ”not exists … except …” structure</h4>
+
+<pre><code class="language-sql">mysql&gt; select distinct ID, name from (
+    -&gt;   select * from teaches natural join instructor)
+    -&gt; as T where not exists (
+    -&gt;   select cs_course.course_id from (
+    -&gt;     select course_id from course
+    -&gt;     where course_id like 'CS-1%')
+    -&gt;   as cs_course where cs_course.course_id not in (
+    -&gt;     select course_id from (
+    -&gt;       select * from teaches natural join instructor)
+    -&gt;     as S where S.name = T.name));
+Empty set (0.00 sec)
+</code></pre>
+
+<h4 id="using-matching-of-counts-which-we-covered-in-class-dont-forget-the-distinct-clause">Using matching of counts which we covered in class (don’t forget the distinct clause!)</h4>
+
+<pre><code class="language-sql">mysql&gt; with S(course_id) as (
+    -&gt;   select distinct course_id
+    -&gt;   from teaches natural join instructor
+    -&gt;   where course_id like 'CS-1%')
+    -&gt; select distinct ID, name from (
+    -&gt;   select * from teaches natural join instructor) as T
+    -&gt; where ((select count(course_id) from S)=(
+    -&gt;   select count(distinct course_id)
+    -&gt;   from teaches natural join instructor
+    -&gt;   where name = T.name and course_id like 'CS-1%'
+    -&gt; ));
+Empty set (0.00 sec)
+</code></pre>
+
+<h3 id="insert-each-instructor-as-a-student-with-tot-creds--0-in-the-same-department">Insert each instructor as a student, with tot creds = 0, in the same department</h3>
+
+<p>这里报错是因为学生ID和教师ID冲突。</p>
+
+<pre><code class="language-sql">mysql&gt; insert into student
+    -&gt; select ID, name, dept_name, '0'
+    -&gt; from instructor;
+ERROR 1062 (23000): Duplicate entry '76543' for key 'PRIMARY'
+</code></pre>
+
+<h3 id="now-delete-all-the-newly-added-students-above-note-already-existing-students-who-happened-to-have-tot-creds--0-should-not-get-deleted">Now delete all the newly added ”students” above (note: already existing students who happened to have tot creds = 0 should not get deleted)</h3>
+
+<p>因为上一问报错了，因此这一问实际上什么都没删除。</p>
+
+<pre><code class="language-sql">mysql&gt; delete from student
+    -&gt; where (ID, name, dept_name) in (
+    -&gt;   select ID, name, dept_name
+    -&gt;   from instructor);
+Query OK, 0 rows affected (0.00 sec)
+</code></pre>
+
+<h3 id="some-of-you-may-have-noticed-that-the-tot-creds-value-for-students-did-not-match-the-credits-from-courses-they-have-taken-write-and-execute-query-to-update-tot-creds-based-on-the-credits-passed-to-bring-the-database-back-to-consistency-this-query-is-provided-in-the-bookslides">Some of you may have noticed that the tot creds value for students did not match the credits from courses they have taken. Write and execute query to update tot creds based on the credits passed, to bring the database back to consistency. (This query is provided in the book/slides.)</h3>
+
+<pre><code class="language-sql">mysql&gt; update student as S set tot_cred = (
+    -&gt;   select sum(credits)
+    -&gt;   from takes natural join course
+    -&gt;   where S.ID = takes.ID and takes.grade is not null);
+Query OK, 13 rows affected (0.03 sec)
+Rows matched: 13  Changed: 13  Warnings: 0
+</code></pre>
+
+<h3 id="update-the-salary-of-each-instructor-to-10000-times-the-number-of-course-sections-they-have-taught">Update the salary of each instructor to 10000 times the number of course sections they have taught</h3>
+
+<p>这一步出现报错，和数据库的约束条件冲突。</p>
+
+<pre><code class="language-sql">mysql&gt; update instructor as I set salary = 10000 * (
+    -&gt;   select count(distinct sec_id, semester, year)
+    -&gt;   from teaches as T where I.ID = T.ID);
+ERROR 3819 (HY000): Check constraint 'instructor_chk_1' is violated.
+</code></pre>
+
+<h3 id="create-your-own-query-define-what-you-want-to-do-in-english-then-write-the-query-in-sql-make-it-as-difficult-as-you-wish-the-harder-the-better">Create your own query: define what you want to do in English, then write the query in SQL. Make it as difficult as you wish, the harder the better</h3>
+
+<p>这里统计的是上过任何一门由计算机系开设课程的学生数量。</p>
+
+<pre><code class="language-sql">mysql&gt; select count(S.name) from student as S,(
+    -&gt;   select * from takes natural join course) as C
+    -&gt; where S.ID = C.ID and C.dept_name = 'Comp. Sci.';
++---------------+
+| count(S.name) |
++---------------+
+|            15 |
++---------------+
+1 row in set (0.00 sec)
+</code></pre>
+:ET

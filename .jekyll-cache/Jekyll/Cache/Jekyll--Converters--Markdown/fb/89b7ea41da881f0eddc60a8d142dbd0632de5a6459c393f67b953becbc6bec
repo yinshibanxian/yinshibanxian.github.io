@@ -1,0 +1,127 @@
+I"–<h1 id="comma-sprinkler"><a href="https://vjudge.net/problem/Kattis-comma">Comma Sprinkler</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e6 + 9;
+struct ID : unordered_map&lt;string, int&gt;
+{
+	vector&lt;string&gt; v;
+	int ask(const string &amp;s)
+	{
+		if (count(s))
+			return at(s);
+		return insert({s, v.size()}), v.push_back(s), v.size() - 1;
+	}
+} id;
+deque&lt;pair&lt;int, int&gt;&gt; q;
+vector&lt;int&gt; v[N];
+char s[N], t[N], vis[N][2];
+int n, a[N];
+int main()
+{
+	for (; ~scanf("%s", s); ++n)
+	{
+		int len = strlen(s);
+		if (s[len - 1] == ',' || s[len - 1] == '.')
+			t[n] = s[--len], s[len] = 0;
+		v[a[n] = id.ask(s)].push_back(n);
+		if (t[n] == ',')
+			q.push_back({n, 1}), q.push_back({n + 1, 0});
+	}
+	for (; !q.empty(); q.pop_front())
+	{
+		int an = a[q.front().first], type = q.front().second;
+		if (vis[an][type] || q.front().first &gt;= n)
+			continue;
+		else
+			vis[an][type] = 1;
+		if (type)
+		{
+			for (auto i : v[an])
+				if (!t[i])
+					t[i] = ',', q.push_back({i + 1, 0});
+		}
+		else
+		{
+			for (auto i : v[an])
+				if (i &gt; 0 &amp;&amp; !t[i - 1])
+					t[i - 1] = ',', q.push_back({i - 1, 1});
+		}
+	}
+	for (int i = 0; i &lt; n; ++i)
+	{
+		cout &lt;&lt; id.v[a[i]];
+		if (t[i])
+			cout &lt;&lt; t[i];
+		cout &lt;&lt; " ";
+	}
+}
+</code></pre>
+<h1 id="go-with-the-flow"><a href="https://vjudge.net/problem/Kattis-gowithflow">Go with the Flow</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 4095;
+char s[99];
+int n, a[N], ans0, ans1;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%s", s), a[i] = strlen(s);
+	for (int len = *max_element(a, a + n), i = len; i &lt; n * len + n; ++i)
+	{
+		vector&lt;pair&lt;int, int&gt;&gt; mp, mmp;
+		for (int j = 0, now = 0, p = 0; j &lt; n; ++j)
+		{
+			now += a[j] + 1;
+			if (j + 1 &gt;= n || now + a[j + 1] &gt; i)
+			{
+				now = p = 0;
+				swap(mp, mmp);
+				mp.clear();
+				continue;
+			}
+			mp.push_back({now, 1});
+			while (p &lt; mmp.size() &amp;&amp; mmp[p].first &lt; now - 1)
+				++p;
+			for (int k = p; k &lt; mmp.size() &amp;&amp; mmp[k].first &lt; now + 2; ++k)
+				mp.back().second = max(mp.back().second, mmp[k].second + 1);
+			if (ans1 &lt; mp.back().second)
+				ans0 = i, ans1 = mp.back().second;
+		}
+	}
+	printf("%d %d", ans0, ans1);
+}
+</code></pre>
+<h1 id="wireless-is-the-new-fiber"><a href="https://vjudge.net/problem/Kattis-newfiber">Wireless is the New Fiber</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+set&lt;pair&lt;int, int&gt;&gt; p, q;
+int n, m, d[N];
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;m);
+	for (int i = 0, u, v; i &lt; m; ++i)
+		scanf("%d%d", &amp;u, &amp;v), ++d[u], ++d[v];
+	for (int i = 0; i &lt; n; ++i)
+		p.insert({d[i], i});
+	int t = (m = n) - 1;
+	for (auto it : p)
+	{
+		if (t &gt; it.first - 1)
+			t -= it.first - 1, q.insert(it), --m;
+		else
+			q.insert({t, it.second}), t = 1;
+	}
+	printf("%d\n%d %d\n", m, n, n - 1);
+	while (!q.empty())
+	{
+		auto ch = *q.begin(), fa = *q.rbegin();
+		printf("%d %d\n", ch.second, fa.second);
+		q.erase(ch), q.erase(fa);
+		if (--fa.first)
+			q.insert(fa);
+	}
+}
+</code></pre>
+:ET

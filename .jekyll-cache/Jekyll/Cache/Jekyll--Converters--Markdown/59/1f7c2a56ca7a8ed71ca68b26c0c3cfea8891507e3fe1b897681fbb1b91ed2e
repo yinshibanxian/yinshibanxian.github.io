@@ -1,0 +1,82 @@
+I"�<blockquote>
+  <p><a href="https://www.chtholly.ac.cn/">中国珂学院</a></p>
+</blockquote>
+
+<p><a href="https://vjudge.net/problem/CodeForces-896C">题目链接</a>
+珂朵莉树是一个可以维护区间x次方和查询的高效数据结构，原理十分暴力。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define mul(a,b,c) ((a)*(b)%(c))
+using namespace std;
+typedef long long ll;
+typedef pair&lt;int,ll&gt; pil;
+ll pow(ll a,ll b,ll m)
+{
+	ll r=1;
+	for(a%=m; b; a=mul(a,a,m),b&gt;&gt;=1)
+		if(b&amp;1)r=mul(r,a,m);
+	return r;
+}
+struct ChthollyTree:map&lt;int,pil&gt;
+{
+	iterator split(int pos)
+	{
+		iterator it=lower_bound(pos);
+		if(it!=end()&amp;&amp;it-&gt;first==pos)return it;
+		--it;
+		if(pos&gt;it-&gt;second.first)return end();
+		pair&lt;int,pil&gt; p=*it;
+		erase(it);
+		insert(make_pair(p.first,pil(pos-1,p.second.second)));
+		return insert(make_pair(pos,p.second)).first;
+	}
+	void add(int l,int r,ll val)
+	{
+		for(iterator b=split(l),e=split(r+1); b!=e; ++b)b-&gt;second.second+=val;
+	}
+	void set(int l,int r,ll val)
+	{
+		erase(split(l),split(r+1)),insert(make_pair(l,pil(r,val)));
+	}
+	ll rank(int l,int r,int k)
+	{
+		vector&lt;pair&lt;ll,int&gt; &gt; v;
+		for(iterator b=split(l),e=split(r+1); b!=e; ++b)
+			v.push_back(make_pair(b-&gt;second.second,b-&gt;second.first-b-&gt;first+1));
+		sort(v.begin(),v.end());
+		for(int i=0; i&lt;v.size(); ++i)
+			if(k-=v[i].second,k&lt;=0)return v[i].first;
+		return -1;
+	}
+	ll sum(int l,int r,ll ex,ll m)
+	{
+		ll res=0;
+		for(iterator b=split(l),e=split(r+1); b!=e; ++b)
+			res=(res+mul(b-&gt;second.first-b-&gt;first+1,pow(b-&gt;second.second,ex,m),m))%m;
+		return res;
+	}
+} t;
+ll n,m,seed,vmax,M=1e9+7;
+ll rnd()
+{
+	ll ret=seed;
+	seed=(seed*7+13)%M;
+	return ret;
+}
+int main()
+{
+	scanf("%lld%lld%lld%lld",&amp;n,&amp;m,&amp;seed,&amp;vmax);
+	for(int i=1; i&lt;=n; ++i)
+		t.insert(make_pair(i,pil(i,rnd()%vmax+1)));
+	for(int i=1; i&lt;=m; ++i)
+	{
+		int op=rnd()%4+1,l=rnd()%n+1,r=rnd()%n+1;
+		if(l&gt;r)swap(l,r);
+		ll x=rnd()%(op==3?r-l+1:vmax)+1;
+		if(op==1)t.add(l,r,x);
+		if(op==2)t.set(l,r,x);
+		if(op==3)printf("%lld\n",t.rank(l,r,x));
+		if(op==4)printf("%lld\n",t.sum(l,r,x,rnd()%vmax+1));
+	}
+}
+</code></pre>
+:ET

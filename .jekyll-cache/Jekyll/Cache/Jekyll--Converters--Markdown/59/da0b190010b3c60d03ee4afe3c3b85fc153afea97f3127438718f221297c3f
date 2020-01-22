@@ -1,0 +1,33 @@
+I"ñ<h2 id="quailty-and-ccpc"><a href="https://vjudge.net/problem/HDU-6666">Quailty and CCPC</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+struct Team
+{
+	int penalty, timu, id;
+	bool operator&lt;(const Team &amp;q) const
+	{
+		return timu == q.timu ? penalty &lt; q.penalty : timu &gt; q.timu;
+	}
+} tt[1004000];
+char s[1000040][20];
+int n, m, t;
+int main(void)
+{
+	scanf("%d", &amp;t);
+	while (t--)
+	{
+		scanf("%d%d", &amp;n, &amp;m);
+		for (int i = 1; i &lt;= n; i++)
+			scanf("%s%d%d", s[i], &amp;tt[i].timu, &amp;tt[i].penalty), tt[i].id = i;
+		if (n * m % 10 == 5)
+		{
+			sort(tt + 1, tt + n + 1);
+			printf("%s\n", s[tt[n * m / 10 + 1].id]);
+		}
+		else
+			puts("Quailty is very great");
+	}
+}
+</code></pre>
+:ET

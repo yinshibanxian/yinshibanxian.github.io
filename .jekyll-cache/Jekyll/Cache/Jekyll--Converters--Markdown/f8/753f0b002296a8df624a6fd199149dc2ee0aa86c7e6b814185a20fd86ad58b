@@ -1,0 +1,65 @@
+I"�
+<h2 id="归并排序求逆序对">归并排序求逆序对</h2>
+<p><a href="https://vjudge.net/solution/19421786">使用示例</a></p>
+<pre><code class="language-cpp">ll merge_sort(ll *b, ll *e) //int存答案会爆
+{
+	if (e - b &lt; 2)
+		return 0;
+	ll *m = b + (e - b) / 2, ans = merge_sort(b, m) + merge_sort(m, e);
+	for (ll *i = b, *j = m; i &lt; m &amp;&amp; j &lt; e; ++i)
+		for (; j &lt; e &amp;&amp; *j &lt; *i; ++j)
+			ans += m - i;
+	return inplace_merge(b, m, e), ans;
+}
+</code></pre>
+<h2 id="约瑟夫问题">约瑟夫问题</h2>
+<pre><code class="language-cpp">ll josephus(ll n, ll k) //编号0~n-1，每k个出列，时间复杂度O(min(n,k))
+{
+	if (n &lt; 3)
+		return k % n;
+	if (n &lt; k)
+		return (Josephus(n - 1, k) + k) % n;
+	ll ret = Josephus(n - n / k, k) - n % k;
+	return ret &lt; 0 ? ret + n : ret + ret / (k - 1);
+}
+</code></pre>
+<h2 id="堆的操作"><a href="https://vjudge.net/solution/19943623">堆的操作</a></h2>
+<p>和STL的函数<code>push_heap</code>、<code>pop_heap</code>用法完全相同，实现的是大根堆。</p>
+<pre><code class="language-cpp">ll pushHeap(ll *b, ll *e)
+{
+	ll tmp = *--e;
+	for (int i = e - b, p;; b[i] = b[p], i = p)
+		if (i &lt;= 0 || b[p = (i - 1) / 2] &gt;= tmp)
+			return b[i] = tmp;
+}
+ll popHeap(ll *b, ll *e)
+{
+	ll tmp = b[0];
+	for (int i = 0, siz = --e - b, ch;; b[i] = b[ch], i = ch)
+	{
+		if (ch = i * 2 + 1, ch + 1 &lt; siz &amp;&amp; b[ch] &lt; b[ch + 1])
+			++ch;
+		if (i &gt;= siz / 2 || b[siz] &gt;= b[ch])
+			return b[i] = b[siz], b[siz] = tmp;
+	}
+}
+</code></pre>
+<h2 id="蔡勒公式">蔡勒公式</h2>
+<p>$w=(\lfloor\frac{c}{4}\rfloor-2c+y+\lfloor\frac{y}{4}\rfloor+\lfloor\frac{13(m+1)}{5}\rfloor+d-1)\mod7$</p>
+
+<p>w：$0,1,\ldots,6$对应周日，周一，$\ldots$，周六</p>
+
+<p>c：世纪减1（即年份前两位数）。</p>
+
+<p>y：年份后两位数。</p>
+
+<p>m：月（$3\leq m\leq14$，即在蔡勒公式中，1、2月要看作上一年的13、14 月来计算）。</p>
+
+<p>d：日。</p>
+<h2 id="曼哈顿距离的变换">曼哈顿距离的变换</h2>
+<p>$\mid x_1−x_2\mid +\mid y_1−y_2\mid=\max (\mid (x_1 + y_1)−(x_2 + y_2)\mid ,\mid (x_1 −y_1)−(x_2 −y_2)\mid )$</p>
+<h2 id="皮克定理">皮克定理</h2>
+<p>顶点坐标均是整点（或说正方形格点）的简单多边形中，面积S和内部格点数目n、边上格点数目m的满足关系$S=n+\frac{m}{2}-1$。</p>
+<h2 id="矩形面积并矩形面积交矩形周长并线段树扫描线总结">矩形面积并、矩形面积交、矩形周长并（线段树、扫描线总结）</h2>
+<p>详见<a href="https://wu-kan.github.io/posts/acm/矩形面积并-矩形面积交-矩形周长并-线段树-扫描线总结">这篇博文</a>。</p>
+:ET

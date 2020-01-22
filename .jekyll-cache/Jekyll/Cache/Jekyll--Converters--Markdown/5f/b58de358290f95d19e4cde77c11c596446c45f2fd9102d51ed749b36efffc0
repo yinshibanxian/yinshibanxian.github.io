@@ -1,0 +1,190 @@
+I"o<h1 id="decoding-baby-boos"><a href="https://vjudge.net/problem/UVALive-6917">Decoding Baby Boos</a></h1>
+<p>另解：使用链表快速合并。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+char s[1000009],a[9],b[9];
+int t,r;
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        vector&lt;list&lt;int&gt; &gt; l(99);
+        scanf("%s%d",s,&amp;r);
+        for(int i=0; s[i]; ++i)
+            l[s[i]].push_back(i);
+        for(; r--; l[a[0]].splice(l[a[0]].end(),l[b[0]]))
+            scanf("%s%s",a,b);
+        for(int i=0; i&lt;l.size(); ++i)
+            for(list&lt;int&gt;::iterator it=l[i].begin(); it!=l[i].end(); ++it)
+                s[*it]=i;
+        printf("%s\n",s);
+    }
+}
+</code></pre>
+<h1 id="and-or"><a href="https://vjudge.net/problem/UVALive-6918">And Or</a></h1>
+<pre><code class="language-cpp">#include&lt;stdio.h&gt;
+long long t,kase,a,b,ansOr,ansAnd;
+int main()
+{
+    for(scanf("%lld", &amp;t); t--;)
+    {
+        scanf("%lld%lld",&amp;a,&amp;b);
+        ansAnd=a,ansOr=a;
+        for(int i=0; !(a&gt;&gt;i&amp;1)&amp;&amp;i&lt;63; ++i)
+            if(b-a&gt;=1LL&lt;&lt;i)ansOr|=1LL&lt;&lt;i;
+        for(; a&lt;=b; a+=a&amp;-a)
+            ansOr|=a,ansAnd&amp;=a;
+        printf("Case %lld: %lld %lld\n",++kase,ansOr,ansAnd);
+    }
+}
+</code></pre>
+<h1 id="a-game-for-kids"><a href="https://vjudge.net/problem/UVALive-6919">A game for kids</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define mul(a,b,c) (1LL*(a)*(b)%(c))
+using namespace std;
+const int M=21092013,H=51;
+struct GCD
+{
+    int a[H][H];
+    GCD()
+    {
+        for(int i=1; i&lt;H; ++i)
+            for(int j=i; j&lt;H; ++j)
+                a[i][j]=a[j][i]=__gcd(i,j);
+    }
+} gcd;
+#define __gcd(i,j) gcd.a[i][j]
+struct Graph
+{
+    struct Vertex
+    {
+        vector&lt;int&gt; a,f;
+        int l,h;
+        Vertex():f(H,0) {}
+    };
+    struct Edge
+    {
+        int from,to;
+    };
+    vector&lt;Vertex&gt; v;
+    vector&lt;Edge&gt; e;
+    vector&lt;int&gt; ans;
+    Graph(int n):v(n),ans(H,0) {}
+    void add(const Edge &amp;ed)
+    {
+        v[ed.from].a.push_back(e.size());
+        e.push_back(ed);
+    }
+    void dfs(int u,int fa)
+    {
+        for(int i=0,to,g; i&lt;v[u].a.size(); ++i)
+            if(to=e[v[u].a[i]].to,to!=fa)
+            {
+                dfs(to,u);
+                for(int j=1; j&lt;H; ++j)
+                    for(int k=1; k&lt;H; ++k)
+                        g=__gcd(j,k),ans[g]=(ans[g]+mul(v[to].f[k],v[u].f[j],M))%M;
+                for(int k=1; k&lt;H; ++k)
+                    for(int j=v[u].l; j&lt;=v[u].h; ++j)
+                        g=__gcd(j,k),v[u].f[g]=(v[u].f[g]+v[to].f[k])%M;
+            }
+        for(int i=v[u].l; i&lt;=v[u].h; ++i)v[u].f[i]=(v[u].f[i]+1)%M;
+    }
+};
+int main()
+{
+    int t,n,kase=0;
+    for(scanf("%d",&amp;t); t--;)
+    {
+        printf("Case %d:\n",++kase);
+        scanf("%d",&amp;n);
+        Graph g(n);
+        for(int i=1,u,v; i&lt;n; ++i)
+            scanf("%d%d",&amp;u,&amp;v),g.add({u-1,v-1}),g.add({v-1,u-1});
+        for(int i=0; i&lt;n; ++i)scanf("%d",&amp;g.v[i].l);
+        for(int i=0; i&lt;n; ++i)scanf("%d",&amp;g.v[i].h);
+        g.dfs(0,-1);
+        for(int i=1; i&lt;H; ++i)
+        {
+            for(int j=0; j&lt;n; ++j)g.ans[i]=(g.ans[i]+g.v[j].f[i])%M;
+            printf("%d: %d\n",i,g.ans[i]);
+        }
+    }
+}
+</code></pre>
+<h1 id="refraction"><a href="https://vjudge.net/problem/UVALive-6921">Refraction</a></h1>
+<pre><code class="language-cpp">#include&lt;stdio.h&gt;
+#include&lt;math.h&gt;
+double EPS=3e-6,W,H,x,xe,ye,mu;
+int t;
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%lf%lf%lf%lf%lf%lf",&amp;W,&amp;H,&amp;x,&amp;xe,&amp;ye,&amp;mu);
+        double tanH=(ye-H)/(xe-W),E=asin(1)-atan(tanH),sinCPN=sin(E)/mu,
+               tanCPN=tan(asin(sinCPN)),h=(tanH*(W-x)-H)/(tanH*tanCPN-1);
+        if(h-EPS&gt;H)printf("Impossible\n");
+        else printf("%.4f\n",h);
+    }
+}
+</code></pre>
+<h1 id="load-balancing"><a href="https://vjudge.net/problem/UVALive-6924">Load Balancing</a></h1>
+<pre><code class="language-cpp">#include&lt;stdio.h&gt;
+#include&lt;math.h&gt;
+#define M 161
+double f[M][4],d;
+int t,n,kase,s[M],p[M][4];
+void print(int i,int j)
+{
+    if(!j)return;
+    print(p[i][j],j-1);
+    printf(" %d",p[i][j]);
+}
+int main()
+{
+    for(scanf("%d",&amp;t); t--; printf("Case %d:",++kase),print(M-1,3),printf("\n"))
+    {
+        scanf("%d", &amp;n);
+        for(int i=0; i&lt;M; ++i)s[i]=0;
+        for(int i=0,c; i&lt;n; ++i)scanf("%d",&amp;c),++s[c];
+        for(int i=1; i&lt;M; ++i)s[i]+=s[i-1];
+        for(int i=0; i&lt;M; ++i)
+        {
+            f[i][0]=fabs(s[i]-n/4.0),f[i][1]=f[i][2]=f[i][3]=1e9;
+            for(int j=1; j&lt;4; ++j)
+                for(int k=0; k&lt;i; ++k)
+                    if(d=fabs(s[i]-s[k]-n/4.0),f[i][j]&gt;f[k][j-1]+d)
+                        f[i][j]=f[p[i][j]=k][j-1]+d;
+        }
+    }
+}
+</code></pre>
+<h1 id="maximum-score"><a href="https://vjudge.net/problem/UVALive-6926">Maximum Score</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define mul(a,b,c) ((a)*(b)%(c))
+using namespace std;
+typedef unsigned long long ll;
+const ll N=1e5+7,M=1e9+7;
+pair&lt;ll,ll&gt; p[N];
+ll t,n,kase;
+int main()
+{
+    for(scanf("%llu",&amp;t); t--;)
+    {
+        scanf("%llu",&amp;n);
+        for(ll i=0; i&lt;n; ++i)
+            scanf("%llu%llu",&amp;p[i].first,&amp;p[i].second);
+        sort(p,p+n);
+        ll sum=p[0].second,ans=sum*p[0].second,per=1;
+        for(ll i=1; i&lt;n; ++i)
+        {
+            sum+=p[i].second;
+            ans=ans+sum*p[i].second;
+            per=mul(per,p[i-1].second+1,M);
+        }
+        printf("Case %llu: %llu %llu\n",++kase,ans,per);
+    }
+}
+</code></pre>
+:ET

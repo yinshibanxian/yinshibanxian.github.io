@@ -1,0 +1,407 @@
+I"�!<h2 id="实验题目">实验题目</h2>
+
+<p>系统调用</p>
+
+<h2 id="实验目的">实验目的</h2>
+
+<ol>
+  <li>理解系统调用的实现方法。</li>
+  <li>实现原型操作系统中一些基本的系统调用。</li>
+  <li>设计并实现一测试系统调用的用户程序，利用系统调用实现用户界面和内部功能。</li>
+  <li>在原型操作系统上建立一个初步C语言开发环境，理解操作系统与高级语言之间的关系。</li>
+</ol>
+
+<h2 id="实验方案">实验方案</h2>
+
+<h3 id="实验环境">实验环境</h3>
+
+<h4 id="软件">软件</h4>
+
+<ul>
+  <li>Windows 10, 64-bit  (Build 17763) 10.0.17763</li>
+  <li>Windows Subsystem for Linux [Ubuntu 18.04.2 LTS]：WSL是以软件的形式运行在Windows下的Linux子系统，是近些年微软推出来的新工具，可以在Windows系统上原生运行Linux。</li>
+  <li>gcc version 7.3.0 (Ubuntu 7.3.0-27ubuntu1~18.04)：C语言程序编译器，Ubuntu自带。</li>
+  <li>NASM version 2.13.02：汇编程序编译器，通过<code>sudo apt install nasm</code>安装在WSL上。</li>
+  <li>Oracle VM VirtualBox 6.0.4 r128413 (Qt5.6.2)：轻量开源的虚拟机软件。</li>
+  <li>VSCode - Insiders v1.33.0：好用的文本编辑器，有丰富的插件。</li>
+  <li>hexdump for VSCode 1.7.2: VSCode中一个好用的十六进制显示插件。</li>
+  <li>GNU Make 4.1：安装在Ubuntu下，一键编译并连接代码，生成最终的文件。</li>
+</ul>
+
+<p>大部分开发环境安装在WSL上，较之于双系统、虚拟机等其他开发方案，更加方便，也方便直接使用Linux下的一些指令。</p>
+
+<h4 id="硬件">硬件</h4>
+
+<h5 id="开发环境配置">开发环境配置</h5>
+
+<p>所用机器型号为VAIO Z Flip 2016</p>
+
+<ul>
+  <li>Intel(R) Core(TM) i7-6567U CPU @3.30GHZ 3.31GHz</li>
+  <li>8.00GB RAM</li>
+</ul>
+
+<h5 id="虚拟机配置">虚拟机配置</h5>
+
+<ul>
+  <li>处理器内核总数：1</li>
+  <li>RAM：4MB</li>
+</ul>
+
+<h2 id="实验过程">实验过程</h2>
+
+<h3 id="实验代码">实验代码</h3>
+
+<h4 id="bootloaderasm">bootloader.asm</h4>
+
+<p>和<a href="https://wu-kan.github.io/posts/操作系统/实验/中断控制">上一个实验</a>中的代码完全相同，不再放出。</p>
+
+<h4 id="kernelasm">kernel.asm</h4>
+
+<p>操作系统内核的汇编部分代码，提供<code>int 33</code>中断和1~4的四个ah功能号在屏幕的四个象限上显示自定义信息，检测到<code>Ctrl + C</code>时返回。</p>
+
+<p>同时，提供了如下的全局函数供C语言部分调用。</p>
+
+<ul>
+  <li><code>_getch</code>从屏幕上无回显地读入一个字符。</li>
+  <li><code>_getCursor</code>返回屏幕光标的位置。</li>
+  <li><code>_setCursor</code>设置屏幕光标的位置。</li>
+  <li><code>_putC</code>向光标位置写入一个字符。</li>
+  <li><code>_pageUP</code>屏幕内容向上滚动。</li>
+  <li><code>_loadProgram</code>加载用户程序。</li>
+</ul>
+
+<p>getch(),gets(),putch(),puts(),scanf()和printf()函数的汇编部分代码均通过调用上述函数实现。</p>
+
+<pre><code class="language-nasm">%macro print 5 ; string, length, x, y, color
+	pusha
+	push ax
+	push bx
+	push cx
+	push dx
+	push bp
+	push ds
+	push es
+	mov ax, 0b800H
+	mov gs, ax
+	mov ax, cs
+	mov ds, ax
+	mov bp, %1
+	mov ax, ds
+	mov es, ax
+	mov cx, %2
+	mov ax, 1300H
+	mov dh, %3
+	mov dl, %4
+	mov bx, %5
+	int 10H
+	pop es
+	pop ds
+	pop bp
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	popa
+%endmacro
+%macro setIVT 2
+	push es
+	push ds
+	push si
+	pusha
+	mov ax, 0000H
+	mov es, ax
+	mov ax, %1
+	mov bx, 4
+	mul bx
+	mov si, ax
+	mov ax, %2
+	mov [es:si], ax
+	add si, 2
+	mov ax, cs
+	mov [es:si], ax
+	popa
+	pop si
+	pop ds
+	pop es
+%endmacro
+	bits 16
+	UserPrgOffset equ 0a100H
+	PrgSectorOffset equ 0
+	extern terminal
+	global _start
+	global _getch
+	global _getCursor
+	global _setCursor
+	global _putC
+	global _pageUP
+	global _loadProgram
+_start:
+	setIVT 8, int8
+	setIVT 33, int33
+	call terminal
+	ret
+_getCursor:
+	push ebp
+	mov ebp, esp
+	push ebx
+	sub esp, 4
+	mov eax, 768
+	mov edx, 0
+	mov ebx, edx
+	int 0x10
+	mov eax, edx
+	mov dword [ebp-8], eax
+	mov eax, dword [ebp-8]
+	add esp, 4
+	pop ebx
+	pop ebp
+	ret
+_getch:
+	mov ah, 01H
+	int 16H
+	jz _getch
+	mov ah, 00H
+	int 16H
+	ret
+_setCursor:
+	push ebp
+	mov ebp, esp
+	push ebx
+	mov eax, 512
+	mov ecx, 0
+	mov edx, dword [ebp+8]
+	mov ebx, ecx
+	int 0x10
+	pop ebx
+	pop ebp
+	ret
+_putC:
+	push ebp
+	mov ebp, esp
+	push ebx
+	mov eax, dword [ebp+8]
+	or ah, 9
+	mov edx, dword [ebp+12]
+	mov ecx, 1
+	mov ebx, edx
+	int 0x10
+	pop ebx
+	pop ebp
+	ret
+_pageUP:
+	push ebp
+	mov ebp, esp
+	mov eax, dword [ebp+8]
+	or ah, 6
+	mov ecx, 0
+	mov edx, 184fh
+	int 0x10
+	pop ebp
+	ret
+_loadProgram:
+	push ebp
+	mov ebp, esp
+	push ax
+	push bx
+	push cx
+	push dx
+	push es
+	mov ax, cs
+	mov es, ax
+	mov bx, UserPrgOffset
+	mov ah, 2
+	mov al, 2
+	mov dl, 0
+	mov dh, 1
+	mov ch, 0
+	mov cl, byte [ebp+8]
+	add cl, PrgSectorOffset
+	int 13H
+	call UserPrgOffset
+	pop es
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	mov esp, ebp
+	pop ebp
+	ret
+int8:
+	cli
+	pusha
+	push eax
+	call draw_slash
+	mov al, 20H
+	out 20H, al
+	out 0a0H, al
+	pop eax
+	popa
+	sti
+	iret
+int33:
+	cmp ah,1
+	jne prg2
+	mov word[n], 12
+	mov word[m], 30
+	mov word[top], 2
+	mov word[left], 40
+	mov word[length], 8
+	mov word[msg], msg1
+	call show
+	iret
+prg2:
+	cmp ah,2
+	jne prg3
+	mov word[n], 12
+	mov word[m], 30
+	mov word[top], 2
+	mov word[left], 0
+	mov word[length], 10
+	mov word[msg], msg2
+	call show
+	iret
+prg3:
+	cmp ah,4
+	jne prg4
+	mov word[n], 12
+	mov word[m], 20
+	mov word[top], 13
+	mov word[left], 0
+	mov word[length], 20
+	mov word[msg], msg3
+	call show
+	iret
+prg4:
+	mov word[n], 12
+	mov word[m], 14
+	mov word[top], 13
+	mov word[left], 40
+	mov word[length], 26
+	mov word[msg], msg4
+	call show
+	iret
+draw_slash:
+	print bar,1,24,78,7
+	cmp byte[bar],'|'
+	jne rslash
+	mov byte[bar],'/'
+	ret
+rslash:
+	cmp byte[bar],'/'
+	jne hslash
+	mov byte[bar],'-'
+	ret
+hslash:
+	cmp byte[bar],'-'
+	jne lslash
+	mov byte[bar],'\'
+	ret
+lslash:
+	mov byte[bar],'|'
+	ret
+show:
+	dec dword[cnt]
+	jnz show
+	mov dword[cnt],99999999
+	mov word ax, [t]
+	mov word bx, [n]
+	add bx, bx
+	sub bx, 2
+	xor dx, dx
+	div bx
+	cmp dx, [n]
+	jb xok
+	sub bx, dx
+	mov dx, bx
+xok:
+	add dx, [top]
+	mov word[x], dx
+	mov word ax, [t]
+	mov word bx, [m]
+	add bx,bx
+	sub bx,2
+	xor dx, dx
+	div bx
+	cmp dx, [m]
+	jb yok
+	sub bx, dx
+	mov dx, bx
+yok:
+	add dx,[left]
+	mov word [y],dx
+	inc word[t]
+	print [msg],[length],[x],[y],[x]
+	mov ah, 01H
+	int 16H
+	jz show
+	print msgouch,10,[x],[y],[x]
+	mov ah, 00H
+	int 16H
+	cmp ax, 2e03H
+	jne show
+	ret
+datadef:
+	cnt dd 1
+	t dw 0
+	x dw 1
+	y dw 0
+	n dw 12
+	m dw 32
+	top dw 2
+	left dw 40
+	length dw 8
+	msg dw 1
+	msg1 db ' wu-kan '
+	msg2 db ' 17341163 '
+	msg3 db ' wu.kan@foxmail.com '
+	msg4 db ' https://wu-kan.github.io '
+	msgouch db 'Ouch!Ouch!'
+	bar db '|'
+</code></pre>
+
+<h3 id="kernerc">kerner.c</h3>
+
+<p>操作系统内核C语言部分的代码。和上一实验相比没有改变，这里不再放出。</p>
+
+<h4 id="linkld">link.ld</h4>
+
+<p>将<code>wukos.asm</code>和<code>kernel.c</code>两个文件编译出来的内容连接起来。和<a href="https://wu-kan.github.io/posts/操作系统/实验/中断控制">上一个实验</a>中的完全相同，不再放出。</p>
+
+<h4 id="prg1asmprg4asm">prg1.asm~prg4.asm</h4>
+
+<p>直接调用int 33中断和ah功能号实现。</p>
+
+<pre><code class="language-nasm">org 0a100H
+push ax
+mov ah,1
+int 33
+pop ax
+ret
+</code></pre>
+
+<p>上面是prg1.asm的内容，其余同理，不再放出。</p>
+
+<h4 id="makefile">Makefile</h4>
+
+<p>和<a href="https://wu-kan.github.io/posts/操作系统/实验/中断控制">上一个实验</a>完全相同，不再放出。</p>
+
+<h3 id="运行结果">运行结果</h3>
+
+<p><img src="/public/image/2019-03-31-1.jpg" alt="1" />
+如上图，进入操作系统后开始了“无敌风火轮”（右下角）。
+<img src="/public/image/2019-03-31-2.jpg" alt="2" />
+如上图，使用<code>exec</code>指令轮流运行我的四个程序，分别调用中断<code>int 33</code>的四个功能号。按下Ctrl+C可以退出程序。程序检测到键盘输入，因此显示<code>Ouch!Ouch!</code></p>
+
+<p>风火轮仍然在转。
+<img src="/public/image/2019-03-31-3.jpg" alt="3" />
+输入若干指令。</p>
+
+<p>风火轮仍然在转。
+<img src="/public/image/2019-03-31-4.jpg" alt="4" />
+继续输入若干指令，此时超出屏幕显示范围，自动滚屏。</p>
+
+<p>风火轮仍然在转。</p>
+<h2 id="实验总结">实验总结</h2>
+<p>得益于前两个实验，本次实验较为熟练地完成了任务。看着自己的操作系统不断地完善，心中还是很有成就感的。同时，由于踩过了许多寄存器保护的坑，这次在调用功能号前记得将其值压栈，于是很顺利没有出现问题。</p>
+:ET

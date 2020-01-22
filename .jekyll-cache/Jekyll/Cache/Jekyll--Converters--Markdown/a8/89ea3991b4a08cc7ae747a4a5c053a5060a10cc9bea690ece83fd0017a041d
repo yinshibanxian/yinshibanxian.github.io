@@ -1,0 +1,384 @@
+I"�5<h2 id="无符号整数">无符号整数</h2>
+<p><a href="https://vjudge.net/solution/16907599">使用范例</a></p>
+
+<p>vector自带大小比较为字典序比较， <code>!=</code> 、 <code>==</code> 运算，其余需要时一定记得重载！</p>
+
+<p>减法，当被减数小于减数时减为0。</p>
+<pre><code class="language-cpp">struct Wint : vector&lt;int&gt; //继承vector
+{
+	static const int width = 9, base = 1e9;
+	Wint(unsigned long long n = 0) //普通初始化，当整型数和Wint同时运算时会提升至Wint
+	{
+		for (; n; n /= base)
+			push_back(n % base);
+	}
+	explicit Wint(const string &amp;s) //字符串初始化函数，未判断字符串合法情况
+	{
+		for (int len = int(s.size() - 1) / width + 1, b, e, i = 0; i &lt; len; ++i)
+			for (e = s.size() - i * width, b = max(0, e - width), push_back(0); b != e; ++b)
+				back() = back() * 10 + s[b] - '0';
+		trim(0);
+	}
+	Wint &amp;trim(bool up = 1) //去前导0，是否需要进位，很常用的小函数，为方便返回自身
+	{
+		for (int i = 1; up &amp;&amp; i &lt; size(); ++i)
+		{
+			if ((*this)[i - 1] &lt; 0)
+				--(*this)[i], (*this)[i - 1] += base;
+			if ((*this)[i - 1] &gt;= base)
+				(*this)[i] += (*this)[i - 1] / base, (*this)[i - 1] %= base;
+		}
+		while (!empty() &amp;&amp; back() &lt;= 0)
+			pop_back();
+		for (; up &amp;&amp; !empty() &amp;&amp; back() &gt;= base; (*this)[size() - 2] %= base)
+			push_back(back() / base);
+		return *this;
+	}
+	friend istream &amp;operator&gt;&gt;(istream &amp;is, Wint &amp;n)
+	{
+		string s; //懒
+		return is &gt;&gt; s, n = Wint(s), is;
+	}
+	friend ostream &amp;operator&lt;&lt;(ostream &amp;os, const Wint &amp;n)
+	{
+		if (n.empty())
+			return os.put('0');
+		os &lt;&lt; n.back();
+		char ch = os.fill('0');
+		for (int i = n.size() - 2; ~i; --i)
+			os.width(n.width), os &lt;&lt; n[i];
+		return os.fill(ch), os;
+	}
+	friend bool operator&lt;(const Wint &amp;a, const Wint &amp;b)
+	{
+		if (a.size() != b.size())
+			return a.size() &lt; b.size();
+		for (int i = a.size() - 1; ~i; --i)
+			if (a[i] != b[i])
+				return a[i] &lt; b[i];
+		return 0;
+	}
+	friend bool operator&gt;(const Wint &amp;a, const Wint &amp;b) { return b &lt; a; }
+	friend bool operator&lt;=(const Wint &amp;a, const Wint &amp;b) { return !(a &gt; b); }
+	friend bool operator&gt;=(const Wint &amp;a, const Wint &amp;b) { return !(a &lt; b); }
+	Wint &amp;operator+=(const Wint &amp;b)
+	{
+		if (size() &lt; b.size())
+			resize(b.size()); //保证有足够的位数
+		for (int i = 0; i &lt; b.size(); ++i)
+			(*this)[i] += b[i];
+		return trim(); //单独进位防自运算
+	}
+	friend Wint operator+(Wint a, const Wint &amp;b) { return a += b; }
+	Wint &amp;operator++() { return *this += 1; } //前置版本，懒
+	Wint operator++(int)					  //后置版本
+	{
+		Wint b(*this);
+		return ++*this, b;
+	}
+	Wint &amp;operator-=(const Wint &amp;b) //a&lt;b会使a变为0
+	{
+		if (size() &lt; b.size())
+			resize(b.size()); //保证有足够的位数
+		for (int i = 0; i &lt; b.size(); ++i)
+			(*this)[i] -= b[i];
+		return trim(); //单独进位防自运算
+	}
+	friend Wint operator-(Wint a, const Wint &amp;b) { return a -= b; }
+	Wint &amp;operator--() { return *this -= 1; } //前置版本，懒
+	Wint operator--(int)					  //后置版本
+	{
+		Wint b(*this);
+		return --*this, b;
+	}
+	Wint &amp;operator*=(const Wint &amp;b) //高精度乘法，常规写法
+	{
+		Wint c;
+		c.assign(size() + b.size(), 0);
+		for (int j = 0, k, l; j &lt; b.size(); ++j)
+			if (b[j]) //稀疏优化，特殊情况很有效
+				for (int i = 0; i &lt; size(); ++i)
+				{
+					unsigned long long n = (*this)[i];
+					for (n *= b[j], k = i + j; n; n /= base)
+						c[k++] += n % base;
+					for (l = i + j; c[l] &gt;= base || l + 1 &lt; k; c[l++] %= base)
+						c[l + 1] += c[l] / base;
+				}
+		return swap(c), trim(0);
+	}
+	/*
+	Wint&amp; operator*=(const Wint &amp;b)//一种效率略高但对位宽有限制的写法
+	{
+		vector&lt;unsigned long long&gt; n(size()+b.size(),0);//防爆int
+		//乘法算完后统一进位效率高，防止乘法溢出（unsigned long long范围0~1.8e19）
+		//位宽为9时size()不能超过18（十进制162位），位宽为8时size()不能超过1800（十进制14400位）等等。
+		for(int j=0; j!=b.size(); ++j)
+			if(b[j])//稀疏优化，特殊情况很有效
+				for(int i=0; i!=size(); ++i)
+					n[i+j]+=(unsigned long long)(*this)[i]*b[j];
+		for(int i=1; i&lt;n.size(); ++i)//这里用&lt;防止位数0，单独进位防自运算
+			n[i]+=n[i-1]/base,n[i-1]%=base;
+		return assign(n.begin(),n.end()),trim(0);
+	}
+	Wint&amp; operator*=(const Wint &amp;b)//fft优化乘法，注意double仅15位有效数字，调小Wint::width不超过2，计算自2*log2(base)+2*log2(len)&lt;53
+	{
+		vector&lt;ll&gt; ax(begin(),end()),bx(b.begin(),b.end());
+		ax=FFT(size()+b.size()).ask(ax,bx);
+		for(int i=1; i&lt;ax.size(); ++i)
+			ax[i]+=ax[i-1]/base,ax[i-1]%=base;
+		return assign(ax.begin(),ax.end()),trim(0);
+	}
+	Wint&amp; operator*=(const Wint &amp;b)//ntt优化，Wint::width不超过2
+	{
+		vector&lt;ll&gt; ax(begin(),end()),bx(b.begin(),b.end());
+		ax=FNTT(size()+b.size(),(7&lt;&lt;26)+1,3).ask(ax,bx);
+		for(int i=1; i&lt;ax.size(); ++i)
+			ax[i]+=ax[i-1]/base,ax[i-1]%=base;
+		return assign(ax.begin(),ax.end()),trim(0);
+	}
+	*/
+	friend Wint operator*(Wint a, const Wint &amp;b) { return a *= b; }
+	Wint &amp;operator/=(Wint b)
+	{
+		Wint r, c, d = b.base / (b.back() + 1);
+		*this *= d, b *= d, c.assign(size(), 0);
+		for (int i = size() - 1; ~i; --i)
+		{
+			r.insert(r.begin(), (*this)[i]);
+			unsigned long long s = 0;
+			for (int j = b.size(); j + 1 &gt;= b.size(); --j) //b.size()==0肯定第一行就出问题的
+				s = s * b.base + (j &lt; r.size() ? r[j] : 0);
+			for (d = c[i] = s / b.back(), d *= b; r &lt; d; r += b)
+				--c[i];
+			r -= d;
+		}
+		return swap(c), trim(0); //r为加倍后的余数，可通过高精度除低精度得到真正余数，此处略
+	}
+	friend Wint operator/(Wint a, const Wint &amp;b) { return a /= b; }
+	Wint &amp;operator%=(const Wint &amp;b) { return *this -= *this / b * b; }
+	friend Wint operator%(Wint a, const Wint &amp;b) { return a %= b; }
+	//开平方，改自ZJU模板
+	bool cmp(long long c, int d, const Wint &amp;b) const
+	{
+		if ((int)b.size() - (int)size() &lt; d + 1 &amp;&amp; c)
+			return 1;
+		long long t = 0;
+		for (int i = b.size() - 1, lo = -(base &lt;&lt; 1); lo &lt;= t &amp;&amp; t &lt;= 0 &amp;&amp; ~i; --i)
+			if (t = t * base - b[i], 0 &lt;= i - d - 1 &amp;&amp; i - d - 1 &lt; size())
+				t += (*this)[i - d - 1] * c;
+		return t &gt; 0;
+	}
+	Wint &amp;sub(const Wint &amp;b, long long k, int d)
+	{
+		int l = b.size() + d;
+		for (int i = d + 1; i &lt;= l; ++i)
+		{
+			long long tmp = (*this)[i] - k * b[i - d - 1];
+			if (tmp &lt; 0)
+			{
+				(*this)[i + 1] += (tmp - base + 1) / base;
+				(*this)[i] = tmp - (tmp - base + 1) / base * base;
+			}
+			else
+				(*this)[i] = tmp;
+		}
+		for (int i = l + 1; i &lt; size() &amp;&amp; (*this)[i] &lt; 0; ++i)
+		{
+			(*this)[i + 1] += ((*this)[i] - base + 1) / base;
+			(*this)[i] -= ((*this)[i] - base + 1) / base * base;
+		}
+		return trim(0);
+	}
+	friend Wint sqrt(Wint a)
+	{
+		Wint n;
+		n.assign(a.size() + 1 &gt;&gt; 1, 0);
+		for (int i = n.size() - 1, l, r; ~i; --i)
+		{
+			for (l = 0, r = a.base, n[i] = l + r &gt;&gt; 1; r - l &gt; 1; n[i] = l + r &gt;&gt; 1)
+			{
+				if (n.cmp(n[i], i - 1, a))
+					r = n[i];
+				else
+					l = n[i];
+			}
+			a.sub(n, n[i], i - 1), n[i] += l + r &gt;&gt; 1;
+		}
+		for (int i = 0; i &lt; n.size(); ++i)
+			n[i] &gt;&gt;= 1;
+		return n.trim(0);
+	}
+	/*
+	friend Wint sqrt(const Wint &amp;a)//常规牛顿迭代实现的开平方算法，慢但是好敲
+	{
+		Wint b=a,c=(b+1)/2;
+		while(b!=c)swap(b,c),c=(b+a/b)/2;
+		return c;
+	}
+	friend Wint sqrt(const Wint &amp;a)
+	{
+		Wint ret,t;
+		ret.assign((a.size()+1)&gt;&gt;1,0);
+		for(int i=ret.size()-1,l,r; ~i; --i)
+		{
+			for(l=0,r=a.base; r-l&gt;1;)
+			{
+				ret[i]=l+(r-l)/2;
+				t=ret*ret;
+				if(a&lt;t)r=ret[i];
+				else l=ret[i];
+			}
+			if(!l&amp;&amp;i==ret.size()-1)ret.pop_back();
+			else ret[i]=l;
+		}
+		return ret;
+	}
+	*/
+};
+</code></pre>
+<h2 id="分数">分数</h2>
+<p><a href="https://vjudge.net/solution/16733633">使用示范</a>。</p>
+<pre><code class="language-cpp">struct Fraction
+{
+	ll num, den;
+	Fraction(ll n = 0, ll d = 1) : num(n), den(d)
+	{
+		d = __gcd(num, den), num /= d, den /= d;
+		if (den &lt; 0)
+			num = -num, den = -den;
+	}
+	friend Fraction operator+(const Fraction &amp;A, const Fraction &amp;B)
+	{
+		ll d = __gcd(A.den, B.den);
+		return Fraction(B.den / d * A.num + A.den / d * B.num, A.den / d * B.den);
+	}
+	Fraction &amp;operator+=(const Fraction &amp;c) { return *this = *this + c; }
+	Fraction operator-() const
+	{
+		Fraction r(*this);
+		return r.num = -r.num, r;
+	}
+	friend Fraction operator-(const Fraction &amp;a, const Fraction &amp;c) { return -c + a; }
+	Fraction &amp;operator-=(const Fraction &amp;c) { return *this = *this - c; }
+	friend Fraction operator*(const Fraction &amp;A, const Fraction &amp;B) { return Fraction(A.num * B.num, A.den * B.den); }
+	Fraction &amp;operator*=(const Fraction &amp;c) { return *this = *this * c; }
+	friend Fraction operator/(const Fraction &amp;A, const Fraction &amp;B) { return Fraction(A.num * B.den, A.den * B.num); }
+	Fraction &amp;operator/=(const Fraction &amp;c) { return *this = *this / c; }
+	friend Fraction operator%(const Fraction &amp;a, const Fraction &amp;c) { return Fraction(a.num * c.den % (c.num * a.den), a.den * c.den); }
+	Fraction &amp;operator%=(const Fraction &amp;c) { return *this = *this % c; }
+	friend bool operator==(const Fraction &amp;a, const Fraction &amp;b) { return a.num * b.den == a.den * b.num; }
+	friend bool operator!=(const Fraction &amp;a, const Fraction &amp;b) { return !(a == b); }
+	friend bool operator&lt;(const Fraction &amp;a, const Fraction &amp;b) { return a.num * b.den &lt; a.den * b.num; }
+	friend bool operator&gt;(const Fraction &amp;a, const Fraction &amp;b) { return b &lt; a; }
+	friend bool operator&lt;=(const Fraction &amp;a, const Fraction &amp;b) { return !(a &gt; b); }
+	friend bool operator&gt;=(const Fraction &amp;a, const Fraction &amp;b) { return !(a &lt; b); }
+	friend Fraction abs(Fraction f)
+	{
+		if (f.num &lt; 0)
+			f.num = -f.num;
+		return f;
+	}
+	friend ostream &amp;operator&lt;&lt;(ostream &amp;os, const Fraction &amp;f) { return !f.num ? os &lt;&lt; 0 : f.den == 1 ? os &lt;&lt; f.num : os &lt;&lt; f.num &lt;&lt; '/' &lt;&lt; f.den; }
+};
+</code></pre>
+<h2 id="bitset高精度">bitset高精度</h2>
+<p>代替整型进行位运算，更方便并且可以处理超过最大整形范围大小的位集合。
+你可以把bitset看作可以位运算的bool数组，换言之，bitset的大小是固定的。因此，用bitset做状态压缩是很方便的，也可以方便的实现集合的交并补操作。
+bitset仅重载了相等不等和位运算符，原生不支持四则运算和大小比较，所以很少代替高精度数。</p>
+<pre><code class="language-cpp">typedef bitset&lt;127&gt; Bint;
+/*
+Bint b(unsigned long long u=0);//用u的低N位初始化b，N是一个可转成ULL类型的常量表达式，高位补0
+Bint bs(string s,int pos,int m=string::npos,char zero='0',char one='1');//用s从pos位开始的m位初始化b，s中只含zero和one
+
+b.size();//b的大小，即N
+b.count();//b中1的个数
+
+b[pos];//b中pos位的引用
+
+b.set();//b全赋1
+b.reset();//b全赋0
+b.flip();//b全反转
+
+b.to_ull();//b转成unsigned long long，b.size()&gt;64时出错
+b.to_string(char zero='0',char one='1');//按参数输出字符串
+
+os&lt;&lt;b;//按'0'和'1'打印b
+is&gt;&gt;b;//按'0'和'1'读入b，当下一个字符不是'0'或'1'或读到b.size()个数后停止
+
+==、!=、&lt;&lt;、&gt;&gt;、&amp;、|、^//保持它们在整型运算中的含义
+*/
+//大小比较，其他运算符类似
+bool operator&lt;(const Bint &amp;a, const Bint &amp;b)
+{
+	for (int i = a.size() - 1; ~i; --i)
+		if (a[i] != b[i])
+			return a[i] &lt; b[i];
+	return 0;
+}
+bool operator!=(const Bint &amp;a, const Bint &amp;b)
+{
+	for (int i = a.size() - 1; ~i; --i)
+		if (a[i] != b[i])
+			return 1;
+	return 0;
+}
+//加法
+Bint operator+(const Bint &amp;a, const Bint &amp;b) { return b.any() ? (a ^ b) + ((a &amp; b) &lt;&lt; 1) : a; }
+Bint &amp;operator+=(Bint &amp;a, const Bint &amp;b) { return a = a + b; }
+//减法
+Bint operator-(const Bint &amp;a) { return Bint(1) + ~a; }
+Bint &amp;operator-=(Bint &amp;a, const Bint &amp;b) { return a += -b; }
+Bint operator-(Bint a, const Bint &amp;b) { return a -= b; }
+//乘法
+Bint operator*(Bint a, Bint b)
+{
+	Bint r(0);
+	for (; b.any(); b &gt;&gt;= 1, a += a)
+		if (b[0])
+			r += a;
+	return r;
+}
+Bint &amp;operator*=(Bint &amp;a, const Bint &amp;b) { return a = a * b; }
+//整除，取模
+Bint operator%=(Bint &amp;dividend, const Bint &amp;divisor)
+{
+	if (dividend &lt; divisor || divisor.none())
+		return dividend;
+	Bint c, res = 0;
+	for (int k; divisor &lt; dividend;)
+	{
+		for (k = 0, c = divisor; !(dividend &lt; c); c &lt;&lt;= 1, ++k)
+			if (dividend &lt; divisor + c)
+			{
+				res += 1 &lt;&lt; k;
+				break;
+			}
+		if (dividend &lt; divisor + c)
+			break;
+		res += 1 &lt;&lt; (k - 1);
+		dividend -= c &gt;&gt; 1;
+	}
+	return dividend; //res是商
+}
+//输入输出，bitset已经原生重载了输入输出运算符，避免歧义。
+istream &amp;getb(istream &amp;is, Bint &amp;val)
+{
+	int sign = 1, ch = is.get();
+	for (; !isdigit(ch) &amp;&amp; ch != EOF; ch = is.get())
+		if (ch == '-')
+			sign = -sign;
+	for (val = 0; isdigit(ch); ch = is.get())
+		val = (val &lt;&lt; 3) + (val &lt;&lt; 1) + (ch ^ '0');
+	if (sign == -1)
+		val = -val;
+	return is.putback(ch);
+}
+ostream &amp;putb(ostream &amp;os, const Bint &amp;val)
+{
+	if (Bint(9) &lt; val)
+		putb(os, val / 10);
+	return os.put(val.to_ulong() % 10 + '0');
+}
+</code></pre>
+:ET

@@ -1,0 +1,142 @@
+I"�<h2 id="题目要求">题目要求</h2>
+
+<p>用pthread完成稠密矩阵向量乘法的并行算法：y=Ax，线程按输出数据y划分任务，每个线程负责计算y的m/p个元素。</p>
+
+<p>矩阵和向量从磁盘读入，结果输出到磁盘，矩阵和向量文件格式统一按三元组存放。测试数据自己生成如8,000,000*8的矩阵。
+测试NUMA非一直访问的影响；测试伪共享。</p>
+
+<h2 id="实验过程">实验过程</h2>
+
+<p>先看一下老师提供机器的配置：</p>
+
+<pre><code class="language-bash">lnszyd@201-NF5280M3:~$ numactl -H
+available: 2 nodes (0-1)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 24 25 26 27 28 29 30 31 32 33 34 35
+node 0 size: 128924 MB
+node 0 free: 106089 MB
+node 1 cpus: 12 13 14 15 16 17 18 19 20 21 22 23 36 37 38 39 40 41 42 43 44 45 46 47
+node 1 size: 128994 MB
+node 1 free: 120915 MB
+node distances:
+node   0   1
+  0:  10  20
+  1:  20  10
+</code></pre>
+
+<h3 id="mulc">mul.c</h3>
+
+<p>两个node共有48个可用线程。为了体现出NUMA非一致访问的影响，这里考虑使用24个线程加速（恰等于每个Node的线程数）。</p>
+
+<p>开始生成<code>8000000*8</code>的矩阵时，生成的文件大小已经高达6G，然而在老师的机器上实际上用于矩阵乘法的时间只有<code>0.027s</code>，体现不出差异。这里和老师确认之后，直接将矩阵生成在内存，去掉了文件（如果要使用文件，只需要去掉我代码中的注释部分即可）。</p>
+
+<p>此外，将矩阵大小扩大到<code>240000000*8</code>（行数增加三十倍），终于能够在运行时体现一点点的区别（内存占用约7.5G，恰略小于每个Node的空闲内存，不会引起内存页被SWAP到硬盘上导致减速）。</p>
+
+<p>此外，要注意的是，要使用线程安全的计时函数。这里使用了OpenMP中的<code>omp_get_wtime()</code>。</p>
+
+<pre><code class="language-cpp">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;omp.h&gt;
+int m, n, numThreads, *y, *a, *x; // row, col, number of threads, y=ax
+void *threadMul(void *rank)
+{
+	for (int block = (m + numThreads - 1) / numThreads, i = (int)rank * block, ie = i + block &lt; m ? i + block : m; i &lt; ie; ++i)
+		for (int j = y[i] = 0; j &lt; n; ++j)
+			y[i] += a[i * n + j] * x[j];
+	return NULL;
+}
+int main(int argc, char *argv[])
+{
+	m = atoi(argv[1]), n = atoi(argv[2]), numThreads = atoi(argv[3]);
+	a = malloc(m * n * sizeof(int));
+	x = malloc(n * sizeof(int));
+	y = malloc(m * sizeof(int));
+	for (int i = 0; i &lt; n; ++i)
+		x[i] = rand();
+	for (int i = 0; i &lt; m * n; ++i)
+		a[i] = rand();
+	/*
+	FILE *arrinput = fopen(argv[4], "r"), *vecinput = fopen(argv[5], "r");
+	for (int i, j; fscanf(arrinput, "%d%d", &amp;i, &amp;j) != EOF;)
+		fscanf(arrinput, "%d", &amp;a[i * n + j]);
+	for (int i, j; fscanf(vecinput, "%d%d", &amp;i, &amp;j) != EOF;)
+		fscanf(vecinput, "%d", &amp;x[i]);
+	fclose(arrinput), fclose(vecinput);
+	*/
+	double start = omp_get_wtime();
+	pthread_t *thread_handles = malloc(numThreads * sizeof(pthread_t));
+	for (int i = 0; i &lt; numThreads; ++i)
+		pthread_create(&amp;thread_handles[i], NULL, threadMul, (void *)i);
+	for (int i = 0; i &lt; numThreads; ++i)
+		pthread_join(thread_handles[i], NULL);
+	free(thread_handles);
+	printf("elapsed time: %f s", omp_get_wtime() - start);
+	/*
+	FILE *output = fopen(argv[6], "w");
+	for (int i = 0; i &lt; m; i++)
+		fprintf(output, "%d ", y[i]);
+	fclose(output);
+	*/
+	free(a), free(x), free(y);
+}
+</code></pre>
+
+<h3 id="数据生成器">数据生成器</h3>
+
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+int main(int argc, char *argv[])
+{
+	FILE *output = fopen(argv[1], "w");
+	int m = atoi(argv[2]), n = atoi(argv[3]);
+	for (int i = 0; i &lt; m; ++i)
+		for (int j = 0; j &lt; n; ++j)
+			fprintf(output, "%d %d %d\n", i, j, rand());
+	fclose(output);
+}
+</code></pre>
+
+<h3 id="运行">运行</h3>
+
+<pre><code class="language-bash">lnszyd@201-NF5280M3:~$ gcc -lpthread -fopenmp -o mul mul.c
+lnszyd@201-NF5280M3:~$ time ./mul 240000000 8 24
+elapsed time: 0.825514 s
+real    0m26.875s
+user    0m40.572s
+sys     0m4.357s
+lnszyd@201-NF5280M3:~$ time numactl --interleave=all ./mul 240000000 8 24
+elapsed time: 0.793493 s
+real    0m28.699s
+user    0m38.905s
+sys     0m6.258s
+lnszyd@201-NF5280M3:~$ time numactl -N 0 -m 0 ./mul 240000000 8 24
+elapsed time: 0.796528 s
+real    0m26.820s
+user    0m40.939s
+sys     0m4.029s
+lnszyd@201-NF5280M3:~$ time numactl -N 0 -m 1 ./mul 240000000 8 24
+elapsed time: 0.842660 s
+real    0m28.698s
+user    0m41.000s
+sys     0m6.913s
+</code></pre>
+
+<p>如上，当使用Node 0的CPU但是使用Node 1的内存时，运行时间最长；其次是按默认情况运行；<code>numactl -N 0 -m 0</code>和<code>numactl -N 0 -m 0</code>都取得了一定的提升，前者是将内存随机均匀分布在整个内存，而后者绑定Node 0的内存和CPU。</p>
+
+<p>下面测定访存一致性和伪共享。以下是0号Node访问0号node对应内存的记录。</p>
+
+<pre><code class="language-bash">lnszyd@201-NF5280M3:~$ sudo perf c2c record  numactl -N 0 -m 0 ./mul 240000000 8 24
+elapsed time: 0.905527 s[ perf record: Woken up 44 times to write data ]
+[ perf record: Captured and wrote 11.816 MB perf.data (140452 samples) ]
+lnszyd@201-NF5280M3:~$ sudo perf c2c report
+</code></pre>
+
+<p>以下是0号Node访问1号node对应内存的记录。可以看到，这里的平均延迟大了很多。</p>
+
+<pre><code class="language-bash">lnszyd@201-NF5280M3:~$ sudo perf c2c record  numactl -N 0 -m 1 ./mul 240000000 8 24
+elapsed time: 0.929291 s[ perf record: Woken up 44 times to write data ]
+[ perf record: Captured and wrote 11.267 MB perf.data (133906 samples) ]
+lnszyd@201-NF5280M3:~$ sudo perf c2c report
+</code></pre>
+:ET

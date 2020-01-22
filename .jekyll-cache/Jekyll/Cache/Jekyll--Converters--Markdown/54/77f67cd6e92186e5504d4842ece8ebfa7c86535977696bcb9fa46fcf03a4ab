@@ -1,0 +1,176 @@
+I"�<h1 id="bonus-cards"><a href="https://vjudge.net/problem/Gym-100307B">Bonus Cards</a></h1>
+<p>概率dp。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define cin fin
+#define cout fout
+using namespace std;
+ifstream fin("bonus.in");
+ofstream fout("bonus.out");
+double f[3009][3009]/*= {1}*/;//去掉注释会因为生成文件过大而过不了编译？
+double dp(int n,int a,int b,int c)
+{
+    for(int i=f[0][0]=1; i&lt;=n; ++i)
+        for(int j=0; j&lt;=i; ++j)
+        {
+            f[i][j]=0;
+            if(a-j+1&gt;0&amp;&amp;b-i+j&gt;=0)f[i][j]+=2*(a-j+1)/(2.0*(a-j+1)+b-i+j+c)*f[i-1][j-1];
+            if(a-j&gt;=0&amp;&amp;b-i+j+1&gt;0)f[i][j]+=(b-i+j+1)/(2.0*(a-j)+b-i+j+1+c)*f[i-1][j];
+        }
+    return accumulate(f[n],f[n]+min(a,n)+1,0.0);
+}
+int main()
+{
+    int n,a,b;
+    cin&gt;&gt;n&gt;&gt;a&gt;&gt;b;
+    cout.precision(9);
+    cout&lt;&lt;1-dp(n,a,b,2)&lt;&lt;'\n'&lt;&lt;1-dp(n,a,b,1);
+}
+</code></pre>
+<h1 id="fraud-busters"><a href="https://vjudge.net/problem/Gym-100307F">Fraud Busters</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define cin fin
+#define cout fout
+using namespace std;
+ifstream fin("fraud.in");
+ofstream fout("fraud.out");
+vector&lt;string&gt; ans;
+string s,t;
+int n,flag;
+int main()
+{
+    for(cin&gt;&gt;s&gt;&gt;n; n--;)
+    {
+        cin&gt;&gt;t;
+        for(int i=flag=0; !flag&amp;&amp;i&lt;t.size(); ++i)
+            if(s[i]!='*'&amp;&amp;s[i]!=t[i])
+                flag=1;
+        if(!flag)ans.push_back(t);
+    }
+    cout&lt;&lt;ans.size();
+    for(int i=0; i&lt;ans.size(); ++i)
+        cout&lt;&lt;'\n'&lt;&lt;ans[i];
+}
+</code></pre>
+<h1 id="hack-protection"><a href="https://vjudge.net/problem/Gym-100307H">Hack Protection</a></h1>
+<p>感觉相当复杂的一题，两小时就有一堆神仙过了……</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define cin fin
+#define cout fout
+#define log2(n) LOG2[n]
+#define at(n) operator[](n)
+using namespace std;
+typedef int ll;
+const int N=1e5+9;
+ifstream fin("hack.in");
+ofstream fout("hack.out");
+struct Log:vector&lt;ll&gt;
+{
+    Log(int N,ll E):vector&lt;ll&gt;(N,-1)
+    {
+        for(int i=1; i&lt;N; ++i)at(i)=at(i/E)+1;
+    }
+} LOG2(N,2);
+struct RangeAnd
+{
+    vector&lt;vector&lt;ll&gt; &gt; f;
+    RangeAnd(const vector&lt;ll&gt; &amp;a):f(log2(a.size())+1,a)
+    {
+        for(int k=0; k+1&lt;f.size(); ++k)
+            for(int i=0; i+(1&lt;&lt;k)&lt;a.size(); ++i)
+                f[k+1][i]=min(f[k][i],f[k][i+(1&lt;&lt;k)]);
+    }
+    ll min(ll l,ll r)//区间位与和区间最小值用一样的求法
+    {
+        return l&amp;r;
+    }
+    ll ask(int l,int r)//[l,r]区间内的位与和
+    {
+        int k=log2(r-l+1);
+        return min(f[k][l],f[k][r+1-(1&lt;&lt;k)]);
+    }
+    int bs(int l,int r,int b,ll val)//[l,r)区间内找最大的m使ask(b,m)==val
+    {
+        if(r-l&lt;2)return l;
+        int m=l+(r-l)/2;
+        return ask(b,m)&lt;val?bs(l,m,b,val):bs(m,r,b,val);
+    }
+};
+struct RangeXor:vector&lt;ll&gt;
+{
+    unordered_map&lt;ll,vector&lt;int&gt; &gt; mp;
+    RangeXor(int N):vector&lt;ll&gt;(N,0) {}
+    void init()
+    {
+        for(int i=1; i&lt;size(); ++i)mp[at(i)^=at(i-1)].push_back(i);
+    }
+};
+int main()
+{
+    long long n,ans=0;
+    cin&gt;&gt;n;
+    RangeXor rx(n+1);
+    for(int i=1; i&lt;=n; ++i)cin&gt;&gt;rx[i];
+    RangeAnd ra(rx);
+    rx.init();
+    for(int i=1; i&lt;=n; ++i)
+        for(int l,r; l&lt;=n; l=r+1)
+        {
+            const vector&lt;int&gt; &amp;v=rx.mp[ra.ask(i,l)^rx[i-1]];
+            r=ra.bs(l,n+1,i,ra.ask(i,l));//[l,r]内任意m，[i,m]区间位与值均为ra.ask(i,l)^rx[i-1]
+            ans+=upper_bound(v.begin(),v.end(),r)-lower_bound(v.begin(),v.end(),l);
+        }
+    cout&lt;&lt;ans;
+}
+</code></pre>
+<h1 id="join-the-conversation"><a href="https://vjudge.net/problem/Gym-100307J">Join the Conversation</a></h1>
+<p>玄学字符串处理题，注意不要写丑了…</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define cin fin
+#define cout fout
+using namespace std;
+ifstream fin("join.in");
+ofstream fout("join.out");
+struct Identifier:unordered_map&lt;string,int&gt;
+{
+    int operator()(const string &amp;a)
+    {
+        if(!count(a))insert(make_pair(a,size()));
+        return at(a);
+    }
+} id;
+string s;
+unordered_map&lt;int,int&gt; mp;
+pair&lt;int,int&gt; p[50005];
+int n,user,mention,ans;
+void print(int ans)
+{
+    if(ans)print(p[ans].second),cout&lt;&lt;ans&lt;&lt;' ';
+}
+int main()
+{
+    getline(cin&gt;&gt;n,s);
+    for(int i=1; i&lt;=n; ++i)
+    {
+        getline(cin,s,':');
+        user=id(s);
+        getline(cin,s);
+        s+="  "+s+"  ";
+        for(int pos=0,len; pos=s.find('@',pos),pos!=s.npos; pos+=len)
+        {
+            len=s.find(' ',pos)-pos;
+            if(s[pos-1]==' '&amp;&amp;s[pos+len]==' ')
+                if(mention=id(s.substr(pos,len)),mention!=user)
+                    if(p[i].first&lt;p[mp[mention]].first)
+                    {
+                        p[i].first=p[mp[mention]].first;
+                        p[i].second=mp[mention];
+                    }
+        }
+        if(++p[i].first,p[mp[user]].first&lt;p[i].first)mp[user]=i;
+        if(p[ans].first&lt;p[i].first)ans=i;
+    }
+    cout&lt;&lt;p[ans].first&lt;&lt;'\n';
+    print(ans);
+}
+</code></pre>
+:ET

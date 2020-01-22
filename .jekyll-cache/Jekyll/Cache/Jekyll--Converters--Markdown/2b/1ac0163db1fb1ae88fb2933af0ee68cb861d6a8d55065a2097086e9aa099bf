@@ -1,0 +1,374 @@
+I"�&<p>跟着<a href="https://blog.csdn.net/lwt36/article/details/48908031">这篇博客</a>复习扫描线+线段树…</p>
+<h1 id="atlantis">Atlantis</h1>
+<p><a href="https://vjudge.net/problem/HDU-1542">题目链接</a></p>
+
+<p>求矩形并，即平面上至少被一个矩形覆盖的面积。</p>
+
+<blockquote>
+  <p>离散化: 这些技巧都是老生常谈的了，不然浮点数怎么建树，离散化x坐标就可以了。</p>
+
+  <p>扫描线: 首先把矩形按y轴分成两条边，上边和下边，对x轴建树，扫描线可以看成一根平行于x轴的直线。从y=0开始往上扫，下边表示要计算面积+1，上边表示已经扫过了−1，直到扫到最后一条平行于xx轴的边但是真正在做的时候，不需要完全模拟这个过程，一条一条边地插入线段树就好了。</p>
+
+  <p>线段树: 用于动态维护扫描线在往上走时，x轴哪些区域是有合法面积的。这种线段树是不用懒标记的，因为没有查询操作</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef double ll;
+struct Ranker : vector&lt;ll&gt;
+{
+	void init() { sort(begin(), end()), resize(unique(begin(), end()) - begin()); }
+	int ask(ll x) const { return lower_bound(begin(), end(), x) - begin(); }
+};
+struct AreaUnion
+{
+	struct Seg
+	{
+		ll l, r, h;
+		int f;
+		bool operator&lt;(const Seg &amp;rhs) const { return h &lt; rhs.h; }
+	};
+	struct Node
+	{
+		int cnt;
+		ll sum;
+	};
+	vector&lt;Seg&gt; s;
+	vector&lt;Node&gt; v;
+	Ranker rk;
+	void add(ll l, ll b, ll r, ll t)
+	{
+		rk.push_back(l);
+		rk.push_back(r);
+		s.push_back({l, r, b, 1});
+		s.push_back({l, r, t, -1});
+	}
+	void upd(int ql, int qr, int c, int l, int r, int rt = 1)
+	{
+		if (ql &lt;= l &amp;&amp; r &lt;= qr)
+			v[rt].cnt += c;
+		else
+		{
+			int m = l + r &gt;&gt; 1;
+			if (ql &lt;= m)
+				upd(ql, qr, c, l, m, rt &lt;&lt; 1);
+			if (qr &gt; m)
+				upd(ql, qr, c, m + 1, r, rt &lt;&lt; 1 | 1);
+		}
+		v[rt].sum = v[rt].cnt ? rk[r + 1] - rk[l] : l &lt; r ? v[rt &lt;&lt; 1].sum + v[rt &lt;&lt; 1 | 1].sum : 0;
+	}
+	ll ask()
+	{
+		rk.init();
+		sort(s.begin(), s.end());
+		v.assign(rk.size() * 4, Node());
+		ll ans = 0;
+		for (int i = 0; i + 1 &lt; s.size(); ++i)
+		{
+			upd(rk.ask(s[i].l), rk.ask(s[i].r) - 1, s[i].f, 0, rk.size() - 1);
+			ans += v[1].sum * (s[i + 1].h - s[i].h);
+		}
+		return ans;
+	}
+};
+int main()
+{
+	for (int kase = 0, n; ~scanf("%d", &amp;n) &amp;&amp; n;)
+	{
+		AreaUnion a;
+		for (int i = 0; i &lt; n; ++i)
+		{
+			ll l, b, r, t;
+			scanf("%lf%lf%lf%lf", &amp;l, &amp;b, &amp;r, &amp;t);
+			a.add(l, b, r, t);
+		}
+		printf("Test case #%d\nTotal explored area: %.2lf\n\n", ++kase, a.ask());
+	}
+}
+</code></pre>
+<h1 id="覆盖的面积">覆盖的面积</h1>
+<p><a href="https://vjudge.net/problem/HDU-1255">题目链接</a></p>
+
+<p>求矩形交，即平面上至少被覆盖两次的面积。线段树上维护被覆盖一次的长度和被覆盖两次的长度。</p>
+
+<blockquote>
+  <p>前面的与矩形面积并类似，不同的是要考虑至少覆盖一次one和至少覆盖两次two的更新。</p>
+
+  <p>尤其是当前被覆盖了一次的时候，由于没有down操作，父亲节点的信息是没有同步到儿子节点的，这样的话up就要考虑了。</p>
+
+  <p>父亲被记录覆盖了一次，但是如果儿子被覆盖过，这些操作都是在这个父亲这个大区间上的，就相当于父亲区间被覆盖了至少两次，所以two和one都要更新。</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef double ll;
+struct Ranker : vector&lt;ll&gt;
+{
+	void init() { sort(begin(), end()), resize(unique(begin(), end()) - begin()); }
+	int ask(ll x) const { return lower_bound(begin(), end(), x) - begin(); }
+};
+struct AreaIntersection
+{
+	struct Seg
+	{
+		ll l, r, h;
+		int f;
+		bool operator&lt;(const Seg &amp;rhs) const { return h &lt; rhs.h; }
+	};
+	struct Node
+	{
+		int cnt;
+		ll one, two;
+	};
+	vector&lt;Seg&gt; s;
+	vector&lt;Node&gt; v;
+	Ranker rk;
+	void add(ll l, ll b, ll r, ll t)
+	{
+		rk.push_back(l);
+		rk.push_back(r);
+		s.push_back({l, r, b, 1});
+		s.push_back({l, r, t, -1});
+	}
+	void upd(int ql, int qr, int c, int l, int r, int rt = 1)
+	{
+		if (ql &lt;= l &amp;&amp; r &lt;= qr)
+			v[rt].cnt += c;
+		else
+		{
+			int m = l + r &gt;&gt; 1;
+			if (ql &lt;= m)
+				upd(ql, qr, c, l, m, rt &lt;&lt; 1);
+			if (qr &gt; m)
+				upd(ql, qr, c, m + 1, r, rt &lt;&lt; 1 | 1);
+		}
+		if (v[rt].cnt == 0)
+		{
+			v[rt].one = l != r ? v[rt &lt;&lt; 1].one + v[rt &lt;&lt; 1 | 1].one : 0;
+			v[rt].two = l != r ? v[rt &lt;&lt; 1].two + v[rt &lt;&lt; 1 | 1].two : 0;
+		}
+		else
+		{
+			v[rt].one = rk[r + 1] - rk[l];
+			if (v[rt].cnt &gt; 1)
+				v[rt].two = rk[r + 1] - rk[l];
+			else
+				v[rt].two = l != r ? v[rt &lt;&lt; 1].one + v[rt &lt;&lt; 1 | 1].one : 0;
+		}
+	}
+	ll ask()
+	{
+		rk.init();
+		sort(s.begin(), s.end());
+		v.assign(rk.size() * 4, Node());
+		ll ans = 0;
+		for (int i = 0; i + 1 &lt; s.size(); ++i)
+		{
+			upd(rk.ask(s[i].l), rk.ask(s[i].r) - 1, s[i].f, 0, rk.size() - 1);
+			ans += v[1].two * (s[i + 1].h - s[i].h);
+		}
+		return ans;
+	}
+};
+int main()
+{
+	int t, n;
+	for (scanf("%d", &amp;t); t--;)
+	{
+		AreaIntersection a;
+		scanf("%d", &amp;n);
+		for (ll l, b, r, t; n--;)
+		{
+			scanf("%lf%lf%lf%lf", &amp;l, &amp;b, &amp;r, &amp;t);
+			a.add(l, b, r, t);
+		}
+		printf("%.2lf\n", a.ask());
+	}
+}
+</code></pre>
+<h1 id="picture">Picture</h1>
+<p><a href="https://vjudge.net/problem/HDU-1828">题目链接</a></p>
+
+<p>求矩形周长并。</p>
+<h2 id="解法一">解法一</h2>
+<blockquote>
+  <p>可以用类似矩形面积并的办法，不过这次我们，不算面积罢了。</p>
+
+  <p>需要注意的是，由于周长的线会被重复覆盖，每次需要和上一次的作差。</p>
+
+  <p>但是这样仅仅是x轴的，不过可以再对y轴做一次加起来就可以了。</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+struct Ranker : vector&lt;ll&gt;
+{
+	void init() { sort(begin(), end()), resize(unique(begin(), end()) - begin()); }
+	int ask(ll x) const { return lower_bound(begin(), end(), x) - begin(); }
+};
+struct HalfPerimeter
+{
+	struct Seg
+	{
+		ll l, r, h;
+		int f;
+		bool operator&lt;(const Seg &amp;rhs) const { return h != rhs.h ? h &lt; rhs.h : f &gt; rhs.f; }
+	};
+	struct Node
+	{
+		int cnt;
+		ll sum;
+	};
+	vector&lt;Seg&gt; s;
+	vector&lt;Node&gt; v;
+	Ranker rk;
+	ll add(ll l, ll b, ll r, ll t)
+	{
+		rk.push_back(l);
+		rk.push_back(r);
+		s.push_back({l, r, b, 1});
+		s.push_back({l, r, t, -1});
+	}
+	void upd(int L, int R, int c, int l, int r, int rt = 1)
+	{
+		if (L &lt;= l &amp;&amp; r &lt;= R)
+			v[rt].cnt += c;
+		else
+		{
+			int m = l + r &gt;&gt; 1;
+			if (L &lt;= m)
+				upd(L, R, c, l, m, rt &lt;&lt; 1);
+			if (R &gt; m)
+				upd(L, R, c, m + 1, r, rt &lt;&lt; 1 | 1);
+		}
+		v[rt].sum = v[rt].cnt ? rk[r + 1] - rk[l] : l != r ? v[rt &lt;&lt; 1].sum + v[rt &lt;&lt; 1 | 1].sum : 0;
+	}
+	ll ask()
+	{
+		rk.init();
+		sort(s.begin(), s.end());
+		v.assign(rk.size() &lt;&lt; 2, Node());
+		ll ans = 0;
+		for (int i = 0; i &lt; s.size(); ++i)
+		{
+			ll last = v[1].sum;
+			upd(rk.ask(s[i].l), rk.ask(s[i].r) - 1, s[i].f, 0, rk.size() - 1);
+			ans += abs(v[1].sum - last);
+		}
+		return ans;
+	}
+};
+int main()
+{
+	for (int n; ~scanf("%d", &amp;n);)
+	{
+		HalfPerimeter x, y;
+		for (int i = 0, l, b, r, t; i &lt; n; ++i)
+		{
+			scanf("%d%d%d%d", &amp;l, &amp;b, &amp;r, &amp;t);
+			x.add(l, b, r, t);
+			y.add(b, l, t, r);
+		}
+		printf("%d\n", x.ask() + y.ask());
+	}
+}
+</code></pre>
+<h2 id="解法二">解法二</h2>
+<blockquote>
+  <p>也可以只对x轴做一次扫描线，只要同时维护y轴竖线（就是求矩形面积并的时候的高）的个数vtl。</p>
+
+  <p>需要的注意的是竖线重合的情况，需要再开变量lbd、rbd来判断重合，避免重复计算。</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+struct Ranker : vector&lt;ll&gt;
+{
+	void init() { sort(begin(), end()), resize(unique(begin(), end()) - begin()); }
+	int ask(ll x) const { return lower_bound(begin(), end(), x) - begin(); }
+};
+struct Perimeter
+{
+	struct Seg
+	{
+		ll l, r, h;
+		int f;
+		bool operator&lt;(const Seg &amp;rhs) const { return h &lt; rhs.h; }
+	};
+	struct Node
+	{
+		int cnt;
+		ll sum, vtl, lbd, rbd;
+	};
+	vector&lt;Seg&gt; s;
+	vector&lt;Node&gt; v;
+	Ranker rk;
+	void add(ll l, ll b, ll r, ll t)
+	{
+		rk.push_back(l);
+		rk.push_back(r);
+		s.push_back({l, r, b, 1});
+		s.push_back({l, r, t, -1});
+	}
+	void upd(int ql, int qr, int c, int l, int r, int rt = 1)
+	{
+		if (ql &lt;= l &amp;&amp; r &lt;= qr)
+			v[rt].cnt += c;
+		else
+		{
+			int m = l + r &gt;&gt; 1;
+			if (ql &lt;= m)
+				upd(ql, qr, c, l, m, rt &lt;&lt; 1);
+			if (qr &gt; m)
+				upd(ql, qr, c, m + 1, r, rt &lt;&lt; 1 | 1);
+		}
+		if (v[rt].cnt)
+		{
+			v[rt].lbd = v[rt].rbd = 1;
+			v[rt].sum = rk[r + 1] - rk[l];
+			v[rt].vtl = 2;
+		}
+		else if (l == r)
+			v[rt].sum = v[rt].vtl = v[rt].lbd = v[rt].rbd = 0;
+		else
+		{
+			v[rt].lbd = v[rt &lt;&lt; 1].lbd;
+			v[rt].rbd = v[rt &lt;&lt; 1 | 1].rbd;
+			v[rt].sum = v[rt &lt;&lt; 1].sum + v[rt &lt;&lt; 1 | 1].sum;
+			v[rt].vtl = v[rt &lt;&lt; 1].vtl + v[rt &lt;&lt; 1 | 1].vtl;
+			if (v[rt &lt;&lt; 1].rbd &amp;&amp; v[rt &lt;&lt; 1 | 1].lbd)
+				v[rt].vtl -= 2;
+		}
+	}
+	ll ask()
+	{
+		rk.init();
+		sort(s.begin(), s.end());
+		v.assign(rk.size() &lt;&lt; 2, Node());
+		ll ans = 0;
+		for (int i = 0; i + 1 &lt; s.size(); ++i)
+		{
+			ll pre = v[1].sum;
+			upd(rk.ask(s[i].l), rk.ask(s[i].r) - 1, s[i].f, 0, rk.size() - 1);
+			ans += v[1].vtl * (s[i + 1].h - s[i].h) + abs(v[1].sum - pre);
+		}
+		return ans + abs(v[1].sum);
+	}
+};
+int main()
+{
+	for (int n; ~scanf("%d", &amp;n);)
+	{
+		Perimeter p;
+		for (int i = 0, l, b, r, t; i &lt; n; ++i)
+		{
+			scanf("%d%d%d%d", &amp;l, &amp;b, &amp;r, &amp;t);
+			p.add(l, b, r, t);
+		}
+		printf("%d\n", p.ask());
+	}
+}
+</code></pre>
+:ET

@@ -1,0 +1,101 @@
+I"¹<h1 id="live-love"><a href="https://vjudge.net/problem/ZOJ-4047">Live Love</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int t,n,m;
+int main()
+{
+	for(scanf("%d",&amp;t); t--;)
+	{
+		scanf("%d%d",&amp;n,&amp;m);
+		if(n==1||!m)printf("%d %d\n",m,m);
+		else for(int i=1,tmp,res; i&lt;=m; ++i)
+				if(tmp=n/(i+1),res=n-tmp*(i+1),tmp*i+res&gt;=m)
+				{
+					printf("%d %d\n",m,i);
+					break;
+				}
+	}
+}
+</code></pre>
+<h1 id="halting-problem"><a href="https://vjudge.net/problem/ZOJ-4049">Halting Problem</a></h1>
+<pre><code class="language-c">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+struct Instruction
+{
+	char s[9];
+	int v,k,vis[256];
+} a[10009];
+int t,n,i,r;
+int main()
+{
+	for(scanf("%d",&amp;t); t--;)
+	{
+		scanf("%d",&amp;n);
+		for(i=1; i&lt;=n; ++i)
+		{
+			fill(a[i].vis,a[i].vis+256,0);
+			scanf("%s%d",&amp;a[i].s,&amp;a[i].v);
+			if(a[i].s[1]!='d')scanf("%d",&amp;a[i].k);
+		}
+		for(i=1,r=0; i&lt;=n&amp;&amp;!a[i].vis[r]; ++i)
+			switch(a[i].vis[r]=1,a[i].s[1])
+			{
+			case 'd':
+				r=(r+a[i].v)%256;
+				break;
+			case 'e':
+				if(r==a[i].v)i=a[i].k-1;
+				break;
+			case 'n':
+				if(r!=a[i].v)i=a[i].k-1;
+				break;
+			case 'l':
+				if(r&lt;a[i].v)i=a[i].k-1;
+				break;
+			case 'g':
+				if(r&gt;a[i].v)i=a[i].k-1;
+				break;
+			}
+		printf(i&gt;n?"Yes\n":"No\n");
+	}
+}
+</code></pre>
+<h1 id="traveling-on-the-axis"><a href="https://vjudge.net/problem/ZOJ-4054">Traveling on the Axis</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+char s[100009];
+ll t,ans;
+int main()
+{
+	for(scanf("%lld",&amp;t); t--; printf("%lld\n",ans))
+	{
+		scanf("%s",s);
+		for(ll i=ans=0,n=strlen(s); i&lt;n; ++i)
+		{
+			ans+=(i+1)*(n-i);
+			if(s[i]=='0')ans+=n-i;
+			if(i&amp;&amp;s[i]==s[i-1])ans+=i*(n-i);
+		}
+	}
+}
+</code></pre>
+<h1 id="xor-clique"><a href="https://vjudge.net/problem/ZOJ-4057">XOR Clique</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int t,n,a,k,cnt[31];
+int main()
+{
+	for(scanf("%d",&amp;t); t--;)
+	{
+		fill(cnt,cnt+31,0);
+		for(scanf("%d",&amp;n); n--;)
+		{
+			scanf("%d",&amp;a);
+			for(k=0; a; ++k)a&gt;&gt;=1;
+			++cnt[k];
+		}
+		printf("%d\n",*max_element(cnt,cnt+31));
+	}
+}
+</code></pre>
+:ET

@@ -1,0 +1,201 @@
+I"�<h1 id="help-in-the-rnos"><a href="https://vjudge.net/problem/URAL-1830">Help in the RNOS</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+ll cal(char s[],int n)
+{
+	char t[63];
+	fill(t,t+n,'0');
+	t[n-1]='1';
+	ll ans=0;
+	for(int i=n-1; ~i; --i)
+		if(s[i]!=t[i])
+		{
+			if(!i)++ans;
+			else t[i-1]='1',ans+=1ll&lt;&lt;i;
+		}
+	return ans;
+}
+char a[63],b[63];
+ll n;
+int main()
+{
+	scanf("%lld%s%s",&amp;n,a,b);
+	while(n&amp;&amp;a[n-1]==b[n-1])--n;
+	cout&lt;&lt;(n&lt;2?n:cal(a,n-1)+cal(b,n-1)+1);
+}
+</code></pre>
+<h1 id="arirang-show"><a href="https://vjudge.net/problem/URAL-1832">Arirang Show</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+const int N=300009;
+char s[N]= {0,'a',0};
+int n,p[N],ps=0,use[127];
+int main()
+{
+	scanf("%d",&amp;n);
+	for(int i=1; i*2&lt;=n; ++i)if(n%i==0)p[ps++]=i;
+	for(int i=2; i&lt;=n; ++i)
+	{
+		fill(use+'a',use+'z'+1,0);
+		for(int j=0,k; j&lt;ps; ++j)
+		{
+			if(k=i+p[j],k&gt;n)k-=n;
+			use[s[k]]=1;
+			if(k=i-p[j],k&lt;1)k+=n;
+			use[s[k]]=1;
+		}
+		for(s[i]='a'; s[i]&lt;='z'; ++s[i])
+			if(!use[s[i]])break;
+		if(s[i]&gt;'z')return printf("Impossible"),0;
+	}
+	printf("%s",s+1);
+}
+</code></pre>
+<h1 id="babel-fish"><a href="https://vjudge.net/problem/URAL-1836">Babel Fish</a></h1>
+<pre><code class="language-cpp">//待修改
+#include&lt;bits/stdc++.h&gt;
+using namespace std;
+const double EPS=1e-9;
+struct Coord3
+{
+	double X,Y,Z;
+	Coord3(double X=0,double Y=0,double Z=0):X(X),Y(Y),Z(Z) {}
+};
+
+int sgn(double d)
+{
+	return (d&gt;EPS)-(d&lt;-EPS);
+}
+bool operator!=(const Coord3 &amp;a,const Coord3 &amp;b)//不等运算符，涉及到浮点数比较要重写
+{
+	return sgn(a.X-b.X)||sgn(a.Y-b.Y)||sgn(a.Z-b.Z);
+}
+bool operator==(const Coord3 &amp;a,const Coord3 &amp;b)
+{
+	return !(a!=b);
+}
+
+Coord3&amp; operator+=(Coord3 &amp;a,const Coord3 &amp;b)
+{
+	return a.X+=b.X,a.Y+=b.Y,a.Z+=b.Z,a;
+}
+Coord3 operator+(Coord3 a,const Coord3 &amp;b)
+{
+	return a+=b;
+}
+
+Coord3&amp; operator-=(Coord3 &amp;a,const Coord3 &amp;b)
+{
+	return a.X-=b.X,a.Y-=b.Y,a.Z-=b.Z,a;
+}
+Coord3 operator-(Coord3 a,const Coord3 &amp;b)
+{
+	return a-=b;
+}
+
+int t,l,a,b,c,d;
+int main()
+{
+	for(scanf("%d",&amp;t); t--;)
+	{
+		scanf("%d%d%d%d%d",&amp;l,&amp;a,&amp;b,&amp;c,&amp;d);
+		switch(sgn(a)+sgn(b)+sgn(c)+sgn(d))
+		{
+		case 4:
+		{
+			Coord3 A(0,0,a),B(0,1,b),C(1,1,c),D(1,0,d);
+			if(B-A+D-A==C-A)printf("%.7f\n",l*l*(a+c)/2.0);
+			else printf("error\n");
+		}
+		break;
+		case 3:
+		{
+			int s[4]= {a,b,c,d},p=min_element(s,s+4)-s;
+			a=s[(p+1)%4],b=s[(p+2)%4],c=s[(p+3)%4],d=b-a-c;
+			if(b&lt;a+c)
+			{
+				printf("error\n");
+				break;
+			}
+			printf("%.7f\n",l*l*((a+c)/2.0-d*d*d/6.0/(a+d)/(c+d)));
+			break;
+		}
+		case 2:
+			printf((a&amp;&amp;c)||(b&amp;&amp;d)?"error\n":"ambiguous\n");
+			break;
+		case 1:
+			printf("ambiguous\n");
+			break;
+		case 0:
+			printf("0\n");
+		};
+	}
+}
+</code></pre>
+<h1 id="isenbaevs-number"><a href="https://vjudge.net/problem/URAL-1837">Isenbaev’s Number</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+const int N=511,INF=1e9;
+struct Id:map&lt;string,int&gt;
+{
+	int operator()(const string &amp;s)
+	{
+		if(!count(s))insert(make_pair(s,size()));
+		return at(s);
+	}
+} id;
+string s[3];
+int n,f[N][N];
+int main()
+{
+	for(int i=0; i&lt;N; ++i)fill(f[i],f[i]+N,INF),f[i][i]=0;
+	cin&gt;&gt;n;
+	for(int i=0; i&lt;n; ++i)
+	{
+		cin&gt;&gt;s[0]&gt;&gt;s[1]&gt;&gt;s[2];
+		int p[3]= {id(s[0]),id(s[1]),id(s[2])};
+		for(int j=0; j&lt;3; ++j)
+			for(int k=0; k&lt;j; ++k)
+				f[p[j]][p[k]]=f[p[k]][p[j]]=min(f[p[j]][p[k]],1);
+	}
+	for(int k=0; k&lt;N; ++k)
+		for(int i=0; i&lt;N; ++i)
+			for(int j=0; j&lt;N; ++j)
+				f[i][j]=min(f[i][j],f[i][k]+f[k][j]);
+	int flag=!id.count("Isenbaev"),p=id("Isenbaev");
+	for(Id::iterator it=id.begin(); it!=id.end(); ++it)
+		if(!(flag&amp;&amp;it-&gt;second==p))
+		{
+			cout&lt;&lt;it-&gt;first&lt;&lt;' ';
+			if(f[p][it-&gt;second]==INF)cout&lt;&lt;"undefined\n";
+			else cout&lt;&lt;f[p][it-&gt;second]&lt;&lt;'\n';
+		}
+}
+</code></pre>
+<h1 id="samurais-stroke"><a href="https://vjudge.net/problem/URAL-1838">Samurai’s Stroke</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int l,n,a[100009];
+int main()
+{
+	scanf("%d%d",&amp;l,&amp;n),a[n+1]=l;
+	for(int i=1; i&lt;=n; ++i)scanf("%d",&amp;a[i]);
+	if (n&lt;=3) return printf("%d",l),0;
+	int ans=a[2]+l-a[n-1];
+//	printf("%d\n",ans);
+	for (int i=3;i&lt;=n-1;i++)
+	{
+		int x=a[i-1],y=a[i];
+		int q=max(2*a[1],2*y-l),p=min(2*x,2*a[n]-l);
+		if (q&lt;x) q=x;
+		if (p&gt;y) p=y;
+		if ((q&gt;y)||(p&lt;x)) {ans+=y-x; continue;}
+		if (p&gt;q) ans+=(y-x-(p-q));
+		 else ans+=y-x;
+//		printf("%d %d\n",i,ans);
+	}
+	printf("%d",ans);
+}
+</code></pre>
+:ET

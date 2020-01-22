@@ -1,0 +1,343 @@
+I"y%<h1 id="made-in-heaven"><a href="https://nanti.jisuanke.com/t/31445">Made In Heaven</a></h1>
+<p>Astar求K短路。</p>
+<pre><code class="language-cpp">#include&lt;cstdio&gt;
+#include&lt;vector&gt;
+#include&lt;queue&gt;
+using namespace std;
+typedef int ll;
+const ll INF=1e9;
+struct Graph
+{
+    struct Vertex
+    {
+        vector&lt;int&gt; a,b;//相关出边和入边编号
+        //int siz,dep,top,dfn;//树链剖分中使用，依次代表子树节点数、深度、所在链的顶端节点、dfs序
+    };
+    struct Edge
+    {
+        int from,to;
+        ll dist/*,cap*/;//边长、容量，图论算法使用
+    };
+    vector&lt;Vertex&gt; v;//点集
+    vector&lt;Edge&gt; e;//边集
+    Graph(int n):v(n) {}
+    void add(const Edge &amp;ed)
+    {
+        //if(ed.from==ed.to)return;//如果有需要请拆点
+        v[ed.from].a.push_back(e.size());
+        v[ed.to].b.push_back(e.size());
+        e.push_back(ed);
+    }
+};
+struct Dijkstra:Graph
+{
+    vector&lt;ll&gt; d;
+    Dijkstra(int n):Graph(n) {}
+    void ask(int s)
+    {
+        d.assign(v.size(),INF);
+        priority_queue&lt;pair&lt;ll,int&gt; &gt; q;
+        for(q.push(make_pair(d[s]=0,s)); !q.empty();)
+        {
+            ll dis=-q.top().first;
+            int u=q.top().second;
+            if(q.pop(),d[u]&lt;dis)continue;
+            for(int i=0,k,to; i!=v[u].a.size(); ++i)
+                if(k=v[u].a[i],to=e[k].to,
+                        d[to]&gt;d[u]+e[k].dist)
+                {
+                    d[to]=d[u]+e[k].dist;
+                    q.push(make_pair(-d[to],to));
+                }
+        }
+    }
+};
+struct Astar:Dijkstra
+{
+    vector&lt;ll&gt; ans;
+    Astar(int n):Dijkstra(n) {}
+    void ask(int s,int t,int k,int T)
+    {
+        Dijkstra::ask(s);
+        ans.assign(k,INF);
+        if(d[t]==INF)return;
+        vector&lt;int&gt; cnt(v.size(),0);
+        priority_queue&lt;pair&lt;ll,int&gt; &gt; q;
+        for(q.push(make_pair(-d[t],t)); cnt[s]&lt;k&amp;&amp;!q.empty();)
+        {
+            ll dis=-q.top().first;
+            int u=q.top().second;
+            if(u==s)ans[cnt[s]]=dis;
+            if(dis&gt;T)return;
+            if(q.pop(),++cnt[u]&gt;k)continue;
+            for(int i=0,k; i&lt;v[u].b.size(); ++i)
+                k=v[u].b[i],q.push(make_pair(d[u]-d[e[k].from]-e[k].dist-dis,e[k].from));
+        }
+    }
+};
+int main()
+{
+    for(int n,m,s,e,k,t; ~scanf("%d%d%d%d%d%d",&amp;n,&amp;m,&amp;s,&amp;e,&amp;k,&amp;t);)
+    {
+        Astar g(n+1);
+        for(int u,v,w; m--;)
+        {
+            scanf("%d%d%d",&amp;u,&amp;v,&amp;w);
+            g.add({u,v,w});
+        }
+        g.ask(s,e,k,t);
+        printf(g.ans[k-1]&gt;t?"Whitesnake!\n":"yareyaredawa\n");
+    }
+}
+</code></pre>
+<h1 id="fantastic-graph"><a href="https://nanti.jisuanke.com/t/31447">Fantastic Graph</a></h1>
+<p>转换一下变成一个有源汇上下界网络流模型。</p>
+<pre><code class="language-cpp">#include&lt;cstdio&gt;
+#include&lt;vector&gt;
+using namespace std;
+typedef int ll;
+const ll INF=1e9;
+struct Graph
+{
+    struct Vertex
+    {
+        vector&lt;int&gt; a/*,b*/;//相关出边和入边编号
+        //int siz,dep,top,dfn;//树链剖分中使用，依次代表子树节点数、深度、所在链的顶端节点、dfs序
+    };
+    struct Edge
+    {
+        int from,to;
+        ll /*dist,*/cap;//边长、容量，图论算法使用
+    };
+    vector&lt;Vertex&gt; v;//点集
+    vector&lt;Edge&gt; e;//边集
+    Graph(int n):v(n) {}
+    void add(const Edge &amp;ed)
+    {
+        //if(ed.from==ed.to)return;//如果有需要请拆点
+        v[ed.from].a.push_back(e.size());
+        //v[ed.to].b.push_back(e.size());
+        e.push_back(ed);
+    }
+};
+struct ISAP:Graph
+{
+    ll flow;
+    vector&lt;ll&gt; f;
+    vector&lt;int&gt; h,cur,gap;
+    ISAP(int n):Graph(n) {}
+    void add(Edge ed)
+    {
+        Graph::add(ed);
+        swap(ed.from,ed.to),ed.cap=0;
+        Graph::add(ed);
+    }
+    ll dfs(int s,int u,int t,ll r)
+    {
+        if(r==0||u==t)return r;
+        ll _f,_r=0;
+        for(int &amp;i=cur[u],k; i&lt;v[u].a.size(); ++i)
+            if(k=v[u].a[i],h[u]==h[e[k].to]+1)
+            {
+                _f=dfs(s,e[k].to,t,min(r-_r,e[k].cap-f[k]));
+                f[k]+=_f,f[k^1]-=_f,_r+=_f;
+                if(_r==r||h[s]&gt;=v.size())return _r;
+            }
+        if(!--gap[h[u]])h[s]=v.size();
+        return ++gap[++h[u]],cur[u]=0,_r;
+    }
+    void ask(int s,int t)
+    {
+        h.assign(v.size(),0);
+        cur.assign(v.size(),0);
+        gap.assign(v.size()+2,0);
+        /*for(deque&lt;int&gt; q(h[t]=gap[t]=1,t); !q.empty(); q.pop_front())//可选预处理
+            for(int i=0,u=q.front(),k,to; i&lt;v[u].a.size(); ++i)
+                if(to=e[v[u].a[i]].to,!h[to])
+                    ++gap[h[to]=h[u]+1],q.push_back(to);*/
+        for(f.assign(e.size(),flow=0); h[s]&lt;v.size();)
+            flow+=dfs(s,s,t,INF);
+    }
+};
+int main()
+{
+    for(int n,m,k,l,r,kase=0; ~scanf("%d%d%d",&amp;n,&amp;m,&amp;k);)
+    {
+        ISAP g((n+m)*2+9);
+        scanf("%d%d",&amp;l,&amp;r);
+        for(int i=0,u,v; i&lt;k; ++i)
+        {
+            scanf("%d%d",&amp;u,&amp;v);
+            v+=n;
+            g.add({2*u+1,2*v,1});
+        }
+        int s=2*(n+m+1),t=s+1,ss=t+1,tt=ss+1;
+        g.add({t,s,INF});
+        for(int i=1; i&lt;=n; ++i)
+            g.add({s,2*i,INF});
+        for(int i=n+1; i&lt;=n+m; ++i)
+            g.add({2*i+1,t,INF});
+        for(int i=1; i&lt;=n+m; ++i)
+        {
+            g.add({2*i,2*i+1,r-l});
+            g.add({ss,2*i+1,l});
+            g.add({2*i,tt,l});
+        }
+        g.ask(ss,tt);
+        printf("Case %d: %s\n",++kase,g.flow==(n+m)*l?"Yes":"No");
+    }
+}
+</code></pre>
+<h1 id="spare-tire"><a href="https://nanti.jisuanke.com/t/31448">Spare Tire</a></h1>
+<pre><code class="language-cpp">#include&lt;cstdio&gt;
+#include&lt;vector&gt;
+#define mul(a,b,m) ((a)*(b)%(m))
+using namespace std;
+typedef long long ll;
+const ll M=1e9+7;
+ll n,m,ans1,ans2,INV[9];
+vector&lt;ll&gt; fac;
+void getfac(ll n)
+{
+    fac.clear();
+    for(ll i=2; i*i&lt;=n; ++i)
+        if(n%i==0)
+            for(fac.push_back(i); n%i==0;)n/=i;
+    if(n&gt;1)fac.push_back(n);
+}
+ll pow(ll a,ll b,ll m)
+{
+    ll r=1;
+    for(a%=m; b; b&gt;&gt;=1,a=mul(a,a,m))
+        if(b&amp;1)r=mul(r,a,m);
+    return r;
+}
+void dfs(ll cur,ll num,ll val)
+{
+    if(cur==fac.size())
+    {
+        if(val!=1)
+        {
+            ll t=n/val,k=mul(mul(t*(t+1)/2%M,num%2?M-1:1,M),val,M);
+            if(ans1+=k,ans1&gt;=M)ans1-=M;
+            if(ans2+=mul(mul(mul(k,(t*2+1),M),INV[3],M),val,M),ans2&gt;=M)ans2-=M;
+        }
+        return;
+    }
+    dfs(cur+1,num,val),dfs(cur+1,num+1,val*fac[cur]);
+}
+int main()
+{
+    for(ll i=0; i&lt;9; ++i)INV[i]=pow(i,M-2,M);
+    while(~scanf("%lld%lld",&amp;n,&amp;m))
+    {
+        ans1=n*(n+1)/2%M;
+        ans2=ans1*(2*n+1)%M*INV[3]%M;
+        getfac(m);
+        dfs(0,0,1);
+        printf("%lld\n",(ans1+ans2)%M);
+    }
+}
+</code></pre>
+
+<h1 id="lattices-basics-in-digital-electronics"><a href="https://nanti.jisuanke.com/t/31450">Lattice’s basics in digital electronics</a></h1>
+<p>做了一遍就不想再做一遍的沙雕大模拟…为了模拟而模拟。字典树跑掉。</p>
+<pre><code class="language-cpp">#include&lt;cstdio&gt;
+using namespace std;
+const int NPOS=-1,N=200009&lt;&lt;2;
+struct AhoCorasick
+{
+    struct Node
+    {
+        int ch[2],val;
+        int &amp;to(char c)
+        {
+            return ch[c-'0'];
+        }
+        Node():val(NPOS)
+        {
+            ch[0]=ch[1]=0;
+        }
+    } v[N];
+    int siz;
+    AhoCorasick():siz(1) {}
+    void add(char s[],int val)
+    {
+        int u=0;
+        for(int i=0; s[i]; u=v[u].to(s[i++]))
+            if(!v[u].to(s[i]))
+            {
+                v[u].to(s[i])=siz;
+                v[siz++]=Node();
+            }
+        v[u].val=val;
+    }
+};
+char stak[N],data[N];
+int t,kase=0,m,n;
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%d%d",&amp;m,&amp;n);
+        AhoCorasick ac;
+        for(int i=0,c; i&lt;n; ++i)
+        {
+            scanf("%d%s",&amp;c,data);
+            ac.add(data,c);
+        }
+        scanf("%s",stak);
+        int len=0,siz=0;
+        for(int i=0; stak[i]; ++i)
+        {
+            stak[i]='0'&lt;=stak[i]&amp;&amp;stak[i]&lt;='9'?stak[i]-'0':
+                    'a'&lt;=stak[i]&amp;&amp;stak[i]&lt;='z'?stak[i]-'a'+10:
+                    stak[i]-'A'+10;
+            len+=4;
+            for(int j=1; j&lt;=4; ++j)data[len-j]='0'+stak[i]%2,stak[i]/=2;
+        }
+        for(int i=0,cnt; i+8&lt;len; i+=9)
+        {
+            for(int j=cnt=0; j&lt;8; ++j)if(data[i+j]=='1')++cnt;
+            if(cnt%2!=(data[i+8]=='0'?1:0))continue;
+            for(int j=0; j&lt;8; ++j)stak[siz++]=data[i+j];
+        }
+        for(int i=0,u=0,cnt=0; i&lt;siz; ++i)
+            if(ac.v[u=ac.v[u].to(stak[i])].val!=NPOS)
+            {
+                printf("%c",ac.v[u].val);
+                u=0;
+                if(++cnt==m)break;
+            }
+        printf("\n");
+    }
+}
+</code></pre>
+<h1 id="supreme-number"><a href="https://nanti.jisuanke.com/t/31452">Supreme Number</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+char s[127];
+int t,n,kase,a[]=
+{
+    1,2,3,5,7,
+    11,13,17,23,31,
+    37,53,71,73,113,
+    131,137,173,311,317
+};
+int main()
+{
+    for(scanf("%d",&amp;t); t--;)
+    {
+        scanf("%s",s);
+        if(strlen(s)&gt;3)n=318;
+        else sscanf(s,"%d",&amp;n);
+        for(int i=19; ~i; --i)
+            if(a[i]&lt;=n)
+            {
+                printf("Case #%d: %d\n",++kase,a[i]);
+                break;
+            }
+    }
+}
+</code></pre>
+:ET

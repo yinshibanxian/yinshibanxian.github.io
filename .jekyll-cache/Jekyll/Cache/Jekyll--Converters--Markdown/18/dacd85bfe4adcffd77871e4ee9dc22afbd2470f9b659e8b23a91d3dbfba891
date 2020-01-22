@@ -1,0 +1,262 @@
+I"�<h1 id="saving-tang-monk-ii"><a href="https://vjudge.net/problem/HihoCoder-1828">Saving Tang Monk II</a></h1>
+<p>按气罐数量分层建图跑最短路。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+#define POS(i,j,k) ((k)*(n)*(m)+(i)*(m)+(j))
+using namespace std;
+typedef int ll;
+const int INF=1e9;
+struct Graph
+{
+	struct Vertex
+	{
+		vector&lt;int&gt; a;
+	};
+	struct Edge
+	{
+		int from,to;
+		ll dist;
+	};
+	vector&lt;Vertex&gt; v;
+	vector&lt;Edge&gt; e;
+	Graph(int n):v(n) {}
+	void add(const Edge &amp;ed)
+	{
+		v[ed.from].a.push_back(e.size());
+		e.push_back(ed);
+	}
+};
+struct Dijkstra:Graph
+{
+	vector&lt;ll&gt; d;
+	Dijkstra(int n):Graph(n) {}
+	void ask(int s)
+	{
+		d.assign(v.size(),INF);
+		priority_queue&lt;pair&lt;ll,int&gt; &gt; q;
+		for(q.push(make_pair(d[s]=0,s)); !q.empty();)
+		{
+			ll dis=-q.top().first;
+			int u=q.top().second;
+			if(q.pop(),d[u]&lt;dis)continue;
+			for(int i=0,k,to; i!=v[u].a.size(); ++i)
+				if(k=v[u].a[i],to=e[k].to,
+				        d[to]&gt;d[u]+e[k].dist)
+				{
+					d[to]=d[u]+e[k].dist;
+					q.push(make_pair(-d[to],to));
+				}
+		}
+	}
+};
+char s[127][127];
+int main()
+{
+	for(int n,m,sx,sy,tx,ty; ~scanf("%d%d",&amp;n,&amp;m)&amp;&amp;n&amp;&amp;m;)
+	{
+		for(int i=0; i&lt;n; ++i)scanf("%s",s[i]);
+		Dijkstra g(POS(n-1,m-1,5)+1);
+		for(int i=0; i&lt;n; ++i)
+			for(int j=0; j&lt;m; ++j)
+			{
+				for(int k=0,tk,dist=s[i][j]=='#'?2:s[i][j]!='P'; k&lt;6; ++k)
+					if(tk=s[i][j]=='#'?k-1:s[i][j]=='B'?k+1:k,0&lt;=tk&amp;&amp;tk&lt;=5)
+					{
+						if(i)g.add({POS(i,j,k),POS(i-1,j,tk),dist});
+						if(j)g.add({POS(i,j,k),POS(i,j-1,tk),dist});
+						if(i+1&lt;n)g.add({POS(i,j,k),POS(i+1,j,tk),dist});
+						if(j+1&lt;m)g.add({POS(i,j,k),POS(i,j+1,tk),dist});
+					}
+				if(s[i][j]=='S')sx=i,sy=j;
+				if(s[i][j]=='T')tx=i,ty=j;
+			}
+		g.ask(POS(sx,sy,0));
+		ll ans=INF;
+		for(int k=0; k&lt;6; ++k)
+			ans=min(ans,g.d[POS(tx,ty,k)]);
+		printf("%d\n",ans&lt;INF?ans:-1);
+	}
+}
+</code></pre>
+<h1 id="tomb-raider"><a href="https://vjudge.net/problem/HihoCoder-1829">Tomb Raider</a></h1>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+int n;
+string s[15],lcs,ans;
+bool check(string s)
+{
+	for (int i=0; i&lt;s.size(); ++i)
+	{
+		int h=i,j=0;
+		for (; h!=(i+s.size()-1)%s.size(); h=(h+1)%s.size())
+		{
+			if (s[h]==lcs[j]) ++j;
+			if (j==lcs.size()) return true;
+		}
+		if (j!=lcs.size() &amp;&amp; s[h]==lcs[j]) ++j;
+		if (j==lcs.size()) return true;
+	}
+	return false;
+}
+void rep(string &amp;s)
+{
+	string st,ret=s;
+	for (int i=0; i&lt;s.size(); ++i)
+	{
+		st=s.substr(i)+s.substr(0,i);
+		if (st&lt;ret) ret=st;
+	}
+	s=ret;
+}
+int main()
+{
+	while (cin &gt;&gt; n)
+	{
+		ans="";
+		for (int i=1; i&lt;=n; ++i) cin &gt;&gt; s[i];
+		int l=s[1].size();
+		for (int i=1; i&lt;(1&lt;&lt;l); ++i)
+		{
+			bool ok=true;
+			lcs="";
+			for (int j=0; j&lt;l; ++j) if (i&amp;(1&lt;&lt;j)) lcs+=s[1][j];
+			for (int i=2; i&lt;=n; ++i)
+			{
+				if (!check(s[i]))
+				{
+					ok=false;
+					break;
+				}
+			}
+			if (!ok) continue;
+			rep(lcs);
+			if (lcs.size()&gt;ans.size() || lcs.size()==ans.size() &amp;&amp; lcs&lt;ans) ans=lcs;
+		}
+		if (ans=="") cout &lt;&lt; "0\n";
+		else cout &lt;&lt; ans &lt;&lt; endl;
+	}
+}
+</code></pre>
+<h1 id="80-days"><a href="https://vjudge.net/problem/HihoCoder-1831">80 Days</a></h1>
+<pre><code class="language-cpp">#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;algorithm&gt;
+using namespace std;
+
+const int maxn=1000000+10;
+
+int t,n,c,cnt,head;
+long long a[maxn*2],b[maxn*2];
+long long sum;
+
+inline int read()
+{
+	char c=getchar();
+	while (((c&lt;'0')||(c&gt;'9'))&amp;&amp;(c!='-')) c=getchar();
+	int x,t;
+	if (c=='-') t=-1,x=0;
+	else x=c-'0',t=1;
+	while (((c=getchar())&gt;='0')&amp;&amp;(c&lt;='9')) x=x*10+c-'0';
+	return x*t;
+}
+
+int main()
+{
+	t=read();
+	while (t--)
+	{
+		n=read();
+		c=read();
+		sum=c;
+		for (int i=1; i&lt;=n; i++) a[i+n]=a[i]=read(),sum+=a[i];
+		for (int i=1; i&lt;=n; i++) b[i+n]=b[i]=read(),sum-=b[i];
+		if (sum&lt;0)
+		{
+			printf("-1\n");
+			continue;
+		}
+		cnt=1;
+		head=1;
+		sum=c+a[1]-b[1];
+		while (cnt&lt;n)
+		{
+			while (sum&lt;0) sum=sum-a[head]+b[head],head++,cnt--;
+			sum+=a[head+cnt]-b[head+cnt];
+			cnt++;
+		}
+		printf("%d\n",head);
+	}
+	return 0;
+}
+</code></pre>
+<h1 id="k-dimensional-foil-ii"><a href="https://vjudge.net/problem/HihoCoder-1835">K-Dimensional Foil II</a></h1>
+<pre><code class="language-cpp">#include &lt;cstdio&gt;
+#include &lt;cstdlib&gt;
+#include &lt;cstring&gt;
+#include &lt;algorithm&gt;
+
+using namespace std;
+
+struct P
+{
+	int x,id;
+	double ans;
+	bool minus;
+}a[200];
+
+bool cmpx(const P&amp; a,const P&amp; b)
+{
+	return a.x&gt;b.x;
+}
+
+bool cmpid(const P&amp; a,const P&amp; b)
+{
+	return a.id&lt;b.id;
+}
+
+int T,n,k,r;
+int c[200];
+
+
+int main()
+{
+	scanf("%d",&amp;T);
+	while (T--)
+	{
+		scanf("%d%d",&amp;n,&amp;k);
+		scanf("%d",&amp;r);
+		for (int i=1;i&lt;=k;++i) scanf("%d",&amp;c[i]);
+		for (int i=1;i&lt;=n;++i)
+		{
+			memset(a,0,sizeof(a));
+			for (int j=1;j&lt;=k;++j) {scanf("%d",&amp;a[j].x);a[j].id=j;}
+			for (int j=1;j&lt;=k;++j)
+			{
+				a[j].x=a[j].x-c[j];
+				if(a[j].x&lt;0) {a[j].x=-a[j].x;a[j].minus=true;}
+			}
+			sort(a+1,a+k+1,cmpx);
+			int res=r;
+			for (int j=1;j&lt;=k;++j)
+			{
+				if ((a[j].x-a[j+1].x)*j&lt;=res)
+				{
+					res-=(a[j].x-a[j+1].x)*j;
+				}
+				else
+				{
+					for (int r=1;r&lt;j;++r) a[r].ans=a[r].x-a[j].x;
+					for (int r=1;r&lt;=j;++r) a[r].ans+=double(res)/j;
+					break;
+				}
+			}
+			sort(a+1,a+k+1,cmpid);
+			for (int j=1;j&lt;=k;++j)
+				if (a[j].minus) printf("%.5lf ",-a[j].ans+c[j]);
+				else printf("%.5lf ",a[j].ans+c[j]);
+			puts("");
+		}
+	}
+}
+</code></pre>
+
+:ET

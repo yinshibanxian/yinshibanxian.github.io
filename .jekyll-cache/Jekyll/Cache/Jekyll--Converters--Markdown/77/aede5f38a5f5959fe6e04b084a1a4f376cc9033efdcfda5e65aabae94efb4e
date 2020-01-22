@@ -1,0 +1,190 @@
+I"<h1 id="determine-line"><a href="https://vjudge.net/problem/CodeForces-1056A">Determine Line</a></h1>
+<p>签到题还WA了一发…</p>
+
+<p><code>bitset</code>初始化的时候是0扩展而不是符号扩展。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+bitset&lt;127&gt; ans(string(127, '1'));
+int n;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0, r, k; i &lt; n; ++i)
+	{
+		bitset&lt;127&gt; bs;
+		for (scanf("%d", &amp;r); r--; bs.set(k))
+			scanf("%d", &amp;k);
+		ans &amp;= bs;
+	}
+	for (int i = 0; i &lt; ans.size(); ++i)
+		if (ans[i])
+			printf("%d ", i);
+}
+</code></pre>
+<h1 id="divide-candies"><a href="https://vjudge.net/problem/CodeForces-1056B">Divide Candies</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+ll n, m, ans, a[1023];
+int main()
+{
+	scanf("%lld%lld", &amp;n, &amp;m);
+	fill(a, a + m, n / m);
+	for (ll i = n / m * m + 1; i &lt;= n; ++i)
+		++a[i % m];
+	for (ll i = 0; i &lt; m; ++i)
+		for (ll j = 0; j &lt; m; ++j)
+			if ((i * i + j * j) % m == 0)
+				ans += a[i] * a[j];
+	printf("%lld", ans);
+}
+</code></pre>
+<h1 id="pick-heroes"><a href="https://vjudge.net/problem/CodeForces-1056C">Pick Heroes</a></h1>
+<p>难得一见的交互题，题目本身不难，无脑贪心即可。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 2047;
+int n, m, p[N], a[N], q[N], vis[N];
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;m);
+	for (int i = 1; i &lt;= 2 * n; ++i)
+		scanf("%d", &amp;p[q[i] = i]);
+	for (int i = 0, x, y; i &lt; m; ++i)
+		scanf("%d%d", &amp;x, &amp;y), a[a[x] = y] = x;
+	sort(q + 1, q + 2 * n + 1, [](int x, int y) -&gt; bool { return a[x] &amp;&amp; !a[y] ? 1 : !a[x] &amp;&amp; a[y] ? 0 : p[x] &gt; p[y]; });
+	scanf("%d", &amp;m);
+	if (m == 1)
+		printf("%d\n", vis[q[1]] = q[1]), fflush(stdout);
+	for (int t = 1;;)
+	{
+		scanf("%d", &amp;m);
+		for (vis[m] = m; vis[q[t]];)
+			++t;
+		if (t &gt; 2 * n)
+			break;
+		m = a[m] &amp;&amp; !vis[a[m]] ? a[m] : q[t];
+		printf("%d\n", vis[m] = m), fflush(stdout);
+	}
+}
+</code></pre>
+<h1 id="decorate-apple-tree"><a href="https://vjudge.net/problem/CodeForces-1056D">Decorate Apple Tree</a></h1>
+<p>就是求叶结点第k小的子树上有多少叶结点。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+vector&lt;int&gt; g[N];
+int n, a[N];
+void dfs(int u)
+{
+	if (g[u].empty())
+		a[u] = 1;
+	for (auto v : g[u])
+		dfs(v), a[u] += a[v];
+}
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 2, p; i &lt;= n; ++i)
+		scanf("%d", &amp;p), g[p].push_back(i);
+	dfs(1);
+	sort(a + 1, a + n + 1);
+	for (int i = 1; i &lt;= n; ++i)
+		printf("%d ", a[i]);
+}
+</code></pre>
+<h1 id="check-transcription"><a href="https://vjudge.net/problem/CodeForces-1056E">Check Transcription</a></h1>
+<p>字符串哈希，卡模数。</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+struct Mod
+{
+	const ll M;
+	Mod(ll M) : M(M) {}
+	ll add(ll a, ll b) const { return ((a + b) % M + M) % M; }
+	ll mul(ll a, ll b) const { return a * b % M; }
+};
+struct HashString : Mod
+{
+	vector&lt;ll&gt; f, p;
+	HashString(const string &amp;s, ll M = 1e9 + 7, ll P = 131) : Mod(M), f(s.size() + 1), p(s.size() + 1, 1)
+	{
+		for (int i = 0; i &lt; s.size(); ++i)
+		{
+			f[i + 1] = add(mul(f[i], P), s[i]);
+			p[i + 1] = mul(p[i], P);
+		}
+	}
+	ll ask(int pos, int len)
+	{
+		return add(f[pos + len], -mul(f[pos], p[len]));
+	}
+};
+string s, t;
+int c[2], ans;
+int main()
+{
+	cin &gt;&gt; s &gt;&gt; t;
+	HashString h(t);
+	for (int i = 0; i &lt; s.size(); ++i)
+		++c[s[i] - '0'];
+	for (int len[2] = {1}; len[0] * c[0] &lt; t.size(); ++len[0])
+	{
+		len[1] = (t.size() - len[0] * c[0]) / c[1];
+		if (len[1] == 0)
+			break;
+		if (len[0] * c[0] + len[1] * c[1] == t.size())
+		{
+			ll r[2] = {-1, -2};
+			for (int i = 0, j = 0; r[0] != r[1] &amp;&amp; i &lt; s.size(); ++i)
+			{
+				if (r[s[i] - '0'] &lt; 0)
+					r[s[i] - '0'] = h.ask(j, len[s[i] - '0']);
+				if (r[s[i] - '0'] == h.ask(j, len[s[i] - '0']))
+					j += len[s[i] - '0'];
+				else
+					r[0] = r[1];
+			}
+			if (r[1] != r[0])
+				++ans;
+		}
+	}
+	cout &lt;&lt; ans;
+}
+</code></pre>
+<h1 id="write-the-contest"><a href="https://vjudge.net/problem/CodeForces-1056E">Write The Contest</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 127, C = 10, INF = 1e9;
+pair&lt;double, int&gt; a[N];
+double c, t, f[N][N * C];
+int n, kase;
+int main()
+{
+	for (scanf("%d", &amp;kase); kase--;)
+	{
+		scanf("%d%lf%lf", &amp;n, &amp;c, &amp;t);
+		int m = 0, ans = 0;
+		for (int i = 1; i &lt;= n; ++i)
+			scanf("%lf%d", &amp;a[i].first, &amp;a[i].second), m += a[i].second;
+		sort(a + 1, a + n + 1, greater&lt;pair&lt;double, int&gt;&gt;());
+		for (int i = 0; i &lt;= n; ++i)
+			fill(f[i], f[i] + m + 1, INF);
+		f[0][0] = 0;
+		for (int i = 1; i &lt;= n; ++i)
+			for (int j = i; j; --j)
+				for (int k = m - a[i].second; ~k; --k)
+					f[j][k + a[i].second] = min(f[j][k + a[i].second], f[j - 1][k] + a[i].first / pow(0.9, j));
+		for (int j = m; !ans &amp;&amp; j; --j)
+			for (int i = 0; !ans &amp;&amp; i &lt;= n; ++i)
+			{
+				double x = max(sqrt(c * f[i][j]) - 1, .0) + 1;
+				if (x + c * f[i][j] / x - 1 + c * i * 10 &lt;= t * c)
+					ans = j;
+			}
+		printf("%d\n", ans);
+	}
+}
+</code></pre>
+:ET

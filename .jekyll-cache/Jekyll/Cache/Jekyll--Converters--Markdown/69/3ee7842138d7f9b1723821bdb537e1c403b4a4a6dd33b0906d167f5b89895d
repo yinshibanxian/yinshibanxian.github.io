@@ -1,0 +1,413 @@
+I"ñ"<h2 id="balanced-diet"><a href="https://vjudge.net/problem/Gym-102220B">Balanced Diet</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+struct Fenwick
+{
+	struct BaseFenwick
+	{
+		vector&lt;ll&gt; v;
+		BaseFenwick(int n) : v(n, 0) {}
+		void add(int x, ll w)
+		{
+			for (; x &lt; v.size(); x += x &amp; -x)
+				v[x] += w;
+		}
+		ll ask(int x)
+		{
+			ll r = 0;
+			for (; x; x -= x &amp; -x)
+				r += v[x];
+			return r;
+		}
+	};
+	pair&lt;BaseFenwick, BaseFenwick&gt; p;
+	Fenwick(int n) : p(n + 99, n + 99) {}
+	void add(int x, ll w)
+	{
+		p.first.add(x, w), p.second.add(x, x * w);
+	}
+	void add(int l, int r, ll w)
+	{
+		l += 9, r += 9;
+		add(l, w), add(r + 1, -w);
+	}
+	ll ask(int x)
+	{
+		return (x + 1) * p.first.ask(x) - p.second.ask(x);
+	}
+	ll ask(int l, int r)
+	{
+		l += 9, r += 9;
+		return ask(r) - ask(l - 1);
+	}
+};
+int main()
+{
+	int t, n, m;
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d", &amp;n, &amp;m);
+		vector&lt;pair&lt;int, vector&lt;ll&gt;&gt;&gt; vv(m);
+		for (int i = 0; i &lt; m; ++i)
+			scanf("%d", &amp;vv[i].first);
+		for (int i = 0, a, b; i &lt; n; ++i)
+		{
+			scanf("%d%d", &amp;a, &amp;b);
+			vv[b - 1].second.push_back(a);
+		}
+		Fenwick t(n + 9);
+		for (auto &amp;p : vv)
+		{
+			sort(p.second.rbegin(), p.second.rend());
+			for (int i = 0; i &lt; p.second.size(); ++i)
+				t.add(max(i + 1, p.first), n, p.second[i]);
+		}
+		ll u = 0, v = 1;
+		for (ll i = 1; i &lt;= n; ++i)
+		{
+			ll c = i, s = t.ask(c, c), g = __gcd(c, s);
+			c /= g, s /= g;
+			if (s * v &gt; c * u)
+				u = s, v = c;
+		}
+		cout &lt;&lt; u &lt;&lt; '/' &lt;&lt; v &lt;&lt; '\n';
+	}
+}
+</code></pre>
+
+<h2 id="line-line-intersection"><a href="https://vjudge.net/problem/Gym-102220C">Line-line Intersection</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+int t, n;
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d", &amp;n);
+		map&lt;ll, map&lt;ll, pair&lt;ll, map&lt;ll, map&lt;ll, map&lt;ll, ll&gt;&gt;&gt;&gt;&gt;&gt; mp;
+		ll ans = 0;
+		for (int i = 0, x1, y1, x2, y2; i &lt; n; ++i)
+		{
+			scanf("%d%d%d%d", &amp;x1, &amp;y1, &amp;x2, &amp;y2);
+			ll A = x2 - x1, B = y2 - y1, C = 1LL * x1 * y2 - 1LL * y1 * x2;
+			if (!A)
+			{
+				ll g = __gcd(B, C);
+				B /= g, C /= g;
+				if (B &lt; 0)
+					B = -B, C = -C;
+			}
+			else if (!B)
+			{
+				ll g = __gcd(A, C);
+				A /= g, C /= g;
+				if (A &lt; 0)
+					A = -A, C = -C;
+			}
+			else
+			{
+				ll g = __gcd(__gcd(A, B), C);
+				A /= g, B /= g, C /= g;
+				if (A &lt; 0)
+					A = -A, B = -B, C = -C;
+			}
+			ll a = A / __gcd(A, B), b = B / __gcd(A, B);
+			if (a &lt; 0)
+				a = -a, b = -b;
+			auto &amp;p = mp[a][b];
+			ans += i - p.first++;
+			ans += p.second[A][B][C]++;
+		}
+		cout &lt;&lt; ans &lt;&lt; '\n';
+	}
+}
+</code></pre>
+
+<h2 id="minimum-spanning-tree"><a href="https://vjudge.net/problem/Gym-102220E">Minimum Spanning Tree</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int N = 1e5 + 9;
+struct UnionfindSet : vector&lt;int&gt;
+{
+	UnionfindSet(int n) : vector&lt;int&gt;(n)
+	{
+		for (int i = 0; i &lt; n; ++i)
+			at(i) = i;
+	}
+	int merge(int u, int w)
+	{
+		if (w = ask(w), u = ask(u), w != u)
+			return at(w) = u, 1;
+		return 0;
+	}
+	int ask(int u) { return at(u) != u ? at(u) = ask(at(u)) : u; }
+};
+struct Edge
+{
+	int u, v;
+	ll w;
+	bool operator&lt;(const Edge &amp;ed) const { return w &lt; ed.w; }
+} e[N];
+int t, n, m;
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d", &amp;n);
+		for (int i = 0, u, v, w; i + 1 &lt; n; ++i)
+		{
+			scanf("%d%d%d", &amp;u, &amp;v, &amp;w);
+			e[i] = {u - 1, v - 1, w};
+		}
+		sort(e, e + n - 1);
+		vector&lt;vector&lt;int&gt;&gt; v(n);
+		for (int i = 0; i + 1 &lt; n; ++i)
+			v[e[i].u].push_back(i), v[e[i].v].push_back(i);
+		ll ans = 0;
+		vector&lt;int&gt; flag(n, 0);
+		UnionfindSet ufs(n - 1);
+		for (int i = 0; i + 1 &lt; n; ++i)
+			for (auto u : {e[i].u, e[i].v})
+				if (!flag[u])
+				{
+					flag[u] = 1;
+					for (auto it : v[u])
+						if (ufs.merge(i, it))
+							ans += e[i].w + e[it].w;
+				}
+		cout &lt;&lt; ans &lt;&lt; '\n';
+	}
+}
+</code></pre>
+
+<h2 id="radar-scanner"><a href="https://vjudge.net/problem/Gym-102220G">Radar Scanner</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long LL;
+
+const int maxn = 100000 + 10;
+int T, n;
+struct data
+{
+	int Lx, Rx, Ly, Ry;
+} a[maxn];
+
+int main()
+{
+	scanf("%d", &amp;T);
+	while (T--)
+	{
+		scanf("%d", &amp;n);
+		for (int i = 1; i &lt;= n; i++)
+			scanf("%d%d%d%d", &amp;a[i].Lx, &amp;a[i].Ly, &amp;a[i].Rx, &amp;a[i].Ry);
+
+		int L = 0, R = 1e9 + 1;
+		LL ans1 = 0, ans2 = 0;
+		while (L + 1 &lt; R)
+		{
+			int mid = (L + R) / 2;
+
+			int Le = 0, Ri = 0;
+			for (int i = 1; i &lt;= n; i++)
+			{
+				if (a[i].Rx &lt; mid)
+					Le++;
+				if (a[i].Lx &gt; mid)
+					Ri++;
+			}
+			if (Le &gt; Ri)
+				R = mid;
+			else
+				L = mid;
+		}
+		for (int i = 1; i &lt;= n; i++)
+		{
+			if (a[i].Rx &lt; L)
+				ans1 += (LL)(L - a[i].Rx);
+			if (a[i].Rx &lt; R)
+				ans2 += (LL)(R - a[i].Rx);
+			if (a[i].Lx &gt; L)
+				ans1 += (LL)(a[i].Lx - L);
+			if (a[i].Lx &gt; R)
+				ans2 += (LL)(a[i].Lx - R);
+		}
+
+		L = 0;
+		R = 1e9 + 1;
+		LL ans3 = 0, ans4 = 0;
+		while (L + 1 &lt; R)
+		{
+			int mid = (L + R) / 2;
+
+			int Le = 0, Ri = 0;
+			for (int i = 1; i &lt;= n; i++)
+			{
+				if (a[i].Ry &lt; mid)
+					Le++;
+				if (a[i].Ly &gt; mid)
+					Ri++;
+			}
+			if (Le &gt; Ri)
+				R = mid;
+			else
+				L = mid;
+		}
+		for (int i = 1; i &lt;= n; i++)
+		{
+			if (a[i].Ry &lt; L)
+				ans3 += (LL)(L - a[i].Ry);
+			if (a[i].Ry &lt; R)
+				ans4 += (LL)(R - a[i].Ry);
+			if (a[i].Ly &gt; L)
+				ans3 += (LL)(a[i].Ly - L);
+			if (a[i].Ly &gt; R)
+				ans4 += (LL)(a[i].Ly - R);
+		}
+
+		LL ans = min(ans1, ans2) + min(ans3, ans4);
+		printf("%I64d\n", ans);
+	}
+
+	return 0;
+}
+</code></pre>
+
+<h2 id="skyscraper"><a href="https://vjudge.net/problem/Gym-102220H">Skyscraper</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const int NPOS = -1, N = 1e5 + 9;
+int t, n, m, a[N];
+struct SegmentTree
+{
+	struct Node
+	{
+		struct Val
+		{
+			int l, r;
+			ll lv, rv, ans;
+			void upd(ll mul, ll add)
+			{
+				lv += add, rv += add, ans += add;
+			}
+			friend Val up(const Val &amp;lc, const Val &amp;rc)
+			{
+				return {lc.l, rc.r, lc.lv, rc.rv, lc.ans + rc.ans - min(lc.rv, rc.lv)};
+			}
+		} v;
+		int lc, rc;
+		ll mul, add;
+	};
+	vector&lt;Node&gt; v;
+	SegmentTree(int l, int r)
+	{
+		v.reserve(r - l + 9 &lt;&lt; 1), build(l, r);
+	}
+	void build(int l, int r)
+	{
+		v.push_back({{l, r, a[l], a[l], a[l]}, NPOS, NPOS, 1, 0});
+		if (l &lt; r)
+		{
+			int rt = v.size() - 1;
+			down(rt), v[rt].v = up(v[v[rt].lc].v, v[v[rt].rc].v);
+		}
+	}
+	void down(int rt)
+	{
+		int m = v[rt].v.l + v[rt].v.r &gt;&gt; 1;
+		if (v[rt].lc == NPOS)
+			v[rt].lc = v.size(), build(v[rt].v.l, m);
+		if (v[rt].rc == NPOS)
+			v[rt].rc = v.size(), build(m + 1, v[rt].v.r);
+		upd(v[v[rt].lc].v.l, v[v[rt].lc].v.r, v[rt].mul, v[rt].add, v[rt].lc);
+		upd(v[v[rt].rc].v.l, v[v[rt].rc].v.r, v[rt].mul, v[rt].add, v[rt].rc);
+		v[rt].mul = 1, v[rt].add = 0;
+	}
+	void upd(int l, int r, ll mul, ll add, int rt = 0)
+	{
+		if (l &lt;= v[rt].v.l &amp;&amp; v[rt].v.r &lt;= r)
+			return v[rt].mul *= mul, v[rt].add = v[rt].add * mul + add, v[rt].v.upd(mul, add);
+		down(rt);
+		if (r &lt;= v[v[rt].lc].v.r)
+			upd(l, r, mul, add, v[rt].lc);
+		else if (l &gt;= v[v[rt].rc].v.l)
+			upd(l, r, mul, add, v[rt].rc);
+		else
+			upd(l, v[v[rt].lc].v.r, mul, add, v[rt].lc), upd(v[v[rt].rc].v.l, r, mul, add, v[rt].rc);
+		v[rt].v = up(v[v[rt].lc].v, v[v[rt].rc].v);
+	}
+	Node::Val ask(int l, int r, int rt = 0)
+	{
+		if (l &lt;= v[rt].v.l &amp;&amp; v[rt].v.r &lt;= r)
+			return v[rt].v;
+		down(rt);
+		if (r &lt;= v[v[rt].lc].v.r)
+			return ask(l, r, v[rt].lc);
+		if (l &gt;= v[v[rt].rc].v.l)
+			return ask(l, r, v[rt].rc);
+		return up(ask(l, v[v[rt].lc].v.r, v[rt].lc), ask(v[v[rt].rc].v.l, r, v[rt].rc));
+	}
+};
+int main()
+{
+	for (scanf("%d", &amp;t); t--;)
+	{
+		scanf("%d%d", &amp;n, &amp;m);
+		for (int i = 1; i &lt;= n; ++i)
+			scanf("%d", &amp;a[i]);
+		SegmentTree t(1, n);
+		for (int i = 1, l, r, k; i &lt;= m; ++i)
+		{
+			scanf("%d%d%d", &amp;k, &amp;l, &amp;r);
+			if (k == 2)
+				cout &lt;&lt; t.ask(l, r).ans &lt;&lt; '\n';
+			else
+				scanf("%d", &amp;k), t.upd(l, r, 1, k);
+		}
+	}
+}
+</code></pre>
+
+<h2 id="time-limit"><a href="https://vjudge.net/problem/Gym-102220J">Time Limit</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+const int maxn = 10 + 10;
+int T, n;
+int a[maxn];
+
+int main()
+{
+	scanf("%d", &amp;T);
+	while (T--)
+	{
+		scanf("%d", &amp;n);
+
+		int tim = 0;
+		for (int i = 1; i &lt;= n; i++)
+		{
+			scanf("%d", &amp;a[i]);
+
+			if (i == 1)
+				tim = 3 * a[i];
+			else if (a[i] &gt;= tim)
+				tim = a[i] + 1;
+			if (tim % 2 == 1)
+				tim++;
+		}
+		printf("%d\n", tim);
+	}
+
+	return 0;
+}
+</code></pre>
+:ET

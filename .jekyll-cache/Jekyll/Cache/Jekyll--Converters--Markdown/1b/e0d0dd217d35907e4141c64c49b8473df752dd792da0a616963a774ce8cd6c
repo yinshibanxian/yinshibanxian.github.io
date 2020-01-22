@@ -1,0 +1,80 @@
+I"�<pre><code class="language-haskell">{-
+Newton–Pepys problem
+From Wikipedia, the free encyclopedia
+Jump to navigationJump to searchThe Newton–Pepys problem is a probability problem concerning the probability of throwing sixes from a certain number of dice.[1]
+
+In 1693 Samuel Pepys and Isaac Newton corresponded over a problem posed by Pepys in relation to a wager he planned to make. The problem was:
+
+Which of the following three propositions has the greatest chance of success?
+A. Six fair dice are tossed independently and at least one “6” appears.
+B. Twelve fair dice are tossed independently and at least two “6”s appear.
+C. Eighteen fair dice are tossed independently and at least three “6”s appear.[2]
+Pepys initially thought that outcome C had the highest probability, but Newton correctly concluded that outcome A actually has the highest probability.
+
+请你通过模拟的方法找到问题的答案。
+
+要求：
+
+1. 说明模拟方法和过程；
+
+2. 提交代码，并说明如何运行程序，得到问题答案。
+-}
+import System.Random
+import Text.Printf
+
+main::IO()
+main=
+    do
+        let n=1000
+        a&lt;-getProbablity eventA n
+        b&lt;-getProbablity eventB n
+        c&lt;-getProbablity eventC n
+        putStrLn(printf "P(A)=%.7f,P(B)=%.7f,P(C)=%.7f" a b c)
+
+getProbablity::(IO Bool)-&gt;Int-&gt;IO Float
+getProbablity event n=do 
+    xs&lt;-happen event n
+    return ((fromIntegral xs)/(fromIntegral n))
+
+happen::(IO Bool)-&gt;Int-&gt;(IO Int)
+happen event 0=return 0
+happen event n=
+    do
+        e&lt;-event
+        y&lt;-happen event (n-1)
+        if e==True
+            then return (1+y)
+            else return y
+
+getDices::Int-&gt;IO [Int]
+getDices 0=return []
+getDices x=do
+    y&lt;-randomRIO(1,6)
+    ys&lt;-getDices(x-1)
+    return (y:ys)
+
+eventA::IO Bool
+eventA=
+    do
+        xs&lt;-getDices 6
+        return ((countSix xs)&gt;0)
+
+eventB::IO Bool
+eventB=
+    do
+        xs&lt;-getDices 12
+        return ((countSix xs)&gt;1)
+
+eventC::IO Bool
+eventC=
+    do
+        xs&lt;-getDices 18
+        return ((countSix xs)&gt;2)
+
+countSix::[Int]-&gt;Int
+countSix []=0
+countSix (x:xs)=
+    if x==6 then (countSix xs)+1
+    else countSix xs
+</code></pre>
+:ET

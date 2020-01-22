@@ -1,0 +1,162 @@
+I"�<p><a href="https://vjudge.net/problem/UVA-11992">题目链接</a>
+<a href="https://wu-kan.github.io/posts/acm/template/数据结构">数据结构模板</a>
+对蓝书上的懒标记进行加强，将对区间的操作改成区间线性变换，那么区间修改就是区间先乘0在修改，区间加就是区间先乘1再加。这样敲反而简单很多。</p>
+
+<blockquote>
+  <p>update: 更新了线段树模板。新的模板省去了build操作。</p>
+</blockquote>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+const int NPOS = -1;
+struct SegmentTree
+{
+	struct Val
+	{
+		int l, r;
+		ll min, max, sum;
+		Val(int l, int r) : l(l), r(r), min(0), max(0), sum(0) {}
+		Val(const Val &amp;lc, const Val &amp;rc) : l(lc.l), r(rc.r), min(std::min(lc.min, rc.min)), max(std::max(lc.max, rc.max)), sum(lc.sum + rc.sum) {}
+		void upd(ll mul, ll add) { min = min * mul + add, max = max * mul + add, sum = sum * mul + add * (r - l + 1); }
+	};
+	struct Node : Val
+	{
+		int lc, rc;
+		ll mul, add;
+		Node(Val v) : Val(v), lc(NPOS), rc(NPOS), mul(1), add(0) {}
+	};
+	vector&lt;Node&gt; v;
+	SegmentTree(int l, int r) : v{Val(l, r)} { v.reserve(r - l + 9 &lt;&lt; 1); }
+	void down(int rt)
+	{
+		int m = (v[rt].l + v[rt].r) / 2;
+		if (v[rt].lc == NPOS)
+			v[rt].lc = v.size(), v.push_back(Val(v[rt].l, m));
+		if (v[rt].rc == NPOS)
+			v[rt].rc = v.size(), v.push_back(Val(m + 1, v[rt].r));
+		upd(v[v[rt].lc].l, v[v[rt].lc].r, v[rt].mul, v[rt].add, v[rt].lc);
+		upd(v[v[rt].rc].l, v[v[rt].rc].r, v[rt].mul, v[rt].add, v[rt].rc);
+		v[rt].mul = 1;
+		v[rt].add = 0;
+	}
+	void upd(int l, int r, ll mul, ll add, int rt = 0)
+	{
+		if (l &lt;= v[rt].l &amp;&amp; v[rt].r &lt;= r)
+			return v[rt].mul *= mul, v[rt].add = v[rt].add * mul + add, v[rt].upd(mul, add);
+		down(rt);
+		if (r &lt;= v[v[rt].lc].r)
+			upd(l, r, mul, add, v[rt].lc);
+		else if (l &gt;= v[v[rt].rc].l)
+			upd(l, r, mul, add, v[rt].rc);
+		else
+			upd(l, v[v[rt].lc].r, mul, add, v[rt].lc), upd(v[v[rt].rc].l, r, mul, add, v[rt].rc);
+		dynamic_cast&lt;Val &amp;&gt;(v[rt]) = Val(v[v[rt].lc], v[v[rt].rc]);
+	}
+	Val ask(int l, int r, int rt = 0)
+	{
+		if (l &lt;= v[rt].l &amp;&amp; v[rt].r &lt;= r)
+			return v[rt];
+		down(rt);
+		if (r &lt;= v[v[rt].lc].r)
+			return ask(l, r, v[rt].lc);
+		if (l &gt;= v[v[rt].rc].l)
+			return ask(l, r, v[rt].rc);
+		return Val(ask(l, v[v[rt].lc].r, v[rt].lc), ask(v[v[rt].rc].l, r, v[rt].rc));
+	}
+};
+int main()
+{
+	for (int r, c, m, o, b, e, l; ~scanf("%d%d%d", &amp;r, &amp;c, &amp;m);)
+		for (vector&lt;SegmentTree&gt; Tree(r, {1, c}); m--;)
+		{
+			scanf("%d%d%d%d%d", &amp;o, &amp;b, &amp;l, &amp;e, &amp;r);
+			if (o == 3)
+			{
+				SegmentTree::Val ans(l, r);
+				for (ans.min = 1e9, --b; b &lt; e; ++b)
+					ans = SegmentTree::Val(ans, Tree[b].ask(l, r));
+				printf("%d %d %d\n", ans.sum, ans.min, ans.max);
+			}
+			else
+				for (scanf("%d", &amp;c), --b; b &lt; e; ++b)
+					Tree[b].upd(l, r, o == 1, c);
+		}
+}
+</code></pre>
+<p>原：目测是全网最短解法（Vjudge上Length1705，比第二名少了312，同时性能也比较强）。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+struct SegmentTree
+{
+	struct Node
+	{
+		int l,r;
+		ll mul,add,min,max,sum;
+		void set(ll m,ll a)
+		{
+			mul*=m,add=add*m+a,min=min*m+a,max=max*m+a,sum=sum*m+a*(r-l+1);
+		}
+		void up(const Node &amp;lc,const Node &amp;rc)
+		{
+			min=std::min(lc.min,rc.min);
+			max=std::max(lc.max,rc.max);
+			sum=lc.sum+rc.sum;
+		}
+		void down(Node &amp;lc,Node &amp;rc)
+		{
+			lc.set(mul,add),rc.set(mul,add),mul=1,add=0;
+		}
+	};
+	vector&lt;Node&gt; v;
+	SegmentTree(int N):v(N&lt;&lt;2)
+	{
+		build(1,N);
+	}
+	void build(int l,int r,int rt=1)
+	{
+		v[rt]= {l,r};
+		if(l&gt;=r)return;
+		int m=l+r&gt;&gt;1;
+		build(l,m,rt&lt;&lt;1),build(m+1,r,rt&lt;&lt;1|1),v[rt].up(v[rt&lt;&lt;1],v[rt&lt;&lt;1|1]);
+	}
+	void set(int l,int r,ll mul,ll add,int rt=1)
+	{
+		if(l&lt;=v[rt].l&amp;&amp;v[rt].r&lt;=r)return v[rt].set(mul,add);
+		v[rt].down(v[rt&lt;&lt;1],v[rt&lt;&lt;1|1]);
+		int m=v[rt].l+v[rt].r&gt;&gt;1;
+		if(m&gt;=r)set(l,r,mul,add,rt&lt;&lt;1);
+		else if(m&lt;l)set(l,r,mul,add,rt&lt;&lt;1|1);
+		else set(l,m,mul,add,rt&lt;&lt;1),set(m+1,r,mul,add,rt&lt;&lt;1|1);
+		v[rt].up(v[rt&lt;&lt;1],v[rt&lt;&lt;1|1]);
+	}
+	Node ask(int l,int r,int rt=1)
+	{
+		if(l&lt;=v[rt].l&amp;&amp;v[rt].r&lt;=r)return v[rt];
+		v[rt].down(v[rt&lt;&lt;1],v[rt&lt;&lt;1|1]);
+		int m=v[rt].l+v[rt].r&gt;&gt;1;
+		if(m&gt;=r)return ask(l,r,rt&lt;&lt;1);
+		if(m&lt;l)return ask(l,r,rt&lt;&lt;1|1);
+		return v[0].up(ask(l,m,rt&lt;&lt;1),ask(m+1,r,rt&lt;&lt;1|1)),v[0];
+	}
+};
+int main()
+{
+	for(int r,c,m,o,b,e,l; ~scanf("%d%d%d",&amp;r,&amp;c,&amp;m);)
+		for(vector&lt;SegmentTree&gt; tree(r,c); m--;)
+		{
+			scanf("%d%d%d%d%d",&amp;o,&amp;b,&amp;l,&amp;e,&amp;r);
+			if(o==3)
+			{
+				SegmentTree::Node ans;
+				for(ans.min=1e9,ans.max=ans.sum=0,--b; b&lt;e; ++b)
+					ans.up(ans,tree[b].ask(l,r));
+				printf("%d %d %d\n",ans.sum,ans.min,ans.max);
+			}
+			else for(scanf("%d",&amp;c),--b; b&lt;e; ++b)
+					tree[b].set(l,r,o==1,c);
+		}
+}
+</code></pre>
+:ET

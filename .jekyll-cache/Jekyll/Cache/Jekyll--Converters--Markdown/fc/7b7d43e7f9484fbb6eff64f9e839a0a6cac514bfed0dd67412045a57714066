@@ -1,0 +1,238 @@
+I"h<p><a href="https://github.com/wu-kan/ACM_Template/tree/master/计算几何/三维">三维几何模板</a>
+<a href="https://github.com/wu-kan/ACM_Template/tree/master/高精度/分数">分数类模板</a>
+<a href="https://vjudge.net/problem/UVALive-4973">题目链接</a>
+这一题太特殊了，所有运算都要在分数下进行，因此把完整代码贴出来。<br />
+原有的模板几乎无虚修改即可应用，分数类敲sqrt比较麻烦，因此所有距离计算的是是平方后的值（见注释中的原模板和修改之后的代码）。</p>
+<pre><code class="language-cpp">#include&lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+struct Fraction
+{
+	ll num,den;
+	Fraction(ll n=0,ll d=1):num(n),den(d)
+	{
+		d=__gcd(num,den),num/=d,den/=d;
+		if(den&lt;0)num=-num,den=-den;
+	}
+	friend Fraction operator+(const Fraction&amp; A,const Fraction&amp; B)
+	{
+		ll d=__gcd(A.den,B.den);
+		return Fraction(B.den/d*A.num+A.den/d*B.num,A.den/d*B.den);
+	}
+	Fraction&amp; operator+=(const Fraction &amp;c)
+	{
+		return *this=*this+c;
+	}
+	Fraction operator-()const
+	{
+		Fraction r(*this);
+		return r.num=-r.num,r;
+	}
+	friend Fraction operator-(const Fraction &amp;a,const Fraction &amp;c)
+	{
+		return -c+a;
+	}
+	Fraction&amp; operator-=(const Fraction &amp;c)
+	{
+		return *this=*this-c;
+	}
+	friend Fraction operator*(const Fraction&amp; A,const Fraction&amp; B)
+	{
+		return Fraction(A.num*B.num,A.den*B.den);
+	}
+	Fraction&amp; operator*=(const Fraction &amp;c)
+	{
+		return *this=*this*c;
+	}
+	friend Fraction operator/(const Fraction&amp; A,const Fraction&amp; B)
+	{
+		return Fraction(A.num*B.den,A.den*B.num);
+	}
+	Fraction&amp; operator/=(const Fraction &amp;c)
+	{
+		return *this=*this/c;
+	}
+	friend Fraction operator%(const Fraction &amp;a,const Fraction &amp;c)
+	{
+		return Fraction(a.num*c.den%(c.num*a.den),a.den*c.den);
+	}
+	Fraction&amp; operator%=(const Fraction &amp;c)
+	{
+		return *this=*this%c;
+	}
+	friend bool operator==(const Fraction &amp;a,const Fraction &amp;b)
+	{
+		return a.num*b.den==a.den*b.num;
+	}
+	friend bool operator!=(const Fraction &amp;a,const Fraction &amp;b)
+	{
+		return !(a==b);
+	}
+	friend bool operator&lt;(const Fraction &amp;a,const Fraction &amp;b)
+	{
+		return a.num*b.den&lt;a.den*b.num;
+	}
+	friend bool operator&gt;(const Fraction &amp;a,const Fraction &amp;b)
+	{
+		return b&lt;a;
+	}
+	friend bool operator&lt;=(const Fraction &amp;a,const Fraction &amp;b)
+	{
+		return !(a&gt;b);
+	}
+	friend bool operator&gt;=(const Fraction &amp;a,const Fraction &amp;b)
+	{
+		return !(a&lt;b);
+	}
+	friend Fraction abs(Fraction f)
+	{
+		if(f.num&lt;0)f.num=-f.num;
+		return f;
+	}
+	friend ostream&amp; operator&lt;&lt;(ostream &amp;os,const Fraction &amp;f)
+	{
+		return !f.num?os&lt;&lt;0:
+		       f.den==1?os&lt;&lt;f.num:
+		       os&lt;&lt;f.num&lt;&lt;'/'&lt;&lt;f.den;
+	}
+};
+typedef Fraction lf;
+const lf EPS=1e-9,INF=1e9;
+int sgn(lf d)
+{
+	return (d&gt;EPS)-(d&lt;-EPS);
+}
+struct Coord3
+{
+	lf X,Y,Z;
+	Coord3(lf X=0,lf Y=0,lf Z=0):X(X),Y(Y),Z(Z) {}
+	friend bool operator!=(const Coord3 &amp;a,const Coord3 &amp;b)
+	{
+		return sgn(a.X-b.X)||sgn(a.Y-b.Y)||sgn(a.Z-b.Z);
+	}
+	friend bool operator==(const Coord3 &amp;a,const Coord3 &amp;b)
+	{
+		return !(a!=b);
+	}
+	Coord3&amp; operator+=(const Coord3 &amp;b)
+	{
+		return X+=b.X,Y+=b.Y,Z+=b.Z,*this;
+	}
+	friend Coord3 operator+(Coord3 a,const Coord3 &amp;b)
+	{
+		return a+=b;
+	}
+	Coord3&amp; operator-=(const Coord3 &amp;b)
+	{
+		return X-=b.X,Y-=b.Y,Z-=b.Z,*this;
+	}
+	friend Coord3 operator-(Coord3 a,const Coord3 &amp;b)
+	{
+		return a-=b;
+	}
+	Coord3&amp; operator*=(lf d)
+	{
+		return X*=d,Y*=d,Z*=d,*this;
+	}
+	friend Coord3 operator*(Coord3 a,lf d)
+	{
+		return a*=d;
+	}
+	friend Coord3 operator*(lf d,Coord3 a)
+	{
+		return a*=d;
+	}
+	Coord3&amp; operator/=(lf d)
+	{
+		return X/=d,Y/=d,Z/=d,*this;
+	}
+	friend Coord3 operator/(Coord3 a,lf d)
+	{
+		return a/=d;
+	}
+};
+struct Line3
+{
+	Coord3 p,v;
+	Line3(Coord3 p=Coord3(),Coord3 v=Coord3()):p(p),v(v) {}
+	Coord3 point(lf t)const
+	{
+		return p+v*t;
+	}
+};
+lf Dot(const Coord3&amp; A,const Coord3&amp; B)
+{
+	return A.X*B.X+A.Y*B.Y+A.Z*B.Z;
+}
+Coord3 Cross(const Coord3&amp; A,const Coord3&amp; B)
+{
+	return Coord3(A.Y*B.Z-A.Z*B.Y,A.Z*B.X-A.X*B.Z,A.X*B.Y-A.Y*B.X);
+}
+lf norm(const Coord3&amp; A)
+{
+	return Dot(A,A);
+}
+/*
+lf DistanceToLine(Coord3 P,Coord3 A,Coord3 B)//点P到直线AB的距离
+{
+	Coord3 v1=B-A,v2=P-A;
+	return abs(Cross(v1,v2))/abs(v1);
+}
+*/
+lf Distance2ToLine(Coord3 P,Coord3 A,Coord3 B)//点P到直线AB的距离
+{
+	Coord3 v1=B-A,v2=P-A;
+	return norm(Cross(v1,v2))/norm(v1);
+}
+/*
+lf DistanceToSeg(Coord3 P,Coord3 A,Coord3 B)//点到线段的距离
+{
+	if(A==B)return abs(P-A);
+	Coord3 v1=B-A,v2=P-A,v3=P-B;
+	if(sgn(Dot(v1,v2))&lt;0)return abs(v2);
+	if(sgn(Dot(v1,v3))&gt;0)return abs(v3);
+	return fabs(DistanceToLine(P,A,B));
+}
+*/
+lf Distance2ToSeg(Coord3 P,Coord3 A,Coord3 B)//点到线段的距离
+{
+	if(A==B)return norm(P-A);
+	Coord3 v1=B-A,v2=P-A,v3=P-B;
+	if(sgn(Dot(v1,v2))&lt;0)return norm(v2);
+	if(sgn(Dot(v1,v3))&gt;0)return norm(v3);
+	return abs(Distance2ToLine(P,A,B));
+}
+bool LineDistance3D(Coord3 p1,Coord3 u,Coord3 p2,Coord3 v,lf&amp; s)//求异面直线 p1+s*u与p2+t*v的公垂线对应的s，如果平行|重合，返回0
+{
+	lf b=Dot(u,u)*Dot(v,v)-Dot(u,v)*Dot(u,v);
+	if(!sgn(b))return 0;
+	lf a=Dot(u,v)*Dot(v,p1-p2)-Dot(v,v)*Dot(u,p1-p2);
+	return s=a/b,1;
+}
+Coord3 getCoord3()
+{
+	ll x,y,z;
+	return scanf("%lld%lld%lld",&amp;x,&amp;y,&amp;z),Coord3(x,y,z);
+}
+int main()
+{
+	int t;
+	for(scanf("%d",&amp;t); t--;)
+	{
+		Coord3 A=getCoord3(),B=getCoord3(),C=getCoord3(),D=getCoord3();
+		lf s,t,ans=INF;
+		if(LineDistance3D(A,B-A,C,D-C,s)&amp;&amp;0&lt;s&amp;&amp;s&lt;1&amp;&amp;
+		        LineDistance3D(C,D-C,A,B-A,t)&amp;&amp;0&lt;t&amp;&amp;t&lt;1)
+			ans=norm(Line3(A,B-A).point(s)-Line3(C,D-C).point(t));
+		else
+		{
+			ans=min(ans,Distance2ToSeg(A,C,D));
+			ans=min(ans,Distance2ToSeg(B,C,D));
+			ans=min(ans,Distance2ToSeg(C,A,B));
+			ans=min(ans,Distance2ToSeg(D,A,B));
+		}
+		printf("%lld %lld\n",ans.num,ans.den);
+	}
+}
+</code></pre>
+:ET

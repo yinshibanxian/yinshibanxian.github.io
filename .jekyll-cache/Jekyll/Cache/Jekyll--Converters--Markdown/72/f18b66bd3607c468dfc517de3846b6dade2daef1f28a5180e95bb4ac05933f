@@ -1,0 +1,243 @@
+I"�<p><a href="https://codeforces.com/blog/entry/67366">官方题解</a></p>
+
+<h2 id="another-one-bites-the-dust"><a href="https://vjudge.net/problem/CodeForces-1148A">Another One Bites The Dust</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+unsigned a, b, c;
+int main() { scanf("%u%u%u", &amp;a, &amp;b, &amp;c), printf("%u", (min(a, b) + c) * 2 + (a != b)); }
+</code></pre>
+
+<h2 id="born-this-way"><a href="https://vjudge.net/problem/CodeForces-1148B">Born This Way</a></h2>
+
+<p>如果要在第一段的航班里面删，肯定是优先删起飞时间小的。如果要在第二段航班里面删，那么就是优先删<strong>能够到达的航班里</strong>起飞时间小的。</p>
+
+<p>于是依次考虑保留第一段航班里从第$0,1,2,\ldots,k$号开始的航班，分别考虑第二段航班的时间即可。由于第二段航班的时间是随着第一段航班单调的，于是可以双指针维护。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 2e5 + 9;
+int n, m, ta, tb, k, a[N], b[N];
+int main()
+{
+	scanf("%d%d%d%d%d", &amp;n, &amp;m, &amp;ta, &amp;tb, &amp;k);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;a[i]), a[i] += ta;
+	for (int i = 0; i &lt; m; ++i)
+		scanf("%d", &amp;b[i]);
+	if (k &gt;= n || k &gt;= m)
+		return printf("-1"), 0;
+	for (int i = ta = 0, j = 0; i &lt;= k; ++i)
+	{
+		while (j &lt; m &amp;&amp; b[j] &lt; a[i])
+			++j;
+		if (j + k - i &gt;= m)
+			return printf("-1"), 0;
+		ta = max(ta, b[j + k - i]);
+	}
+	printf("%d", ta + tb);
+}
+</code></pre>
+
+<h2 id="crazy-diamond"><a href="https://vjudge.net/problem/CodeForces-1148C">Crazy Diamond</a></h2>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 3e5 + 9;
+int n, p[N], a[N];
+vector&lt;pair&lt;int, int&gt;&gt; ans;
+bool ok(int x, int y) { return 2 * (y - x) &gt;= n; }
+void work(int x, int y) { ans.emplace_back(x, y), swap(a[p[x]], a[p[y]]), swap(p[x], p[y]); }
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1; i &lt;= n; ++i)
+		scanf("%d", &amp;p[i]), a[p[i]] = i;
+	for (int i = 1; i &lt;= n; ++i)
+	{
+		int x = i, y = a[i];
+		if (x == y)
+			continue;
+		if (ok(x, y))
+			work(x, y);
+		else if (ok(1, x))
+			work(1, x), work(1, y), work(1, x);
+		else if (ok(y, n))
+			work(y, n), work(x, n), work(y, n);
+		else
+			work(1, y), work(x, n), work(1, n), work(x, n), work(1, y);
+	}
+	printf("%d\n", ans.size());
+	for (auto p : ans)
+		printf("%d %d\n", p.first, p.second);
+}
+</code></pre>
+
+<h2 id="dirty-deeds-done-dirt-cheap"><a href="https://vjudge.net/problem/CodeForces-1148D">Dirty Deeds Done Dirt Cheap</a></h2>
+
+<p>现场鬼迷心窍居然开始敲起了随机化…</p>
+
+<p>实际上考虑第一种类型，实际上只要按a、b的降序贪心选择即可（假如当前的选不了，后面的一定都选不了）。</p>
+
+<p>类型二取一个相反数就可以转成类型一。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef tuple&lt;int, int, int&gt; tiii;
+void work(vector&lt;tiii&gt; &amp;v)
+{
+	vector&lt;tiii&gt; tmp;
+	sort(v.rbegin(), v.rend()), swap(tmp, v);
+	for (auto t : tmp)
+		if (v.empty() || get&lt;0&gt;(t) &lt; get&lt;1&gt;(v.back()))
+			v.push_back(t);
+}
+vector&lt;tiii&gt; v[2];
+int n;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, a, b; i &lt;= n; ++i)
+	{
+		scanf("%d%d", &amp;a, &amp;b);
+		if (a &lt; b)
+			v[0].emplace_back(a, b, i);
+		else if (a &gt; b)
+			v[1].emplace_back(-a, -b, i);
+	}
+	work(v[0]), work(v[1]);
+	if (v[0].size() &lt; v[1].size())
+		swap(v[0], v[1]);
+	printf("%d\n", v[0].size());
+	for (auto t : v[0])
+		printf("%d ", get&lt;2&gt;(t));
+}
+</code></pre>
+
+<h2 id="earth-wind-and-fire"><a href="https://vjudge.net/problem/CodeForces-1148E">Earth Wind and Fire</a></h2>
+
+<p>又是一道双指针，感觉像B、C两题的大杂烩。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 3e5 + 9;
+vector&lt;tuple&lt;int, int, int&gt;&gt; ans;
+tuple&lt;int, int&gt; a[N];
+int n, b[N];
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;get&lt;0&gt;(a[i])), get&lt;1&gt;(a[i]) = i;
+	sort(a, a + n);
+	for (int i = 0; i &lt; n; ++i)
+		scanf("%d", &amp;b[i]);
+	sort(b, b + n);
+	long long s = 0;
+	for (int i = 0; i &lt; n; ++i)
+	{
+		s += b[i] -= get&lt;0&gt;(a[i]);
+		if (s &lt; 0)
+			return printf("NO"), 0;
+	}
+	if (s)
+		return printf("NO"), 0;
+	for (int i = 0, j = 0, d; i &lt; n; ++i)
+		while (b[i] &gt; 0)
+		{
+			for (j = max(i + 1, j); b[j] &gt;= 0;)
+				++j;
+			ans.emplace_back(get&lt;1&gt;(a[i]), get&lt;1&gt;(a[j]), d = min(b[i], -b[j]));
+			b[i] -= d, b[j] += d;
+		}
+	printf("YES\n%d\n", ans.size());
+	for (auto t : ans)
+		printf("%d %d %d\n", get&lt;0&gt;(t) + 1, get&lt;1&gt;(t) + 1, get&lt;2&gt;(t));
+}
+</code></pre>
+
+<h2 id="foo-fighters"><a href="https://vjudge.net/problem/CodeForces-1148F">Foo Fighters</a></h2>
+
+<p>从高位到低位依次考虑，如果包含这一位上的权值加起来和总权值的符号相同，那么就把这一位反转并加入答案。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef long long ll;
+const ll N = 3e5 + 9;
+ll n, val[N], mask[N], s, ans;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (ll i = 0; i &lt; n; ++i)
+		scanf("%lld%lld", &amp;val[i], &amp;mask[i]), s += val[i];
+	if (s &lt; 0)
+		for (ll i = 0; i &lt; n; ++i)
+			val[i] = -val[i];
+	for (ll j = 1LL &lt;&lt; 61; j; j &gt;&gt;= 1)
+	{
+		for (ll i = s = 0; i &lt; n; ++i)
+			if (mask[i] == j)
+				s += val[i];
+		if (s &gt; 0)
+		{
+			ans |= j;
+			for (ll i = 0; i &lt; n; ++i)
+				if (mask[i] &amp; j)
+					val[i] = -val[i];
+		}
+		for (ll i = 0; i &lt; n; ++i)
+			if (mask[i] &amp; j)
+				mask[i] ^= j;
+	}
+	printf("%lld\n", ans);
+}
+</code></pre>
+
+<h2 id="gold-experience"><a href="https://vjudge.net/problem/CodeForces-1148G">Gold Experience</a></h2>
+
+<p>假如有一个因子出现的次数多于k次，那么可以直接出结果。</p>
+
+<p>否则，考虑构造第二种集合，即任意一点存在没有连边的另外一点。</p>
+
+<p>如果存在一个点，其权值是质数，把他放进这个集合就好，因为这个质因子出现次数小于k次，必定存在一点无法到达它。后面考虑所有的权值都是合数的情况，选择最大素因子最大的k个（？）。</p>
+
+<pre><code class="language-bash">6 3
+18 75 245 847 1859 26
+</code></pre>
+
+<p>然而我又构造出了上面这组数据把这个做法Hack掉了…</p>
+
+<p>我 Hack 我 自 己
+<img src="/public/image/2019-06-02-1.jpg" alt="HACK" /></p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9, M = 1e7 + 9;
+vector&lt;int&gt; d[int(sqrt(M))];
+pair&lt;int, int&gt; a[N];
+int n, k;
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;k);
+	for (int i = 0; i &lt; n; ++i)
+	{
+		scanf("%d", &amp;a[i].first), a[i].second = i;
+		for (int j = 2, e = a[i].first; j * j &lt;= e; ++j)
+			if (a[i].first % j == 0)
+			{
+				for (d[j].push_back(i); a[i].first % j == 0;)
+					a[i].first /= j;
+				if (d[j].size() == k)
+				{
+					for (auto t : d[j])
+						printf("%d ", t + 1);
+					return 0;
+				}
+			}
+	}
+	sort(a, a + n);
+	for (int i = 0; i &lt; k; ++i)
+		printf("%d ", a[n - i - 1].second + 1);
+}
+</code></pre>
+:ET

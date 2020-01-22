@@ -1,0 +1,319 @@
+I"�4<h2 id="实验简介">实验简介</h2>
+
+<p>使用下面一种或多种优化方法完成CUDA的矩阵向量乘法$A\times b=C$,其中A是$2^{14}\times 2^{14}$的方阵，$b$为$2^{14}$维向量。假设矩阵$A$的元素为$a_{i,j}=i-0.1\times j+1$，向量$b$的元素为$b_i=\log\sqrt{i\times i-i+2}$。</p>
+
+<ul>
+  <li>使用global memory</li>
+  <li>使用合并访存</li>
+  <li>使用constant memory存放向量</li>
+  <li>使用shared memory存放向量和矩阵</li>
+</ul>
+
+<h2 id="实验环境">实验环境</h2>
+
+<p>实验在老师提供的计算集群的一个节点上进行。单节点的显卡配置如下：</p>
+
+<pre><code class="language-bash">$ nvdia-smi
+Mon Dec  2 08:38:49 2019
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 410.48                 Driver Version: 410.48                    |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla V100-PCIE...  On   | 00000000:3B:00.0 Off |                    0 |
+| N/A   30C    P0    24W / 250W |      0MiB / 16130MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+</code></pre>
+
+<h2 id="实验原理">实验原理</h2>
+
+<p>优化CUDA架构上的程序，一般从以下几个方面考虑：</p>
+
+<ul>
+  <li>选择好的并行算法，发掘更多的数据并行性</li>
+  <li>保持SM尽可能忙碌，尽量利用所有的SM参与计算
+    <ul>
+      <li>加大数据量</li>
+      <li>减小线程块大小</li>
+    </ul>
+  </li>
+  <li>优化存储器的使用
+    <ul>
+      <li>全局存储器合并访问</li>
+      <li>使用更快的constant memory或shared memory</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="实验过程">实验过程</h2>
+
+<p>由于都是CUDA架构上的核函数对比性能，下面的计时都只测了用于核函数计算的时间，而不包含数据拷贝的部分（否则运行时间都在300ms左右，基本上都是拷贝的时间而没有参考价值了）。当然，由于没有计入拷贝等预处理的时间，那些需要计算转置或者预读取的算法在这里会有优势一些。</p>
+
+<h3 id="使用global-memory">使用global memory</h3>
+
+<p>这是最基础的矩阵向量乘法。这里假设线程块都是一维组织的，每个CUDA线程计算矩阵的一行与向量乘积，这样各线程之间没有读写冲突，不需要使用原子操作。</p>
+
+<pre><code class="language-c">void __global__ MatVecMulGlobalMemory(const lf *A, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i &lt; nRow)
+	{
+		lf res = 0; //将结果先存在寄存器里，减少对向量C的访存
+		for (size_t j = 0; j &lt; nCol; ++j)
+			res += A[i * nCol + j] * B[j];
+		C[i] = res;
+	}
+}
+</code></pre>
+
+<p>运行时间为<code>3.861504ms</code>。</p>
+
+<h3 id="使用合并访存">使用合并访存</h3>
+
+<p>所谓合并访存，指的是相邻的线程访问段对齐的地址。比如在之前的代码中，<code>j == 0</code>时线程0访问<code>A[0]</code>，线程1访问<code>A[nCol]</code>，线程2访问<code>A[2 * nCol]</code>…它们并不相邻，因此不满足合并访问的要求。在这里我们把原来的矩阵$A$求出转置$A^T$，此时<code>j == 0</code>时线程0访问<code>At[0]</code>，线程1访问<code>At[1]</code>，线程2访问<code>At[2]</code>…此时满足了合并访问的要求。</p>
+
+<pre><code class="language-c">void __global__ MatVecMulGlobalMemoryAlign(const lf *At, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i &lt; nRow)
+	{
+		lf res = 0;
+		for (size_t j = 0; j &lt; nCol; ++j)
+			res += At[j * nRow + i] * B[j];
+		C[i] = res;
+	}
+}
+</code></pre>
+
+<p>运行时间为<code>1.570816ms</code>，性能提高了将近一倍，充分说明了合并访存的重要性。</p>
+
+<h3 id="使用constant-memory存放向量">使用constant memory存放向量</h3>
+
+<p>注意到向量在计算过程中不会改变，且每个线程访问相同地址，因此考虑把它放在constant memory中。</p>
+
+<p>NVIDIA硬件提供了64KB的常量内存，并且常量内存采用了不同于标准全局内存的处理方式。在这里我们大小为$2^{14}$的单精度浮点数向量$b$大小恰好为64KB，正好可以完整保存。如果向量超过了constant memory的64KB上限，那就需要分批进行，多次传输和启动内核。</p>
+
+<pre><code class="language-c">lf __constant__ d_Bc[(1 &lt;&lt; 16) / sizeof(lf)]; //64KB
+void __global__ MatVecMulConstantMemory(const lf *At, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i &lt; nRow)
+	{
+		lf res = 0;
+		for (size_t j = 0; j &lt; nCol; ++j)
+			res += At[j * nRow + i] * d_Bc[j];
+		C[i] = res;
+	}
+}
+</code></pre>
+
+<p>运行时间为<code>1.536000ms</code>，在上一步的基础上略微提高。使用常量内存可以提升运算性能的原因主要有两个：</p>
+
+<ol>
+  <li>对常量内存的单次读操作可以广播到同个半线程束的其他$15$个线程，这种方式产生的内存流量只是使用全局内存时的$\frac{1}{16}$。</li>
+  <li>硬件将主动把常量数据缓存在GPU上。在第一次从常量内存的某个地址上读取后，当其他半线程束请求同一个地址时，那么将命中缓存，这同样减少了额外的内存流量。</li>
+</ol>
+
+<h3 id="使用shared-memory存放向量和矩阵">使用shared memory存放向量和矩阵</h3>
+
+<p>对于block内内存来说，向量都是共享的，因此我们可以使用比constant memory更快的shared memory来存储，此时相比较使用常量内存，我们免掉了向量比较大的时候多次数据拷贝和启动核函数的开销，也没有使用全局变量，增加了代码的可扩展性。当然，shared memory更小，因此需要对向量进行分块处理。</p>
+
+<p>另外需要更正的一个问题是，并不需要使用shared memory去存矩阵，因为在这个矩阵向量乘的过程中，每个矩阵元素只被访问了一次。此外，shared memory的大小也并不足以存下完整的矩阵（甚至是向量）。</p>
+
+<pre><code class="language-c">void __global__ MatVecMulSharedMemory(const lf *At, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	extern lf __shared__ Bs[];
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	lf res = 0;
+	for (size_t jBeg = 0, jEnd = blockDim.x &lt; nCol ? blockDim.x : nCol;
+		 jBeg &lt; nCol;
+		 jBeg += blockDim.x, jEnd += blockDim.x)
+	{
+		__syncthreads(); //防止有的进程还在读Bs
+		if (jBeg + threadIdx.x &lt; nCol)
+			Bs[threadIdx.x] = B[jBeg + threadIdx.x];
+		__syncthreads();
+		if (i &lt; nRow)
+			for (size_t j = jBeg; j &lt; jEnd; ++j)
+				res += At[j * nRow + i] * Bs[j - jBeg];
+	}
+	if (i &lt; nRow)
+		C[i] = res;
+}
+</code></pre>
+
+<p>运行时间为<code>1.821696ms</code>，反而有一定的下降。分析一下原因：</p>
+
+<ol>
+  <li>使用常量内存时，将原来的数据拷贝到常量内存的时间并没有被算进去，而这里读内存的过程是在核函数内部的。想来如果在更大的矩阵上进行计算，使用shared memory应该会有更好的表现。</li>
+  <li>老师集群上的显卡性能过于强悍（在今年十一月SC超算大会刚发布Tesla V100S前，Tesla V100一直都是市面能买到的最强算力），内存读写性能比以往的显卡都要强很多，因此对本来已经很快的global memory的优化效果没有那么明显了，而对应的核函数却比朴素的算法更复杂，一定程度上增加了运行的时间常数。</li>
+</ol>
+
+<h3 id="matvecmulo12727"><code>MatVecMul.o12727</code></h3>
+
+<p>分别是上面四个核函数的运行时间。</p>
+
+<pre><code class="language-bash">3.861504ms
+1.570816ms
+1.536000ms
+1.821696ms
+</code></pre>
+
+<p>可以看到，由于现在的硬件性能已经大大强于数年前，做存储器的优化效果已经比较小（并不是说没有）。因此，对这个问题来说，最主要的是要选一个优秀的并行算法，并对程序代码做好访存分析和优化。</p>
+
+<p>当然也不是说存储器结构就不再重要，还是要具体问题具体分析。上面很多算法都是要对矩阵或者向量进行预处理的，而并没有把对应的代价（时间、内存空间、可扩展性等）计入在内，实际上在运用到生产环境的时候这些仍然是必须要考虑的。</p>
+
+<h3 id="matvecmulpbs"><code>MatVecMul.pbs</code></h3>
+
+<p>调度脚本。</p>
+
+<pre><code class="language-bash">#PBS -N MatVecMul
+#PBS -l nodes=1:ppn=32:gpus=1
+#PBS -j oe
+#PBS -q gpu
+source /public/software/profile.d/cuda10.0.sh
+cd $PBS_O_WORKDIR
+nvcc MatVecMul.cu -o MatVecMul
+./MatVecMul
+</code></pre>
+
+<h3 id="matvecmulcu"><code>MatVecMul.cu</code></h3>
+
+<p>完整代码。</p>
+
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;math.h&gt;
+#include &lt;cuda_runtime.h&gt;
+typedef float lf;
+void __global__ MatVecMulGlobalMemory(const lf *A, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i &lt; nRow)
+	{
+		lf res = 0; //将结果先存在寄存器里，减少对向量C的访存
+		for (size_t j = 0; j &lt; nCol; ++j)
+			res += A[i * nCol + j] * B[j];
+		C[i] = res;
+	}
+}
+void __global__ MatVecMulGlobalMemoryAlign(const lf *At, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i &lt; nRow)
+	{
+		lf res = 0;
+		for (size_t j = 0; j &lt; nCol; ++j)
+			res += At[j * nRow + i] * B[j];
+		C[i] = res;
+	}
+}
+lf __constant__ d_Bc[(1 &lt;&lt; 16) / sizeof(lf)]; //64KB
+void __global__ MatVecMulConstantMemory(const lf *At, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	if (i &lt; nRow)
+	{
+		lf res = 0;
+		for (size_t j = 0; j &lt; nCol; ++j)
+			res += At[j * nRow + i] * d_Bc[j];
+		C[i] = res;
+	}
+}
+void __global__ MatVecMulSharedMemory(const lf *At, const lf *B, lf *C, const size_t nRow, const size_t nCol)
+{
+	extern lf __shared__ Bs[];
+	const size_t i = blockDim.x * blockIdx.x + threadIdx.x;
+	lf res = 0;
+	for (size_t jBeg = 0, jEnd = blockDim.x &lt; nCol ? blockDim.x : nCol;
+		 jBeg &lt; nCol;
+		 jBeg += blockDim.x, jEnd += blockDim.x)
+	{
+		__syncthreads(); //防止有的进程还在读Bs
+		if (jBeg + threadIdx.x &lt; nCol)
+			Bs[threadIdx.x] = B[jBeg + threadIdx.x];
+		__syncthreads();
+		if (i &lt; nRow)
+			for (size_t j = jBeg; j &lt; jEnd; ++j)
+				res += At[j * nRow + i] * Bs[j - jBeg];
+	}
+	if (i &lt; nRow)
+		C[i] = res;
+}
+int main()
+{
+	const size_t
+		nRow = 1 &lt;&lt; 14,
+		nCol = 1 &lt;&lt; 14;
+	lf
+		*h_A = (lf *)malloc(sizeof(lf) * nRow * nCol),
+		*h_At = (lf *)malloc(sizeof(lf) * nRow * nCol),
+		*h_B = (lf *)malloc(sizeof(lf) * nCol),
+		*h_C = (lf *)malloc(sizeof(lf) * nRow),
+		*d_A,
+		*d_At,
+		*d_B,
+		*d_C;
+	for (size_t i = 0; i &lt; nRow; ++i)
+		for (size_t j = 0; j &lt; nCol; ++j)
+			h_A[i * nCol + j] = i - 0.1 * j + 1;
+	for (size_t j = 0; j &lt; nCol; ++j)
+	{
+		h_B[j] = log(sqrt(j * j - j + 2));
+		for (size_t i = 0; i &lt; nRow; ++i)
+			h_At[j * nRow + i] = i - 0.1 * j + 1;
+	}
+
+	cudaMalloc((lf **)&amp;d_A, sizeof(lf) * nRow * nCol);
+	cudaMalloc((lf **)&amp;d_At, sizeof(lf) * nRow * nCol);
+	cudaMalloc((lf **)&amp;d_B, sizeof(lf) * nCol);
+	cudaMalloc((lf **)&amp;d_C, sizeof(lf) * nRow);
+
+	cudaMemcpy(d_A, h_A, sizeof(lf) * nRow * nCol, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_At, h_At, sizeof(lf) * nRow * nCol, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_B, h_B, sizeof(lf) * nCol, cudaMemcpyHostToDevice);
+	cudaMemcpyToSymbol(d_Bc, h_B, sizeof(lf) * nCol, cudaMemcpyHostToDevice);
+
+	for (int i = 0; i &lt; 4; ++i)
+	{
+		cudaEvent_t beg, end;
+		cudaEventCreate(&amp;beg);
+		cudaEventCreate(&amp;end);
+		cudaEventRecord(beg, 0);
+		size_t blocks = 1 &lt;&lt; 7, grids = (nRow + blocks - 1) / blocks;
+		if (i == 0)
+			MatVecMulGlobalMemory&lt;&lt;&lt;grids, blocks&gt;&gt;&gt;(d_A, d_B, d_C, nRow, nCol);
+		else if (i == 1)
+			MatVecMulGlobalMemoryAlign&lt;&lt;&lt;grids, blocks&gt;&gt;&gt;(d_At, d_B, d_C, nRow, nCol);
+		else if (i == 2)
+			MatVecMulConstantMemory&lt;&lt;&lt;grids, blocks&gt;&gt;&gt;(d_At, d_B, d_C, nRow, nCol);
+		else if (i == 3)
+			MatVecMulSharedMemory&lt;&lt;&lt;grids, blocks, sizeof(lf) * blocks&gt;&gt;&gt;(d_At, d_B, d_C, nRow, nCol);
+		cudaDeviceSynchronize();
+		cudaEventRecord(end, 0);
+		cudaEventSynchronize(beg);
+		cudaEventSynchronize(end);
+		lf elapsed_time;
+		cudaEventElapsedTime(&amp;elapsed_time, beg, end);
+		printf("%fms\n", elapsed_time);
+	}
+
+	cudaFree(d_A);
+	cudaFree(d_At);
+	cudaFree(d_B);
+	cudaFree(d_C);
+	free(h_A);
+	free(h_At);
+	free(h_B);
+	free(h_C);
+}
+</code></pre>
+:ET

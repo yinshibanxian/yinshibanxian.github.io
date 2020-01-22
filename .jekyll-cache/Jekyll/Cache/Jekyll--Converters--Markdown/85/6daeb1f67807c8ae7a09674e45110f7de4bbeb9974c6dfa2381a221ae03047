@@ -1,0 +1,126 @@
+I"<h1 id="brexit-negotiations"><a href="https://vjudge.net/problem/Kattis-brexitnegotiations">Brexit Negotiations</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 4e5 + 9;
+set&lt;pair&lt;int, int&gt;&gt; q;
+vector&lt;int&gt; g[N], ans;
+int n, e[N];
+void work(int k)
+{
+	if (!q.count({e[k], k}))
+		return;
+	q.erase({e[k], k});
+	for (auto i : g[k])
+		work(i);
+	ans.push_back(ans.size() + e[k]);
+}
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 0, d, b; i &lt; n; ++i)
+	{
+		scanf("%d%d", &amp;e[i], &amp;d);
+		for (int j = 0; j &lt; d; ++j)
+			scanf("%d", &amp;b), g[i].push_back(b - 1);
+		q.emplace(e[i], i);
+	}
+	while (!q.empty())
+		work(q.rbegin()-&gt;second);
+	printf("%d", *max_element(ans.begin(), ans.end()));
+}
+</code></pre>
+<h1 id="circuit-board-design"><a href="https://vjudge.net/problem/Kattis-circuitdesign">Circuit Board Design</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef double lf;
+typedef complex&lt;lf&gt; Coord;
+const int N = 1023, NPOS = -1;
+Coord ans[N];
+vector&lt;int&gt; g[N];
+int n, siz[N];
+void dfs(int u, int fa, lf b)
+{
+	++siz[u];
+	for (auto to : g[u])
+		if (to != fa)
+		{
+			ans[to] = ans[u] + polar(1.0, b);
+			dfs(to, u, b);
+			b += siz[to] * acos(-1) / N;
+			siz[u] += siz[to];
+		}
+}
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1, u, v; i &lt; n; ++i)
+	{
+		scanf("%d%d", &amp;u, &amp;v);
+		g[u].push_back(v);
+		g[v].push_back(u);
+	}
+	dfs(1, NPOS, 0);
+	for (int i = 1; i &lt;= n; ++i)
+		printf("%.9f %.9f\n", ans[i].real(), ans[i].imag());
+}
+</code></pre>
+<h1 id="hard-drive"><a href="https://vjudge.net/problem/Kattis-harddrive">Hard Drive</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 5e5 + 9;
+char s[N];
+int n, c, b, z[N];
+int main()
+{
+	scanf("%d%d%d", &amp;n, &amp;c, &amp;b);
+	fill(s, s + n, '0');
+	for (int i = 0; i &lt; b; ++i)
+	{
+		scanf("%d", &amp;z[i]), --z[i];
+		for (int j = i ? z[i - 1] + 1 : !(c &amp; 1); c &gt; 0 &amp;&amp; j &lt; z[i]; j += 2)
+			s[j] = '1', c -= 2;
+	}
+	printf("%s", s);
+}
+</code></pre>
+<h1 id="inflation"><a href="https://vjudge.net/problem/Kattis-inflation">Inflation</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 2e5 + 9;
+double f = 1, c[N];
+int n;
+int main()
+{
+	scanf("%d", &amp;n);
+	for (int i = 1; i &lt;= n; ++i)
+		scanf("%lf", &amp;c[i]);
+	sort(c + 1, c + n + 1);
+	for (int i = 1; i &lt;= n; ++i)
+	{
+		if (c[i] &gt; i)
+			return printf("impossible"), 0;
+		f = min(f, c[i] / i);
+	}
+	printf("%.9f", f);
+}
+</code></pre>
+<h1 id="kleptography"><a href="https://vjudge.net/problem/Kattis-kleptography">Kleptography</a></h1>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 127;
+char a[N], b[N], k[N];
+int n, m;
+int main()
+{
+	scanf("%d%d", &amp;n, &amp;m);
+	scanf("%s%s", a + m - n, b);
+	for (int i = m - 1; ~i; --i)
+	{
+		k[i] = ((b[i] - 'a') + 26 - (a[i] - 'a')) % 26 + 'a';
+		if (i &gt;= n)
+			a[i - n] = k[i];
+	}
+	printf("%s", a);
+}
+</code></pre>
+:ET

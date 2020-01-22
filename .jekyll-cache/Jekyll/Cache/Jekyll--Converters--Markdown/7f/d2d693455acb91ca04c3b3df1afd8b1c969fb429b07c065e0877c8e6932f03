@@ -1,0 +1,690 @@
+I"�N<h2 id="实验题目">实验题目</h2>
+
+<p>二状态进程模型</p>
+
+<h2 id="实验目的">实验目的</h2>
+
+<ol>
+  <li>学习进程模型知识，掌握进程模型的实现方法。</li>
+  <li>利用时钟中断，设计时钟中断处理进行进程交替执行</li>
+  <li>扩展MyOS，实现多进程模型的原型操作系统。</li>
+</ol>
+
+<h2 id="实验内容">实验内容</h2>
+
+<p>在实验五的基础上，进化你的原型操作系统，原型保留原有特征的基础上，设计满足下列要求的新原型操作系统：</p>
+
+<ol>
+  <li>内核实现简单进程模型，进程具有就绪、运行两种基本状态。建议在c程序中定义进程表，进程数量最多4个。</li>
+  <li>内核可以一次性加载最多4个用户程序。用户进程采用时间片轮转调度进程。由你设计有个性的用户程序，它们的输出各占1/4屏幕区域，信息输出有动感，以便观察程序是否在执行。</li>
+  <li>在原型中保证原有的系统调用服务可用。再编写4个用户程序，展示系统调用服务还能工作。</li>
+</ol>
+
+<h2 id="实验方案">实验方案</h2>
+
+<h3 id="实验环境">实验环境</h3>
+
+<h4 id="软件">软件</h4>
+
+<ul>
+  <li>Windows 10, 64-bit  (Build 17763) 10.0.17763</li>
+  <li>Windows Subsystem for Linux [Ubuntu 18.04.2 LTS]：WSL是以软件的形式运行在Windows下的Linux子系统，是近些年微软推出来的新工具，可以在Windows系统上原生运行Linux。</li>
+  <li>gcc version 7.3.0 (Ubuntu 7.3.0-27ubuntu1~18.04)：C语言程序编译器，Ubuntu自带。</li>
+  <li>NASM version 2.13.02：汇编程序编译器，通过<code>sudo apt install nasm</code>安装在WSL上。</li>
+  <li>Oracle VM VirtualBox 6.0.6 r130049 (Qt5.6.2)：轻量开源的虚拟机软件。</li>
+  <li>VSCode - Insiders v1.33.0：好用的文本编辑器，有丰富的插件。</li>
+  <li>hexdump for VSCode 1.7.2: VSCode中一个好用的十六进制显示插件。</li>
+  <li>GNU Make 4.1：安装在Ubuntu下，一键编译并连接代码，生成最终的文件。</li>
+</ul>
+
+<p>大部分开发环境安装在WSL上，较之于双系统、虚拟机等其他开发方案，更加方便，也方便直接使用Linux下的一些指令。</p>
+
+<h4 id="硬件">硬件</h4>
+
+<h5 id="开发环境配置">开发环境配置</h5>
+
+<p>所用机器型号为VAIO Z Flip 2016</p>
+
+<ul>
+  <li>Intel(R) Core(TM) i7-6567U CPU @3.30GHZ 3.31GHz</li>
+  <li>8.00GB RAM</li>
+</ul>
+
+<h5 id="虚拟机配置">虚拟机配置</h5>
+
+<ul>
+  <li>处理器内核总数：1</li>
+  <li>RAM：4MB</li>
+</ul>
+
+<h3 id="实验原理">实验原理</h3>
+
+<p>时钟中断响应后，保存当前进程A的寄存器状态；寻找下一个进程B ；还原进程B的寄存器状态。</p>
+
+<h4 id="设计进程控制块和schedule过程">设计进程控制块和<code>schedule</code>过程</h4>
+
+<p>首先要明确：需要保存多少个寄存器。</p>
+
+<blockquote>
+  <p>8086 计算机有以下寄存器：</p>
+
+  <ul>
+    <li>指令指针寄存器：ip</li>
+    <li>段寄存器：cs, es, ds, ss</li>
+    <li>主寄存器：di, si, bp, sp, ax, bx, cx, dx</li>
+    <li>标志寄存器</li>
+  </ul>
+</blockquote>
+
+<p>我使用如下的C语言代码来作为进程控制和调度的过程：</p>
+
+<pre><code class="language-c">#define SCHEDULE_QUEUE_LEN 9
+#define NEW 0
+#define RUNNING 1
+struct PCB
+{
+	int ip, cs, es, ds, ss, di, si, bp, sp, ax, bx, cx, dx, flags, pid;
+} q[SCHEDULE_QUEUE_LEN], *qb = q, *qe = q + 1;
+int statues[SCHEDULE_QUEUE_LEN] = {RUNNING, NEW}, pidStack[SCHEDULE_QUEUE_LEN], *top = pidStack;
+void schedule()
+{
+	do
+		if (++qb == q + SCHEDULE_QUEUE_LEN)
+			qb = q;
+	while (statues[qb-&gt;pid] != RUNNING);
+	if (++qe == q + SCHEDULE_QUEUE_LEN)
+		qe = q;
+}
+</code></pre>
+
+<p>在老师给我们的原型中是为每个程序创建一张表，这样做的缺点有两个：一个是每个程序至多只能同时运行一个；另一个是在调度时如果只加载了少数进程，也仍然需要遍历检查所有的程序，会拖慢操作系统运行的速度。因此我在这里实现了一个循环队列，每次保存进程时写入队尾，进程恢复时从队首取一个“有效”的进程块即可。所谓“有效”将在下面“关闭进程”中解释。</p>
+
+<p>这里使用0号pid代表内核进程。</p>
+
+<h4 id="创建进程">创建进程</h4>
+
+<p>首先创建进程控制块，将<code>cs</code>,<code>ds</code>等寄存器设置为合适的值，然后设置该进程为“就绪”状态。考虑到进程结束后应返回内核并将该进程的<code>statues</code>属性设置为<code>NEW</code>，操作系统应事先在其用户栈内写入返回<code>cs</code>和返回<code>ip</code>。用户程序返回内核后，将<code>alive</code>属性设置为0，死循环等待时钟中断发生。时钟中断发生后，该进程结束，下一次时间片轮转将不再轮到它。</p>
+
+<p>我实现了一个栈用来分配当前进程的pid，即当前进程的标识。这样做的好处和上面使用循环队列的好处一样，可以减少分配时候的空转问题。此外，当栈为空的时候，我的操作系统可以重新分配pid，从而实现杀进程的效果，防止进程资源被用户程序过多占用而不能新开进程。当然，0号pid代表操作系统内核，因此不会被重新分配。</p>
+
+<h4 id="关闭进程">关闭进程</h4>
+
+<p>我这里使用了伪关闭的方法，不是直接将进程的控制块移出队列，而是先在状态表中将其置为关闭，等待调度程序来判断当前进程队列首的进程是否已被关闭，如果是的话直接出队检查下一个进程，直到找到一个有效的进程。由于内核进程是不可以被杀死的，因此进程队列永远不为空。</p>
+
+<pre><code class="language-c">statues[pid] = NEW, *++top = pid;
+</code></pre>
+
+<p>关闭进程时将其<code>pid</code>重新压回栈中，供下一次创建进程时分配。</p>
+
+<p>当然，在当前版本的内核中检测键盘中断没有用多进程实现，因此在多进程运行的时候实际上是没有办法退回到内核的，也就是说这个关闭进程的功能虽然实现是正确的，但是暂时没办法去测试。等待后续版本实现多进程响应键盘中断之后吧。</p>
+
+<h4 id="save和restart过程"><code>save</code>和<code>restart</code>过程</h4>
+
+<p>中断发生时，由CPU将标志寄存器<code>flags</code>、代码段寄存器<code>cs</code>、指令指针寄存器<code>ip</code>依次压入堆栈（被中断的程序的堆栈）；中断返回时（即执行<code>iret</code>指令时），CPU将堆栈中的指令指针寄存器<code>ip</code>、代码段寄存器<code>cs</code>、标志寄存器<code>flags</code>依次弹出堆栈，并转到<code>CS:IP</code>继续原程序的执行。照着文档，我读懂了老师提供的“现场保护”：<code>save</code>过程（旧版）代码和现场恢复<code>restart</code>过 程（旧版）代码。我计划<code>schedule</code>过程由C 实现，故<code>save</code>过程只需将寄存器保存在外部变量（C语言的变量）， 然后<code>restore</code>过程需要将外部变量还原到寄存器中。如此安排，<code>schedule</code>过程要做的事情是：将C语言的变量保存到A进程控制块中，然后调度另一进程B，将<code>B</code>进程控制块中的寄存器写入C语言的变量。</p>
+
+<pre><code class="language-nasm">	call save
+	pusha
+	push ds
+	push es
+
+	push 0
+	call schedule
+restart:
+	pop es
+	pop ds
+	popa
+
+	mov si,[qb]
+	mov es,word[si+12];es
+	mov ss,word[si+20];ss
+	mov ax,word[si+24];ax
+	mov bx,word[si+28];bx
+	mov cx,word[si+32];cx
+	mov dx,word[si+36];dx
+	mov di,word[si+40];di
+	mov bp,word[si+44];bp
+	mov sp,word[si+48];sp
+
+	push word[si+8]
+	push word[si+4]
+	push word[si]
+
+	push word[si+52]
+	push word[si+16];ds
+	pop ds
+	pop si
+
+	push ax
+	mov al,20h
+	out 20h,al
+	out 0A0h,al
+	pop ax
+	iret
+save:
+	push ds
+	push cs
+	pop ds
+	pop word[save_ds]
+	pop word[save_cs]
+
+	mov word[save_si],si
+	mov si,word[qe]
+
+	pop word [si]
+	pop word [si+4]
+	pop word [si+8]
+
+	mov word [si+12],es
+	push word [save_ds]
+	pop word [si+16]
+
+	mov word[si+20],ss
+	mov word[si+24],ax
+	mov word[si+28],bx
+	mov word[si+32],cx
+	mov word[si+36],dx
+	mov word[si+40],di
+	mov word[si+44],bp
+	mov word[si+48],sp
+	push word[save_pid]
+	push word[save_si]
+	pop word[si+52]
+	pop word[si+56]
+	jmp word[save_cs]
+</code></pre>
+
+<p>这里保存变量直接保存在C代码中的队尾<code>qe</code>，并在调度后从C代码中的队首<code>qb</code>中取出变量恢复即可。</p>
+
+<h2 id="实验过程">实验过程</h2>
+
+<h3 id="实验代码">实验代码</h3>
+
+<h4 id="bootloaderasm">bootloader.asm</h4>
+
+<p>和<a href="https://wu-kan.github.io/posts/操作系统/实验/系统调用">上一个实验</a>中的代码完全相同，不再放出。</p>
+
+<h4 id="kernelasm">kernel.asm</h4>
+
+<p>实现系统中断和时钟中断。</p>
+
+<pre><code class="language-nasm">%macro setIVT 2
+	push es
+	push ds
+	push si
+	pusha
+	xor ax, ax
+	mov es, ax
+	mov ax, %1
+	mov bx, 4
+	mul bx
+	mov si, ax
+	mov ax, %2
+	mov [es:si], ax
+	add si, 2
+	mov ax, cs
+	mov [es:si], ax
+	popa
+	pop si
+	pop ds
+	pop es
+%endmacro
+	bits 16
+	extern qb,qe,schedule,terminal,prgCall
+	global _start
+_start:
+	setIVT 33,int33
+	setIVT 8,int8
+	push 0
+	call terminal
+	ret
+int8:
+	cli
+	call save
+	pusha
+	push ds
+	push es
+
+	push 0
+	call schedule
+restart:
+	pop es
+	pop ds
+	popa
+
+	mov si,[qb]
+	mov es,word[si+12];es
+	mov ss,word[si+20];ss
+	mov ax,word[si+24];ax
+	mov bx,word[si+28];bx
+	mov cx,word[si+32];cx
+	mov dx,word[si+36];dx
+	mov di,word[si+40];di
+	mov bp,word[si+44];bp
+	mov sp,word[si+48];sp
+
+	push word[si+8]
+	push word[si+4]
+	push word[si]
+
+	push word[si+52]
+	push word[si+16];ds
+	pop ds
+	pop si
+
+	push ax
+	mov al,20h
+	out 20h,al
+	out 0A0h,al
+	pop ax
+	sti
+	iret
+save:
+	push ds
+	push cs
+	pop ds
+	pop word[save_ds]
+	pop word[save_cs]
+
+	mov word[save_si],si
+	mov si,word[qe]
+
+	pop word [si]
+	pop word [si+4]
+	pop word [si+8]
+
+	mov word [si+12],es
+	push word [save_ds]
+	pop word [si+16]
+
+	mov word[si+20],ss
+	mov word[si+24],ax
+	mov word[si+28],bx
+	mov word[si+32],cx
+	mov word[si+36],dx
+	mov word[si+40],di
+	mov word[si+44],bp
+	mov word[si+48],sp
+	push word[save_pid]
+	push word[save_si]
+	pop word[si+52]
+	pop word[si+56]
+	jmp word[save_cs]
+
+int33:
+	cli
+	mov al,ah
+	xor ah,ah
+	push eax
+	push 0
+	call prgCall
+	pop eax
+	sti
+	iret
+datadef:
+	save_cs dw 0
+	save_si dw 0
+	save_ds dw 0
+	save_pid dw 0
+</code></pre>
+
+<h3 id="kernerc">kerner.c</h3>
+
+<p>实现二状态进程调度功能，前面已经解释过了。</p>
+
+<p>此外，修复了滚屏的时候有时会出现灰屏的问题（忘记给<code>bh</code>寄存器赋值了）。</p>
+
+<pre><code class="language-c">#define SCREEN_WIDTH 80
+#define SCREEN_HEIGHT 25
+#define BUF_LEN (SCREEN_WIDTH * SCREEN_HEIGHT)
+#define PROGRAM_NUM 4
+#define SCHEDULE_QUEUE_LEN 5
+#define NEW 0
+#define RUNNING 1
+struct PCB
+{
+	int ip, cs, es, ds, ss, di, si, bp, sp, ax, bx, cx, dx, flags, pid;
+} q[SCHEDULE_QUEUE_LEN], *qb = q, *qe = q + 1;
+int statues[SCHEDULE_QUEUE_LEN] = {RUNNING, NEW}, pidStack[SCHEDULE_QUEUE_LEN], *top = pidStack;
+void schedule()
+{
+	do
+		if (++qb == q + SCHEDULE_QUEUE_LEN)
+			qb = q;
+	while (statues[qb-&gt;pid] != RUNNING);
+	if (++qe == q + SCHEDULE_QUEUE_LEN)
+		qe = q;
+}
+const struct
+{
+	const char *name, *size, *command;
+	int address;
+} prg[PROGRAM_NUM] =
+	{{"prg1", "    156 bytes", "prg1", 1},
+	 {"prg2", "    158 bytes", "prg2", 2},
+	 {"prg3", "    168 bytes", "prg3", 3},
+	 {"prg4", "    174 bytes", "prg4", 4}};
+void loadProgram(int PrgSectorOffset, int UserPrgOffset)
+{
+	asm("int 0x13"
+		:
+		: "a"(2 &lt;&lt; 8 | 1), "b"(UserPrgOffset), "c"(PrgSectorOffset), "d"(1 &lt;&lt; 8));
+}
+void call(int UserPrgOffset)
+{
+	asm("call bx"
+		:
+		: "b"(UserPrgOffset));
+}
+void prgCall(int i)
+{
+	loadProgram(prg[i].address, 0x0a100 + i * 0x100), call(0x0a100 + i * 0x100);
+}
+int getCursor()
+{
+	int p;
+	asm("int 0x10"
+		: "=d"(p)
+		: "a"(0x0300), "b"(0));
+	return p;
+}
+void setCursor(int pos)
+{
+	asm("int 0x10"
+		:
+		: "a"(0x0200), "b"(0), "d"(pos));
+}
+void pageUP(int p)
+{
+	asm("push bx\n"
+		"mov bh,0\n"
+		"int 0x10\n"
+		"pop bx\n"
+		:
+		: "a"(1536 + p), "c"(0), "d"(0x184F));
+}
+void putC(int ch, int color)
+{
+	asm("int 0x10"
+		:
+		: "a"(9 &lt;&lt; 8 | ch), "b"(color), "c"(1));
+}
+int getch()
+{
+	int ch;
+	asm("getch_loop:\n"
+		"mov ah, 0x01\n"
+		"int 0x16\n"
+		"jz getch_loop\n"
+		"mov ah, 0x00\n"
+		"int 0x16\n"
+		"xor ah, ah\n"
+		: "=a"(ch)
+		:);
+	return ch;
+}
+void putchar(char c)
+{
+	int cur = getCursor(), curX = cur &gt;&gt; 8, curY = cur - (curX &lt;&lt; 8);
+	if (c == '\r' || c == '\n')
+	{
+		if (++curX &gt;= SCREEN_HEIGHT)
+			--curX, pageUP(1);
+		return setCursor(curX &lt;&lt; 8);
+	}
+	putC(c, 0x07);
+	if (++curY &gt;= SCREEN_WIDTH)
+		putchar('\n');
+	else
+		setCursor(curX &lt;&lt; 8 | curY);
+}
+void gets(char *s)
+{
+	for (;; ++s)
+	{
+		putchar(*s = getch());
+		if (*s == '\r' || *s == '\n')
+			break;
+	}
+	*s = 0;
+}
+void printf(const char *s)
+{
+	for (; *s; ++s)
+		putchar(*s);
+}
+int strcmp(const char *s1, const char *s2)
+{
+	while (*s1 &amp;&amp; (*s1 == *s2))
+		++s1, ++s2;
+	return (int)*s1 - (int)*s2;
+}
+void terminal()
+{
+	char str[BUF_LEN] = "$ ";
+	printf(str), gets(str);
+	const char
+		*CLEAR_COM = "clear",
+		*HELP_COM = "help",
+		*EXEC_COM = "exec",
+		*EXECPRO_COM = "execpro",
+		*EXIT_COM = "exit",
+		*KILL_COM = "kill",
+		*LS_COM = "ls",
+		*PS_COM = "ps";
+	if (!strcmp(str, CLEAR_COM))
+		pageUP(SCREEN_HEIGHT), setCursor(0);
+	else if (!strcmp(str, HELP_COM))
+	{
+		const char
+			*HELP_INFO =
+				"WuK-shell v0.0.3\n"
+				"These shell commands are defined internally.\n"
+				"Command         Description\n"
+				"clear        -- Clean the screen\n"
+				"help         -- Show this list\n"
+				"exec         -- Execute all the user programs\n"
+				"execpro      -- Execute all the user programs by mutiprocess\n"
+				"exit         -- Exit OS\n"
+				"kill         -- kill process\n"
+				"ls           -- Show existing programs\n"
+				"prg[num]     -- Execute the num-th program\n"
+				"ps           -- Show running programs with their pid\n";
+		printf(HELP_INFO);
+	}
+	else if (!strcmp(str, EXEC_COM))
+		for (int i = 0; i &lt; PROGRAM_NUM; ++i)
+			prgCall(i);
+	else if (!strcmp(str, EXECPRO_COM))
+		for (int i = 0; i &lt; PROGRAM_NUM; ++i)
+		{
+			if (top == pidStack)
+				for (int j = 1; j &lt; SCHEDULE_QUEUE_LEN; ++j)
+					*++top = j;
+
+			qe-&gt;flags = 512;
+			qe-&gt;ip = 0x000;
+			qe-&gt;sp = qe-&gt;ip - 8;
+			qe-&gt;ss = qe-&gt;es = qe-&gt;ds = qe-&gt;cs = 0xa100 + i * 0x100;
+
+			loadProgram(prg[i].address, 0x0a100 + i * 0x100);
+			statues[qe-&gt;pid = *(top--)] = RUNNING;
+			if (++qe == q + SCHEDULE_QUEUE_LEN)
+				qe = q;
+		}
+	else if (!strcmp(str, EXIT_COM))
+		return pageUP(SCREEN_HEIGHT);
+	else if (!strcmp(str, KILL_COM))
+	{
+		const char *INFO = "Input the pid to kill: ";
+		printf(INFO);
+		gets(str);
+		int pid = str[0] - '0';
+		if (pid &lt;= 0)
+		{
+			const char *INFO = "Can not kill process 0.\n";
+			printf(INFO);
+		}
+		else if (pid &gt;= SCHEDULE_QUEUE_LEN || statues[pid] != RUNNING)
+		{
+			const char *INFO = "Invalid pid.\n";
+			printf(INFO);
+		}
+		else
+			statues[pid] = NEW, *++top = pid;
+	}
+	else if (!strcmp(str, LS_COM))
+		for (int i = 0; i &lt; PROGRAM_NUM; ++i)
+			printf(prg[i].name), printf(prg[i].size), putchar('\n');
+	else if (!strcmp(str, PS_COM))
+	{
+		const char
+			*INFO = "pid statues\n",
+			*RUNNING_INFO = "   RUNNING\n",
+			*NEW_INFO = "   NEW\n";
+		printf(INFO);
+		for (int i = 0; i &lt; SCHEDULE_QUEUE_LEN; ++i)
+		{
+			putchar('0' + i);
+			printf(statues[i] == RUNNING ? RUNNING_INFO : NEW_INFO);
+		}
+	}
+	else
+		for (int i = 0;; ++i)
+		{
+			if (i == PROGRAM_NUM)
+			{
+				printf(str);
+				const char
+					*COMM_NOT_FOUND =
+						" : command not found, type \'help\' for available commands list.\n";
+				printf(COMM_NOT_FOUND);
+				break;
+			}
+			if (!strcmp(str, prg[i].command))
+			{
+				asm("int 33" ::"a"(i &lt;&lt; 8));
+				break;
+			}
+		}
+	terminal();
+}
+</code></pre>
+
+<h4 id="linkld">link.ld</h4>
+
+<p>将<code>wukos.asm</code>和<code>kernel.c</code>两个文件编译出来的内容连接起来。和<a href="https://wu-kan.github.io/posts/操作系统/实验/系统控制">上一个实验</a>中的完全相同，不再放出。</p>
+
+<h4 id="prg1asmprg4asm">prg1.asm~prg4.asm</h4>
+
+<p>由于多进程调用时会同时访问变量，因此每个用户程序需要重新维护自己的运行变量，而不能像之前一样通过系统调用提供唯一个入口了。</p>
+
+<p>这里在实验二中实现的用户程序上修改、完善一下。</p>
+
+<pre><code class="language-nasm">%macro print 5 ; string, length, x, y, color
+	pusha
+	push ax
+	push bx
+	push cx
+	push dx
+	push bp
+	push ds
+	push es
+	mov ax, 0b800H
+	mov gs, ax
+	mov ax, cs
+	mov ds, ax
+	mov bp, %1
+	mov ax, ds
+	mov es, ax
+	mov cx, %2
+	mov ax, 1300H
+	mov dh, %3
+	mov dl, %4
+	mov bx, %5
+	int 10H
+	pop es
+	pop ds
+	pop bp
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	popa
+%endmacro
+N equ 12	;显示区域高度
+M equ 32	;显示区域宽度减去字符串长度
+TOP equ 2	;显示区域上端点
+LEFT equ 40	;显示区域左端点
+LENGTH equ 8	;字符串的长度
+DELAY equ 99999999
+org 0A100h
+myLoop:
+	dec dword[count]	; 递减计数变量
+	jnz myLoop	; &gt;0：跳转
+	mov dword[count], DELAY
+
+	mov word ax, [t]	; ax = t
+	mov word bx,2*N-2
+	xor dx, dx	; clear dx and prepare for division
+	div bx  ; dx = t mod (2N - 2)
+	cmp dx, N ; compare dx and n
+	jb xok  ; if (dx &lt; n) jump xok
+	sub bx, dx
+	mov dx, bx ; dx = 2n - 2 - dx
+xok:
+	mov word[x], dx
+	add word[x], TOP
+
+	mov word ax, [t]
+	mov word bx, 2*M-2
+	xor dx, dx
+	div bx
+	cmp dx, M
+	jb yok
+	sub bx, dx
+	mov dx, bx
+yok:
+	mov word [y],dx
+	add word [y],LEFT
+
+	print message,LENGTH,[x],[y],07H
+	inc word[t]
+	mov word ax,[t]
+	cmp ax, 63
+	jne myLoop
+	ret
+datadef:
+	count dd 1
+	t dw 0
+	x dw 1
+	y dw 0
+	message db ' wu-kan '
+</code></pre>
+
+<p>上面是prg1.asm的内容，其余同理，不再放出。</p>
+
+<h4 id="makefile">Makefile</h4>
+
+<p>和<a href="https://wu-kan.github.io/posts/操作系统/实验/系统控制">上一个实验</a>完全相同，不再放出。</p>
+
+<h3 id="运行结果">运行结果</h3>
+
+<p>输入<code>prg4</code>，通过系统中断打开一个用户程序。可以看到系统中断服务仍然可以工作。
+<img src="/public/image/2019-05-06-1.jpg" alt="1" />
+输入<code>ps</code>，显示当前进程的状态。当前只有一个进程，即内核，在运行。
+<img src="/public/image/2019-05-06-2.jpg" alt="2" />
+输入<code>kill</code>后输入<code>0</code>，杀掉pid为0的内核。可以看到无法杀掉内核进程。
+<img src="/public/image/2019-05-06-3.jpg" alt="3" />
+输入<code>execpro</code>，多进程的打开四个用户程序。可以看到，成功文体四开花了，而且四个象限的运行速度不一样。
+<img src="/public/image/2019-05-06-4.jpg" alt="4" /></p>
+
+<h2 id="实验总结">实验总结</h2>
+
+<p>这次实验让我深入了解了多进程时间片轮转的工作原理。原理很简单，就是<code>save</code>,<code>schedule</code>和<code>restart</code>，但实现起来可不简单。</p>
+
+<p>在<code>save</code>过程和<code>restart</code>过程中，最容易出错是栈。当前栈内元素是什么，这个一定要非常清楚。当使用<code>call</code>操作和<code>ret</code>操作时，会修改堆栈。所以应尽量避免使用<code>call</code>和<code>ret</code>操作，避免出错。另外，<code>ss</code>和<code>sp</code>的保存时机也是非常关键的。<code>ss</code>和<code>sp</code>必须在最后保存，这样做是为了保存弹出<code>flags</code>,<code>cs</code>,<code>ip</code>之后的栈指针。</p>
+
+<p>在<code>schedule</code>过程中，更容易在栈的问题上出错。<code>schedule</code>的栈要与<code>kernel</code>的栈以及用户程序的栈都不一样，否则会覆盖原有的数据。一旦踩进这个坑，就很难跳出来，因为你会发现寄存器之类的全部都是对的，只有栈内元素是错的。</p>
+
+<p>另外在汇编代码调用C函数之前要<code>push 0</code>，传参数的时候也有很多细节，感谢我的室友添伦大哥对我的帮助！</p>
+:ET

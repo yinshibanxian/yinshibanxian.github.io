@@ -1,0 +1,171 @@
+I"=<h1 id="an-olympian-math-problem"><a href="https://nanti.jisuanke.com/t/30990">An Olympian Math Problem</a></h1>
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+int main()
+{
+	long long t,n;
+	for(scanf("%lld",&amp;t); t--; printf("%lld\n",n-1))
+		scanf("%lld",&amp;n);
+}
+</code></pre>
+<h1 id="ac-challenge"><a href="https://nanti.jisuanke.com/t/30994">AC Challenge</a></h1>
+<pre><code class="language-cpp">#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;algorithm&gt;
+#include &lt;queue&gt;
+using namespace std;
+
+const int maxn=25;
+const int maxv=1&lt;&lt;22;
+const long long inf=-100000000000000;
+
+queue &lt;long long&gt; q[2];
+long long f[2][maxv];
+bool inq[maxv];
+int pre[maxn];
+int val[maxn][maxn];
+int n,a,b,s,u,V;
+long long ans;
+
+int main()
+{
+	scanf("%d",&amp;n);
+	for (int i=1;i&lt;=n;i++)
+	{
+		scanf("%d%d",&amp;a,&amp;b);
+		for (int j=1;j&lt;=n;j++) val[i][j]=a*j+b;
+		scanf("%d",&amp;s);
+		for (int j=1;j&lt;=s;j++)
+		{
+			scanf("%d",&amp;u);
+			pre[i]+=1&lt;&lt;u;
+		}
+	}
+	V=1&lt;&lt;n+1;
+	for (int i=1;i&lt;=n;i++)
+	 if (pre[i]==0) f[1][1&lt;&lt;i]=val[i][1],q[1].push(1&lt;&lt;i);
+	for (int i=2;i&lt;=n;i++)
+	{
+		memset(inq,false,sizeof(inq));
+		while (!q[(i+1)%2].empty())
+		{
+			int g=q[(i+1)%2].front();
+			//printf("%d %d\n",i,g);
+			q[(i+1)%2].pop();
+			for (int j=1;j&lt;=n;j++)
+	  		{
+	  			if ((1&lt;&lt;j)&amp;g) continue;
+	  			if ((g&amp;pre[j])!=pre[j]) continue;
+			//	if (f[(i+1)%2][k]+val[j][i]&gt;f[i%2][k+(1&lt;&lt;j)]) printf("%d %d %d\n",j,k,f[(i+1)%2][k]+val[j][i]);
+	  			int nxt=g+(1&lt;&lt;j);
+	  			if (f[(i+1)%2][g]+val[j][i]&gt;f[i%2][nxt])
+	  			{
+	  				f[i%2][nxt]=f[(i+1)%2][g]+val[j][i];	
+					if (!inq[nxt]) q[i%2].push(nxt),inq[nxt]=true;
+					ans=max(ans,f[i%2][nxt]);
+				}
+	  		}
+	  		f[(i+1)%2][g]=inf;
+		}
+	}
+	printf("%lld",ans);
+	return 0;
+}
+</code></pre>
+<h1 id="sum"><a href="https://nanti.jisuanke.com/t/30999">Sum</a></h1>
+<p>线性筛处理一下。</p>
+<pre><code class="language-cpp">#include&lt;cstdio&gt;
+#include&lt;vector&gt;
+using namespace std;
+const int N=2e7+7;
+struct EulerSieve
+{
+	vector&lt;int&gt; p,m,f;
+	EulerSieve(int N):m(N,0),f(N)
+	{
+		f[1]=1;
+		for(long long i=2,k; i&lt;N; ++i)
+		{
+			if(!m[i])p.push_back(m[i]=i),f[i]=2;
+			for(int j=0; j&lt;p.size()&amp;&amp;(k=i*p[j])&lt;N; ++j)
+				if(f[k]=f[i]*2,(m[k]=p[j])==m[i])
+				{
+					f[k]/=4;
+					break;
+				}
+		}
+		for(int i=0,p3; p3=p[i]*p[i]*p[i],p3&lt;N; ++i)
+			for(int j=p3; j&lt;N; j+=p3)
+				f[j]=0;
+	}
+} e(N);
+long long sum[N];
+int t,n;
+int main()
+{
+	for(int i=1; i&lt;N; ++i)sum[i]=sum[i-1]+e.f[i];
+	for(scanf("%d",&amp;t); t--; printf("%lld\n",sum[n]))
+		scanf("%d",&amp;n);
+}
+</code></pre>
+<h1 id="magical-girl-haze"><a href="https://nanti.jisuanke.com/t/31001">Magical Girl Haze</a></h1>
+<p>居然有spfa过的…</p>
+<pre><code class="language-cpp">#include&lt;cstdio&gt;
+#include&lt;queue&gt;
+using namespace std;
+typedef long long ll;
+const ll INF=1e18;
+const int N=12e5,NPOS=-1;
+struct Edge
+{
+	int from,to;
+	ll dist;
+} e[N&lt;&lt;2];
+int ea[N&lt;&lt;2],va[N],es,vs;
+void init(int n)
+{
+	fill(va,va+(vs=n),NPOS);
+	es=0;
+}
+void add(const Edge &amp;ed)
+{
+	ea[es]=va[ed.from];
+	va[ed.from]=es;
+	e[es++]=ed;
+}
+ll d[N];
+void ask(int s)
+{
+	fill(d,d+vs,INF);
+	priority_queue&lt;pair&lt;ll,int&gt; &gt; q;
+	for(q.push(make_pair(d[s]=0,s)); !q.empty();)
+	{
+		ll dis=-q.top().first;
+		int u=q.top().second;
+		if(q.pop(),d[u]&lt;dis)continue;
+		for(int k=va[u],to; k!=NPOS; k=ea[k])
+			if(to=e[k].to,d[to]&gt;d[u]+e[k].dist)
+			{
+				d[to]=d[u]+e[k].dist;
+				q.push(make_pair(-d[to],to));
+			}
+	}
+}
+int main()
+{
+	int t,n,m,k;
+	for(scanf("%d",&amp;t); t--;)
+	{
+		scanf("%d%d%d",&amp;n,&amp;m,&amp;k);
+		init(n*(k+2));
+		for(int i=0,u,v,c; i&lt;m; ++i)
+		{
+			scanf("%d%d%d",&amp;u,&amp;v,&amp;c),--u,--v;
+			for(int j=0; j&lt;=k; ++j)
+				add({u+j*n,v+j*n,c}),add({u+j*n,v+(j+1)*n,0});
+		}
+		ask(0);
+		printf("%lld\n",d[n*(k+1)-1]);
+	}
+}
+</code></pre>
+:ET

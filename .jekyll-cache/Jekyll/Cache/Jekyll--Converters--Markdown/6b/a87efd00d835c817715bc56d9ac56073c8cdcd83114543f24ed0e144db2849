@@ -1,0 +1,306 @@
+I"�)<h2 id="实验题目">实验题目</h2>
+<p>数据表示实验</p>
+<h2 id="实验目的">实验目的</h2>
+<p>掌握结构数据的保存和读取的方法。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+  <li>C语言函数分类：http://msdn.microsoft.com/zh-cn/library/2aza74he(v=vs.110).aspx</li>
+  <li>C语言字符串函数：http://msdn.microsoft.com/zh-cn/library/f0151s4x(v=vs.110).aspx</li>
+</ul>
+
+<h2 id="实验环境">实验环境</h2>
+<ul>
+  <li>Windows + VS 2012  http://172.18.187.11/netdisk/default.aspx?vm=16net</li>
+  <li>Linux + gcc</li>
+</ul>
+
+<p>这里我使用的环境是Windows 10 + VSCode + gcc version 8.1.0 (x86_64-posix-sjlj-rev0, Built by MinGW-W64 project)</p>
+<h2 id="实验内容">实验内容</h2>
+<h3 id="结构数据保存和读出">结构数据保存和读出</h3>
+<h4 id="实验要求">实验要求</h4>
+<p>循环输入员工(Person)的信息，每输入一个员工的信息，立即写入文件(Persons.stru)，直到输入的姓名为空时跳出循环。然后，读出该文件，显示每个Person的信息。
+Person的信息表示：</p>
+<pre><code class="language-cpp">struct Person
+{
+  char username[USER_NAME_LEN];      // 员工名
+  int level;                         // 工资级别
+  char email[EMAIL_LEN];             // email地址
+  DWORD sendtime;                    // 发送时间
+  time_t regtime;                    // 注册时间
+};
+</code></pre>
+<h4 id="源代码">源代码</h4>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef unsigned long DWORD;
+struct CSV //按照CSV格式保存。
+{
+	vector&lt;vector&lt;string&gt;&gt; v;
+	void get(istream &amp;is)
+	{
+		string s;
+		for (v.clear(); getline(is, s);)
+		{
+			v.push_back({});
+			for (istringstream sin(s); getline(sin, s, ',');)
+				v.back().push_back(s);
+		}
+	}
+	void put(ostream &amp;os)
+	{
+		for (int i = 0; i &lt; v.size(); ++i)
+			for (int j = 0; j &lt; v[i].size(); ++j)
+				os &lt;&lt; v[i][j] &lt;&lt; (j + 1 &lt; v[i].size() ? ',' : '\n');
+	}
+};
+struct Person
+{
+	string username;				   // 员工名
+	int level;						   // 工资级别
+	string email;					   // email地址
+	DWORD sendtime;					   // 发送时间
+	time_t regtime;					   // 注册时间
+	bool get(istream &amp;is, ostream &amp;os) //从is中读入，并将提示信息写入os；若读入终止返回false
+	{
+		os &lt;&lt; "Input username: ";
+		getline(is, username);
+		while (!username.empty() &amp;&amp; username.back() == ' ')
+			username.pop_back(); //删除多余空格
+		if (username.empty())	//读入空串，说明已经终止
+			return 0;
+		os &lt;&lt; "Input level: ";
+		is &gt;&gt; level;
+		os &lt;&lt; "Input email: ";
+		is &gt;&gt; email;
+		os &lt;&lt; "Input sendtime: ";
+		is &gt;&gt; sendtime;
+		os &lt;&lt; "Input regtime: ";
+		is &gt;&gt; regtime;
+		string s;
+		return getline(is, s), 1; //要读掉上一行的行末的回车，以免对下一次读入产生影响
+	}
+	void getCSV(vector&lt;string&gt; &amp;v) //从CSV的某一行读入信息
+	{
+		username = v[0];
+		level = stoi(v[1]);
+		email = v[2];
+		sendtime = stoull(v[3]);
+		regtime = stoull(v[4]);
+	}
+	string putFileCSV() //返回CSV格式的信息
+	{
+		return username + "," + to_string(level) + "," + email + "," + to_string(sendtime) + "," + to_string(regtime) + "\n";
+	}
+	friend ostream &amp;operator&lt;&lt;(ostream &amp;os, Person &amp;p) //打印p的信息到os
+	{
+		return os &lt;&lt; "username: " &lt;&lt; p.username &lt;&lt; "\n"
+				  &lt;&lt; "level: " &lt;&lt; p.level &lt;&lt; "\n"
+				  &lt;&lt; "email: " &lt;&lt; p.email &lt;&lt; "\n"
+				  &lt;&lt; "sendtime: " &lt;&lt; p.sendtime &lt;&lt; "\n"
+				  &lt;&lt; "regtime: " &lt;&lt; p.regtime &lt;&lt; "\n\n";
+	}
+};
+int main()
+{
+	ofstream fout("Persons.stru");
+	for (Person p; p.get(cin, cout);) //从屏幕读入Person直到空
+		fout &lt;&lt; p.putFileCSV();		  //以CSV格式写入文件
+	fout.close();
+	ifstream fin("Persons.stru");
+	CSV csv;
+	csv.get(fin); //读入CSV文件
+	fin.close();
+	for (auto line : csv.v) //对于读入的每一行信息
+	{
+		Person p;
+		p.getCSV(line);
+		cout &lt;&lt; p;
+	}
+}
+</code></pre>
+<h3 id="多文件合并保存和读出">多文件合并保存和读出</h3>
+<h4 id="实验要求-1">实验要求</h4>
+<p>循环输入多个文件名（不超过200MB，可以自己确定），每输入一个，就把该文件的文件名（最多300字节）、文件大小(long)和文件内容写入文件FileSet.pak中，输入文件名为空时跳出循环。然后，读FileSet.pak，每读出一个文件就把它原来的文件名加上一个序号保存起来。</p>
+
+<p>合并时可以先取得文件大小，然后边读边写。</p>
+<h4 id="源代码-1">源代码</h4>
+<p>数据的交换格式格式使用JSON，正文内容使用Base64编码。</p>
+<h5 id="encodecpp">encode.cpp</h5>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int BUFSIZE = 200 &lt;&lt; 20;
+const string CONVERT_TABLE =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"abcdefghijklmnopqrstuvwxyz"
+	"0123456789+/";
+char buf[BUFSIZE];
+string base64Encode(char sourcebuf[], int buflen)
+{
+	string ret;
+	char split3[3];
+	unsigned int split4[4], len = buflen, i = 0;
+	while (len--)
+	{
+		split3[i++] = *(sourcebuf++);
+		if (i == 3)
+		{
+			split4[0] = (split3[0] &amp; 0xfc) &gt;&gt; 2;							   //第一个字节取前6位并将其右移2位
+			split4[1] = ((split3[0] &amp; 0x03) &lt;&lt; 4) + ((split3[1] &amp; 0xf0) &gt;&gt; 4); //第一个字节取后2位并左移4位 + 第二个字节取前4位并右移4位
+			split4[2] = ((split3[1] &amp; 0x0f) &lt;&lt; 2) + ((split3[2] &amp; 0xc0) &gt;&gt; 6); //第二个字节取后4位并左移2位 + 第三个字节取前2位并右移6位
+			split4[3] = (split3[2] &amp; 0x3f);									   //第三个字节取后六位并且无需移位
+			for (int j = 0; j &lt; 4; ++j)										   //从Base64编码表中查询split对应元素索引的Base64编码
+				ret += CONVERT_TABLE[split4[j]];
+			i = 0;
+		}
+	}
+	if (i)
+	{
+		if (i == 1)
+		{
+			split4[0] = (split3[0] &amp; 0xfc) &gt;&gt; 2;
+			split4[1] = (split3[0] &amp; 0x03 &lt;&lt; 4);
+			for (int j = 0; j &lt; 2; ++j)
+				ret += CONVERT_TABLE[split4[j]];
+			ret += "==";
+		}
+		if (i == 2)
+		{
+			split4[0] = (split3[0] &amp; 0xfc) &gt;&gt; 2;
+			split4[1] = ((split3[0] &amp; 0x03) &lt;&lt; 4) + ((split3[1] &amp; 0xf0) &gt;&gt; 4);
+			split4[2] = ((split3[1] &amp; 0x0f) &lt;&lt; 2);
+			for (int j = 0; j &lt; 3; j++)
+				ret += CONVERT_TABLE[split4[j]];
+			ret += "=";
+		}
+	}
+	return ret;
+}
+int main()
+{
+	ofstream fout("FileSet.pak");
+	fout &lt;&lt; "{\"data\": [\n";
+	int first = 1;
+	for (string name; cout &lt;&lt; "Input file name:", getline(cin, name);)
+	{
+		ifstream fin(name, ios::binary);
+		if (!fin.is_open())
+		{
+			cout &lt;&lt; "Can not open " &lt;&lt; name &lt;&lt; "\n";
+			continue;
+		}
+		fin.read(buf, BUFSIZE);
+		if (first)
+			first = 0;
+		else
+			fout &lt;&lt; " ,\n";
+		fout &lt;&lt; " {\n"
+			 &lt;&lt; "  \"name\": \"" &lt;&lt; name &lt;&lt; "\",\n"
+			 &lt;&lt; "  \"size\": \"" &lt;&lt; to_string(fin.gcount()) &lt;&lt; "\",\n"
+			 &lt;&lt; "  \"content\": \"" &lt;&lt; base64Encode(buf, fin.gcount()) &lt;&lt; "\"\n"
+			 &lt;&lt; " }";
+	}
+	fout &lt;&lt; "\n]}";
+}
+</code></pre>
+<h5 id="decodecpp">decode.cpp</h5>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const string CONVERT_TABLE =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"abcdefghijklmnopqrstuvwxyz"
+	"0123456789+/";
+string base64Decode(const string &amp;s)
+{
+	string::const_iterator sourcebuf = s.begin();
+	const int buflen = s.size();
+	string ret;
+	unsigned char split3[3];
+	unsigned char split4[4];
+	int len = buflen, ec = 0, seg = buflen / 4; //计算共可以切成几组
+	while (sourcebuf[--len] == '=')				//判断末尾有几个等号，由此可知最后四个字节该如何处理
+		++ec;
+	for (int k = 0; k &lt; seg; ++k)
+	{
+		for (int j = 0; j &lt; 4; ++j) //每四字节为一组进行处理
+		{
+			int index = 0;
+			char c = *(sourcebuf++);
+			for (int i = 0; i &lt; CONVERT_TABLE.size(); ++i) //由码索引数
+			{
+				if (CONVERT_TABLE[i] == c)
+				{
+					index = i;
+					break;
+				}
+			}
+			split4[j] = index;
+		}
+		if (k + 1 == seg)
+		{
+			if (ec == 2) //当末尾有两个等号时的处理
+			{
+				split3[0] = (split4[0] &lt;&lt; 2) + ((split4[1] &amp; 0x30) &gt;&gt; 4);
+				ret += split3[0];
+			}
+			else if (ec == 1) //当末尾有一个等号时的处理
+			{
+				split3[0] = (split4[0] &lt;&lt; 2) + ((split4[1] &amp; 0x30) &gt;&gt; 4);
+				split3[1] = ((split4[1] &amp; 0x0f) &lt;&lt; 4) + ((split4[2] &amp; 0x3c) &gt;&gt; 2);
+				ret += split3[0];
+				ret += split3[1];
+			}
+			else
+			{
+				split3[0] = ((split4[0] &amp; 0x3f) &lt;&lt; 2) + ((split4[1] &amp; 0x30) &gt;&gt; 4);
+				split3[1] = ((split4[1] &amp; 0x0f) &lt;&lt; 4) + ((split4[2] &amp; 0x3c) &gt;&gt; 2);
+				split3[2] = ((split4[2] &amp; 0x03) &lt;&lt; 6) + split4[3];
+				for (int j = 0; j &lt; 3; ++j)
+					ret += split3[j];
+			}
+		}
+		else
+		{
+			split3[0] = ((split4[0] &amp; 0x3f) &lt;&lt; 2) + ((split4[1] &amp; 0x30) &gt;&gt; 4);
+			split3[1] = ((split4[1] &amp; 0x0f) &lt;&lt; 4) + ((split4[2] &amp; 0x3c) &gt;&gt; 2);
+			split3[2] = ((split4[2] &amp; 0x03) &lt;&lt; 6) + split4[3];
+			for (int j = 0; j &lt; 3; ++j)
+				ret += split3[j];
+		}
+	}
+	return ret;
+}
+int main()
+{
+	ifstream fin("FileSet.pak");
+	unordered_map&lt;string, string&gt; mp;
+	int cnt = 0, tmp;
+	for (string s; getline(fin, s);)
+	{
+		if (s.find("[") != s.npos)
+			continue;
+		if (s.find("]") != s.npos)
+			break;
+		if (tmp = s.rfind(","), tmp != s.npos)
+			s.erase(tmp);
+		if (s.find("}") != s.npos)
+		{
+			ofstream fout(to_string(++cnt) + "." + mp["name"]);
+			fout &lt;&lt; base64Decode(mp["content"]);
+			mp.clear();
+		}
+		else if (tmp = s.find(":"), tmp != s.npos)
+		{
+			string t = s.substr(tmp + 1);
+			s.erase(tmp);
+			s.erase(s.find_last_not_of("\" ") + 1);
+			t.erase(t.find_last_not_of("\" ") + 1);
+			mp.insert({s.substr(s.find_first_not_of("\" ")), t.substr(t.find_first_not_of("\" "))});
+		}
+	}
+}
+</code></pre>
+<h2 id="实验体会">实验体会</h2>
+<p>在结构数据保存和读出实验中，使用了CSV表格的格式来存储数据，然而这个格式操作有些繁琐，因此单独设计了一个struct对其进行操作，使得代码更加清晰易读。</p>
+
+<p>在多文件的合并保存和读出实验中，使用了流行的JSON格式来保存数据。然而，使用JSON保存文件的正文时，很难区分JSON本身格式上的内容和文本文档的内容；并且很多文件是不可以按照ascii文本文档的方式打开的。解决方式是使用二进制方式打开文件，并对其内容使用Base64形式进行编码，最终得以解决问题。</p>
+:ET

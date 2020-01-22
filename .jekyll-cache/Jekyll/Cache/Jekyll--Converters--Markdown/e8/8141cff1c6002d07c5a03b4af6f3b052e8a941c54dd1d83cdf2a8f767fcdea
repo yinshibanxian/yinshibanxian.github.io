@@ -1,0 +1,131 @@
+I"T<p><a href="https://vjudge.net/problem/HDU-6278">题目链接</a></p>
+
+<p>很久之前就做过这个题，但是当时只会简单套模板。打算重新学一下可持久化数据结构。</p>
+
+<p>现在我对可持久化数据结构的理解是<strong>每次修改时保留原信息，只在修改的地方增加新的修改节点</strong>。</p>
+
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+typedef int ll;
+const int NPOS = -1;
+struct HJTree
+{
+	struct Val
+	{
+		int l, r;
+		ll sum;
+		void upd(ll add) { sum += (r - l + 1) * add; }
+	};
+	struct Node
+	{
+		Val v;
+		int lc, rc;
+	};
+	vector&lt;Node&gt; v;
+	vector&lt;int&gt; root;
+	HJTree(int n) : root{0} { v.reserve(3e6), build(1, n); }
+	void build(int l, int r)
+	{
+		v.push_back({{l, r, 0}, NPOS, NPOS});
+		if (l &gt;= r)
+			return;
+		int m = l + r &gt;&gt; 1, rt = v.size() - 1;
+		v[rt].lc = v.size(), build(l, m);
+		v[rt].rc = v.size(), build(m + 1, r);
+	}
+	Val up(const Val &amp;lc, const Val &amp;rc) { return {lc.l, rc.r, lc.sum + rc.sum}; }
+	void upd(int pos, int add, int rt)
+	{
+		if (pos &lt;= v[rt].v.l &amp;&amp; v[rt].v.r &lt;= pos)
+			return v[rt].v.upd(add);
+		if (pos &gt; v[v[rt].lc].v.r)
+			v.push_back(v[v[rt].rc]), upd(pos, add, v[rt].rc = v.size() - 1);
+		else
+			v.push_back(v[v[rt].lc]), upd(pos, add, v[rt].lc = v.size() - 1);
+		v[rt].v = up(v[v[rt].lc].v, v[v[rt].rc].v);
+	}
+	void push_back(int pos) { v.push_back(v[root.back()]), root.push_back(v.size() - 1), upd(pos, 1, root.back()); }
+	int h_index(int lx, int rx)
+	{
+		lx = root[lx - 1], rx = root[rx];
+		for (int now = 0; v[lx].v.l &lt; v[lx].v.r;)
+		{
+			if (v[v[rx].rc].v.sum - v[v[lx].rc].v.sum + now &lt; v[v[lx].rc].v.l)
+				now += v[v[rx].rc].v.sum - v[v[lx].rc].v.sum, lx = v[lx].lc, rx = v[rx].lc;
+			else
+				lx = v[lx].rc, rx = v[rx].rc;
+		}
+		return v[lx].v.l;
+	}
+};
+int main()
+{
+	for (int n, q; ~scanf("%d%d", &amp;n, &amp;q);)
+	{
+		HJTree t(n);
+		for (int i = 0, a; i &lt; n; ++i)
+			scanf("%d", &amp;a), t.push_back(a);
+		for (int l, r; q--; printf("%d\n", t.h_index(l, r)))
+			scanf("%d%d", &amp;l, &amp;r);
+	}
+}
+</code></pre>
+<p>一年前敲得还是二分…</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+const int N = 1e5 + 9;
+struct Node
+{
+	int ch[2], sum;
+} v[N &lt;&lt; 5];
+struct HJTree
+{
+	int siz, root[N];
+	void add(int p, int &amp;x, int y, int l, int r)
+	{
+		v[x = siz++].sum = v[y].sum + 1;
+		if (l == r)
+			return;
+		int m = (l + r) / 2;
+		if (p &lt;= m)
+		{
+			add(p, v[x].ch[0], v[y].ch[0], l, m);
+			v[x].ch[1] = v[y].ch[1];
+		}
+		else
+		{
+			v[x].ch[0] = v[y].ch[0];
+			add(p, v[x].ch[1], v[y].ch[1], m + 1, r);
+		}
+	}
+	int ask(int x, int y, int k, int l, int r)
+	{
+		if (l == r)
+			return v[y].sum - v[x].sum;
+		int m = (l + r) / 2;
+		if (k &lt;= m)
+			return v[v[y].ch[1]].sum - v[v[x].ch[1]].sum +
+				   ask(v[x].ch[0], v[y].ch[0], k, l, m);
+		return ask(v[x].ch[1], v[y].ch[1], k, m + 1, r);
+	}
+} t;
+int main()
+{
+	for (int n, q; ~scanf("%d%d", &amp;n, &amp;q);)
+	{
+		for (int i = t.siz = 1, a; i &lt;= n; ++i)
+			scanf("%d", &amp;a), t.add(a, t.root[i], t.root[i - 1], 1, n);
+		for (int i = 1, x, y, l, r, m; i &lt;= q; ++i, printf("%d\n", r))
+			for (scanf("%d%d", &amp;x, &amp;y), l = 2, r = n; l &lt;= r;)
+			{
+				m = l + (r - l) / 2;
+				if (t.ask(t.root[x - 1], t.root[y], m, 1, n) &gt;= m)
+					l = m + 1;
+				else
+					r = m - 1;
+			}
+	}
+}
+</code></pre>
+
+:ET

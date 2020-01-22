@@ -1,0 +1,806 @@
+I"�V<h2 id="辗转相除法">辗转相除法</h2>
+
+<pre><code class="language-cpp">ll gcd(ll a, ll b) { return b ? gcd(b, a % b) : a; } //a、b的最大公约数
+ll lcm(ll a, ll b) { return a / gcd(a, b) * b; }	 //a、b的最小公倍数
+ll gcd(ll a, ll b, ll &amp;x, ll &amp;y)					 //扩展欧几里得，引用返回a*x+b*y=gcd(a,b)绝对值之和最小的解
+{
+	if (!a)
+		return x = 0, y = 1, b;
+	ll d = gcd(b % a, a, y, x);
+	return x -= b / a * y, d;
+}
+ll gcd(ll a, ll b) //无取模求gcd
+{
+	for (ll t = 1, c, d;;)
+	{
+		if (a == b)
+			return t * a;
+		if (a &lt; b)
+			swap(a, b);
+		if (a &amp; 1)
+			c = 0;
+		else
+			a &gt;&gt;= 1, c = 1;
+		if (b &amp; 1)
+			d = 0;
+		else
+			b &gt;&gt;= 1, d = 1;
+		if (c &amp;&amp; d)
+			t &lt;&lt;= 1;
+		else if (!c &amp;&amp; !d)
+			a -= b;
+	}
+}
+</code></pre>
+
+<h3 id="裴蜀定理">裴蜀定理</h3>
+
+<p>对任何$a,b\in Z$和它们的最大公约数$d$，关于未知数$x,y$的线性不定方程（称为裴蜀等式）：$ax+by=c$当仅当$d\vert c$，可知有无穷多解。特别地，$ax+by=d$一定有解。</p>
+
+<h4 id="推论">推论</h4>
+
+<p>$a,b$互质的充要条件是$ax+by=1$有整数解。</p>
+
+<h2 id="同余系运算">同余系运算</h2>
+
+<p>三种乘法的比较，结论是如果可以用<code>__int128</code>就用，否则就用第一种：</p>
+
+<ul>
+  <li><a href="https://vjudge.net/solution/19521824">使用<code>__int128</code></a></li>
+  <li><a href="https://vjudge.net/solution/19853184">第一种同余乘法</a></li>
+  <li><a href="https://vjudge.net/solution/19521800">第二种同余乘法</a></li>
+</ul>
+
+<p>求乘法逆元的另外一种方法是用欧拉定理$x^{\phi(m)}\equiv1\pmod m$，x的逆是$x^{\phi(m)-1}$。特别地，m为素数时$\phi(m)=m-1$，此时x的逆就是<code>pow(x,m-2,m)</code>。</p>
+
+<p>log函数：m为素数时<a href="https://vjudge.net/solution/19395246">求解模方程</a>$a^x\equiv b\pmod m$。设P为质数，G为P的原根，则$x^y\equiv b\pmod P$等价于$y\ ind\ x\equiv b\pmod{P-1}$，其中$G\ ind\ x\equiv x\pmod P$。</p>
+
+<pre><code class="language-cpp">struct Mod
+{
+	const ll M, SM;
+	Mod(ll M) : M(M), SM(sqrt(M) + 0.5) {}
+	ll qadd(ll &amp;a, ll b) const { return a += b, a &gt;= M ? a -= M : a; } //假如a+b&lt;2*M，就不必取模了，取模运算耗时很高
+	ll add(ll a, ll b) const { return qadd(a = (a + b) % M, M); }	  //考虑a和b不在同余系内甚至为负数的情况
+	ll mul(ll a, ll b) const { return add(a * b, M); }
+	ll inv(ll a) const { return pow(a, M - 2); } //要求M为素数，否则return pow(a, phi(M) - 1);
+	ll pow(ll a, ll b) const
+	{
+		ll r = 1;
+		/*
+		if (b &lt; 0)
+			b = -b, a = inv(a);
+		*/
+		for (a = add(a, M); b; b &gt;&gt;= 1, a = mul(a, a))
+			if (b &amp; 1)
+				r = mul(r, a);
+		return r;
+	}
+	/*
+	ll mul(ll a, ll b) const { return add(a * b, -M * (ll)((long double)a / M * b)); } //long double 有效位数16~18位，模数过大时慎用！
+	ll mul(ll a, ll b) const //Head算法，无循环快速计算同余乘法，根据a*b是否爆ll替换a*b%M，需要a&lt;M且b&lt;M，可以调用时手动取模
+	{
+		ll c = a / SM, d = b / SM;
+		a %= SM, b %= SM;
+		ll e = add(add(a * d, b * c), c * d / SM * (SM * SM - M));
+		return add(add(a * b, e % SM * SM), add(c * d % SM, e / SM) * (SM * SM - M));
+	}
+	ll mul(ll a, ll b) const //龟速乘
+	{
+		ll r = 0;
+		for (a %= M; b; b &gt;&gt;= 1, qadd(a, a))
+			if (b &amp; 1)
+				qadd(r, a);
+		return r;
+	}
+	ll inv(ll a) const //模m下a的乘法逆元，不存在返回-1（m为素数时a不为0必有逆元）
+	{
+		ll x, y, d = gcd(a, M, x, y);
+		return d == 1 ? add(x, M) : -1;
+	}
+	vector&lt;ll&gt; sol(ll a, ll b) const //解同余方程，返回ax=b(mod M)循环节内所有解
+	{
+		vector&lt;ll&gt; ans;
+		ll x, y, d = gcd(a, M, x, y);
+		if (b % d)
+			return ans;
+		ans.push_back(mul((b / d) % (M / d), x));
+		for (ll i = 1; i &lt; d; ++i)
+			ans.push_back(add(ans.back(), M / d));
+		return ans;
+	}
+	ll log(ll a, ll b) const
+	{
+		unordered_map&lt;ll, ll&gt; x;
+		for (ll i = 0, e = 1; i &lt;= SM; ++i, e = mul(e, a))
+			if (!x.count(e))
+				x[e] = i;
+		for (ll i = 0, v = inv(pow(a, SM)); i &lt;= SM; ++i, b = mul(b, v))
+			if (x.count(b))
+				return i * SM + x[b];
+		return -1;
+	}
+	*/
+};
+</code></pre>
+
+<h3 id="中国剩余定理解同余方程组">中国剩余定理解同余方程组</h3>
+
+<p><a href="https://vjudge.net/solution/14375815">使用示例</a></p>
+
+<pre><code class="language-cpp">ll crt(const vector&lt;pair&lt;ll, ll&gt;&gt; &amp;v) //同余方程组，x%v[i].first==v[i].second，不存在返回-1
+{
+	ll m = v[0].first, r = v[0].second, c, d, x, y, z;
+	for (int i = 1; i &lt; v.size(); ++i)
+	{
+		if (c = v[i].second - r, d = gcd(m, v[i].first, x, y), c % d)
+			return -1;
+		gcd(m / d, z = v[i].first / d, x, y), r += c / d * x % z * m, r %= m *= z;
+	}
+	return r &lt; 0 ? r + m : r;
+}
+struct Excrt
+{
+	vector&lt;ll&gt; b2, a2;
+	int n;
+	void init()
+	{
+		scanf("%d", &amp;n);
+		ll q, qq;
+		for (int i = 0; i &lt; n; i++)
+			scanf("%lld%lld", &amp;q, &amp;qq), b2.push_back(q), a2.push_back(qq);
+	}
+	ll get()
+	{
+		ll M, ans, x = 0, y = 0;
+		M = 1, ans = 0;
+		for (int i = 0; i &lt; n; i++)
+		{
+			ll a = M, b = b2[i], c = (a2[i] - ans % b + b) % b; //ax=c(mod b)
+			ll gcd = exgcd(a, b, x, y), bg = b / gcd;
+			if (c % gcd != 0)
+			{
+				return -1;
+			} //返回-1表示无解
+			x = mul(x, c / gcd, bg);
+			y = M / gcd * b;
+			ans = (x * M + ans) % y; //???k???????
+			if (ans &lt; 0)
+				ans += y;
+			M = y; //M??k?m?lcm
+		}
+		return ans;
+	}
+};
+</code></pre>
+
+<h3 id="二次剩余">二次剩余</h3>
+
+<pre><code class="language-cpp">struct QuadraticRes
+{
+	struct numb
+	{
+		ll x, y;
+	};
+	numb mul(const numb &amp;a, const numb &amp;b, ll p)
+	{
+		return (numb){(a.x * b.x % p + a.y * b.y % p * w % p) % p, (a.x * b.y + a.y * b.x) % p};
+	}
+	ll pow2(numb a, ll b, ll p)
+	{
+		numb ret = {1, 0}, tem = a;
+		while (b)
+		{
+			if (b &amp; 1)
+				ret = mul(ret, tem, p);
+			tem = mul(tem, tem, p), b &gt;&gt;= 1;
+		}
+		return ret.x % p;
+	}
+	ll get(ll n, ll p)
+	{
+		if (Mod(p).pow(n, p / 2) == p - 1)
+		{
+			return -1;
+		} //此时无解
+		while (1)
+		{
+			ll a = rand();
+			w = (a * a - n + p) % p;
+			if (Mod(p).pow(w, p / 2) == p - 1)
+			{
+				return pow2((numb){a, 1}, p / 2 + 1, p); //还有一个解是p减去这个值
+			}
+		}
+	}
+};
+</code></pre>
+
+<h2 id="欧拉筛">欧拉筛</h2>
+
+<p>欧拉函数$\phi(n)$是小于n的正整数中与n互素的数的数目。特别地，规定$\phi(1)=1$，易知n&gt;2时都为偶数。</p>
+
+<p>欧拉函数是积性函数，即对任意素数$p,q$满足下列关系：$\phi(pq)=\phi(p)\phi(q)=(p-1)(q-1)$对任何两个互质的正整数$x, m(m\geq2)$有欧拉定理：$x^{\phi(m)}\equiv1\pmod m$当m为素数p时，此式变为费马小定理：$x^{p-1}\equiv1\pmod p$利用欧拉函数和它本身不同质因数的关系，用筛法$O(N)$预处理某个范围内所有数的欧拉函数值，并求出素数表。同时，利用计算欧拉函数过程中求出的最小素因子m，可以实现$O(log N)$的素因数分解。</p>
+
+<p>同时求莫比乌斯函数$\mu(n)$，存在<code>mu</code>中。</p>
+
+<pre><code class="language-cpp">struct EulerSieve
+{
+	vector&lt;int&gt; p, m, phi, mu; //素数序列，最小素因子，欧拉函数，莫比乌斯函数
+	EulerSieve(int N) : m(N, 0), phi(N, 0), mu(N, 0)
+	{
+		phi[1] = mu[1] = 1;					 //m[1]=0,m[i]==i可判断i是素数
+		for (long long i = 2, k; i &lt; N; ++i) //防i*p[j]爆int
+		{
+			if (!m[i])
+				p.push_back(m[i] = i), phi[i] = i - 1, mu[i] = -1; //i是素数
+			for (int j = 0; j &lt; p.size() &amp;&amp; (k = i * p[j]) &lt; N; ++j)
+			{
+				phi[k] = phi[i] * p[j];
+				if ((m[k] = p[j]) == m[i])
+				{
+					mu[k] = 0;
+					break;
+				}
+				phi[k] -= phi[i];
+				mu[k] = -mu[i];
+			}
+		}
+	}
+};
+</code></pre>
+
+<h3 id="直接求欧拉函数"><a href="https://vjudge.net/solution/19396361">直接求欧拉函数</a></h3>
+
+<pre><code class="language-cpp">ll phi(ll n)
+{
+	ll phi = n;
+	for (ll i = 2; i * i &lt;= n; ++i)
+		if (!(n % i))
+			for (phi = phi / i * (i - 1); !(n % i);)
+				n /= i;
+	if (n &gt; 1)
+		phi = phi / n * (n - 1);
+	return phi;
+}
+</code></pre>
+
+<h3 id="常见数论函数变换">常见数论函数变换</h3>
+
+<p>$\sum_{d\vert n}\mu(d)=[n=1]$</p>
+
+<p>$\phi(n)=\sum_{i=1}^n[\gcd(i,n)=1]=\sum_{i=1}^n\sum_{k\mid i,k\mid n}\mu(k)=\sum_{k\mid n}\frac nk\mu(k)$</p>
+
+<h4 id="前缀和">前缀和</h4>
+
+<p>欧拉函数前缀和$S_\phi(n)=\frac{(n+1)n}2-\sum_{d=1}^nS_\phi(\frac{n}{d})$</p>
+
+<p>莫比乌斯函数前缀和$S_\mu(n)=1-\sum_{d=1}^nS_\mu(\frac{n}{d})$</p>
+
+<h4 id="莫比乌斯反演">莫比乌斯反演</h4>
+
+<p>若$f(n)=\sum_{d\vert n}g(d)$，则$g(n)=\sum_{d\vert n}\mu(d)f(\frac{n}{d})$</p>
+
+<p>若$f(n)=\sum_{i=1}^nt(i)g(\frac{n}{i})$，则$g(n)=\sum_{i=1}^n\mu(i)t(i)f(\frac{n}{i})$（此时代$t(i)=[gcd(n,i)&gt;1]$可得上式）</p>
+
+<p>举例（其中$T=kd$）：</p>
+
+<p>$
+\sum_{i=1}^n\sum_{j=1}^m\gcd(i,j)<br />
+=\sum_d d\sum_{i=1}^n\sum_{j=1}^m[\gcd (i,j)=d]<br />
+=\sum_{d}d\sum_{i=1}^{\lfloor\frac nd\rfloor}\sum_{j=1}^{\lfloor\frac md\rfloor}[\gcd (i,j)=1]<br />
+=\sum_{d}d\sum_{i=1}^{\lfloor\frac nd\rfloor}\sum_{j=1}^{\lfloor\frac md\rfloor}\sum_{k\mid i,k\mid j}\mu(k)<br />
+=\sum_d d\sum_k\mu(k)\sum_{k\mid i}^{\lfloor\frac nd\rfloor}\sum_{k\mid j}^{\lfloor\frac md\rfloor}<br />
+=\sum_{d}d\sum_k\mu(k)\lfloor\frac n{kd}\rfloor\lfloor\frac m{kd}\rfloor<br />
+=\sum_{T}\lfloor\frac nT\rfloor\lfloor\frac mT\rfloor\sum_{k\mid T}\frac Tk\mu(k)<br />
+=\sum_{T}\lfloor\frac nT\rfloor\lfloor\frac mT\rfloor\varphi(T)
+$</p>
+
+<p>$\varphi(T)$可以使用线性筛预处理处理，我们就可以枚举$T$求上式了，时间复杂度$O(n)$。多组数据$n,m$询问上式，时间复杂度就变成了$O(Tn)$。事实上，$\lfloor\frac{n}{T}\rfloor$是不会轻易变化的，是过了连续的一段后才发生变化的，那么我们就可以计算出这一段的结束位置，对$\varphi$函数作前缀和，就可以直接分块了，这样的时间复杂度是$O(T\sqrt{n})$的。</p>
+
+<h2 id="pollardrho大数素因子分解">PollardRho大数素因子分解</h2>
+
+<p>时间复杂度$O(N^{1/4})$，数据多的时候可考虑欧拉筛优化。</p>
+
+<p>注意这里模乘法很容易爆long long，看情况选用快速乘法。</p>
+
+<pre><code class="language-cpp">struct PollardRho
+{
+	bool isPrime(ll n, int S = 12) //MillerRabin素数测试，S为测试次数，用前S个素数测一遍，S=12可保证unsigned long long范围内无错；n&lt;2请特判
+	{
+		static ll d, u, t, p[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37};
+		for (d = n - 1; !(d &amp; 1);)
+			d &gt;&gt;= 1; //未对0，1做特判！
+		Mod mo(n);
+		for (int i = 0; i &lt; S; ++i)
+		{
+			if (!(n % p[i]))
+				return n == p[i];
+			for (t = mo.pow(p[i], u = d); t != n - 1 &amp;&amp; t != 1 &amp;&amp; u != n - 1;)
+				t = mo.mul(t, t), u &lt;&lt;= 1;
+			if (t != n - 1 &amp;&amp; !(u &amp; 1))
+				return 0;
+		}
+		return 1;
+	}
+	void fac(ll n, vector&lt;ll&gt; &amp;factor)
+	{
+		/*
+		if (n &lt; e.m.size()) //欧拉筛预处理优化，可以防止很多小素数因子的情况
+		{
+			for (; n &gt; 1; n /= e.m[n])
+				factor.push_back(e.m[n]);
+			return;
+		}
+		*/
+		if (isPrime(n))
+			return factor.push_back(n);
+		Mod mo(n);
+		for (ll c = 1;; ++c)
+			for (ll i = 0, k = 1, x = rand() % (n - 1) + 1, y, p;;)
+			{
+				if (++i == k)
+					y = x, k &lt;&lt;= 1;
+				if (x = mo.add(mo.mul(x, x), c), p = __gcd(abs(x - y), n), p == n)
+					break;
+				if (p &gt; 1)
+					return fac(p, factor), fac(n / p, factor);
+			}
+	}
+};
+</code></pre>
+
+<h2 id="快速变换">快速变换</h2>
+
+<h3 id="蝴蝶变换雷德变换">蝴蝶变换（雷德变换）</h3>
+
+<p>保存FTT和FNTT时交换的对应位置（即保存的是置换）。</p>
+
+<pre><code class="language-cpp">struct Rader : vector&lt;int&gt;
+{
+	Rader(int n) : vector&lt;int&gt;(1 &lt;&lt; int(ceil(log2(n))))
+	{
+		for (int i = at(0) = 0; i &lt; size(); ++i)
+			if (at(i) = at(i &gt;&gt; 1) &gt;&gt; 1, i &amp; 1)
+				at(i) += size() &gt;&gt; 1;
+	}
+};
+</code></pre>
+
+<h3 id="快速傅里叶变换">快速傅里叶变换</h3>
+
+<p><a href="https://vjudge.net/solution/21912936">使用示例</a>，高精度乘法。</p>
+
+<p><a href="https://vjudge.net/solution/21914340">任意模数FFT</a></p>
+
+<pre><code class="language-cpp">struct FFT : Rader
+{
+	vector&lt;complex&lt;lf&gt;&gt; w;
+	FFT(int n) : Rader(n), w(size())
+	{
+		for (int i = 0; i &lt; size(); ++i)
+			w[i] = polar(1.0, 2 * M_PI * i / size());
+	}
+	void fft(vector&lt;complex&lt;lf&gt;&gt; &amp;x) const
+	{
+		for (int i = 0; i &lt; x.size(); ++i)
+			if (i &lt; at(i))
+				std::swap(x[i], x[at(i)]);
+		for (int i = 1; i &lt; size(); i &lt;&lt;= 1)
+			for (int j = 0; j &lt; i; ++j)
+				for (int k = j; k &lt; size(); k += i &lt;&lt; 1)
+				{
+					complex&lt;lf&gt; t = w[size() / (i &lt;&lt; 1) * j] * x[k + i];
+					x[k + i] = x[k] - t, x[k] += t;
+				}
+	}
+	vector&lt;ll&gt; ask(const vector&lt;ll&gt; &amp;a, const vector&lt;ll&gt; &amp;b) const
+	{
+		vector&lt;complex&lt;lf&gt;&gt; xa(a.begin(), a.end()), xb(b.begin(), b.end());
+		xa.resize(size()), xb.resize(size()), fft(xa), fft(xb);
+		for (int i = 0; i &lt; size(); ++i)
+			xa[i] *= xb[i];
+		fft(xa);
+		vector&lt;ll&gt; ans(size());
+		for (int i = 0; i &lt; size(); ++i)
+			ans[i] = xa[(size() - i) &amp; (size() - 1)].real() / size() + 0.5;
+		return ans;
+	}
+	vector&lt;ll&gt; askMod(const vector&lt;ll&gt; &amp;a, const vector&lt;ll&gt; &amp;b, ll M) const //任意模数
+	{
+		vector&lt;complex&lt;lf&gt;&gt; e(size()), c(size());
+		for (int i = 0; i &lt; a.size(); ++i)
+			e[i].real(a[i] &amp; 0x7fff), e[i].imag(a[i] &gt;&gt; 15);
+		for (int i = 0; i &lt; b.size(); ++i)
+			c[i].real(b[i] &amp; 0x7fff), c[i].imag(b[i] &gt;&gt; 15);
+		fft(e), fft(c);
+		vector&lt;complex&lt;lf&gt;&gt; d(c);
+		for (int i = 0; i &lt; size(); ++i)
+		{
+			int fr = (size() - i) &amp; (size() - 1);
+			c[i] *= 0.5 * complex&lt;lf&gt;(e[i].X + e[fr].X, e[i].Y - e[fr].Y);
+			d[i] *= 0.5 * complex&lt;lf&gt;(e[i].Y + e[fr].Y, e[fr].X - e[i].X);
+		}
+		fft(c), fft(d);
+		vector&lt;ll&gt; ans(size());
+		for (int i = 0; i &lt; size(); ++i)
+		{
+			ll fr = (size() - i) &amp; (size() - 1),
+			   p = c[fr].X / size() + 0.5,
+			   o = c[fr].Y / size() + 0.5,
+			   x = d[fr].X / size() + 0.5,
+			   u = d[fr].Y / size() + 0.5;
+			ans[i] = (p % M + ((o + x) % M &lt;&lt; 15) + (u % M &lt;&lt; 30)) % M;
+		}
+		return ans;
+	}
+};
+</code></pre>
+
+<h3 id="快速数论变换">快速数论变换</h3>
+
+<p>原理和FFT相同，解决特殊情况下FFT的浮点误差，并且可以在同余系进行变换。</p>
+
+<p>对于形如$m=2^nc+1$的费马素数，记其原根为g，则旋转因子为$g^{(m-1)/n}$，满足$g^{m-1}=1$且$2^n\mid m-1$。</p>
+
+<p><a href="https://vjudge.net/solution/21913390">使用示例</a></p>
+
+<pre><code class="language-cpp">struct FNTT : Rader, Mod
+{
+	vector&lt;ll&gt; w;
+	FNTT(int N, ll M, ll G) : Rader(N), Mod(M), w(size(), pow(G, (M - 1) / size()))
+	{
+		for (int i = w[0] = 1; i &lt; size(); ++i)
+			w[i] = mul(w[i], w[i - 1]);
+	}
+	void fntt(vector&lt;ll&gt; &amp;x) const
+	{
+		for (int i = 0; i &lt; size(); ++i)
+			if (i &lt; at(i))
+				std::swap(x[i], x[at(i)]);
+		for (int i = 1, j; i &lt; size(); i &lt;&lt;= 1)
+			for (int j = 0; j &lt; i; ++j)
+				for (int k = j; k &lt; size(); k += i &lt;&lt; 1)
+				{
+					ll t = mul(w[size() / (i &lt;&lt; 1) * j], x[k + i]);
+					qadd(x[k + i] = x[k], M - t), qadd(x[k], t);
+				}
+	}
+	vector&lt;ll&gt; ask(vector&lt;ll&gt; a, vector&lt;ll&gt; b) const
+	{
+		a.resize(size()), b.resize(size()), fntt(a), fntt(b);
+		for (int i = 0; i &lt; size(); ++i)
+			a[i] = mul(a[i], b[i]);
+		fntt(a), reverse(a.begin() + 1, a.end());
+		ll u = inv(size());
+		for (int i = 0; i &lt; size(); ++i)
+			a[i] = mul(a[i], u);
+		return a;
+	}
+};
+</code></pre>
+
+<h4 id="常见素数的原根"><a href="https://blog.csdn.net/hnust_xx/article/details/76572828">常见素数的原根</a></h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>r * 2 ^ k + 1</th>
+      <th>r</th>
+      <th>k</th>
+      <th>g，mod(r * 2 ^ k + 1)的原根</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>3</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>1</td>
+      <td>4</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>97</td>
+      <td>3</td>
+      <td>5</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>193</td>
+      <td>3</td>
+      <td>6</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>257</td>
+      <td>1</td>
+      <td>8</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>7681</td>
+      <td>15</td>
+      <td>9</td>
+      <td>17</td>
+    </tr>
+    <tr>
+      <td>12289</td>
+      <td>3</td>
+      <td>12</td>
+      <td>11</td>
+    </tr>
+    <tr>
+      <td>40961</td>
+      <td>5</td>
+      <td>13</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>65537</td>
+      <td>1</td>
+      <td>16</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>786433</td>
+      <td>3</td>
+      <td>18</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td>5767169</td>
+      <td>11</td>
+      <td>19</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>7340033</td>
+      <td>7</td>
+      <td>20</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>23068673</td>
+      <td>11</td>
+      <td>21</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>104857601</td>
+      <td>25</td>
+      <td>22</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>167772161</td>
+      <td>5</td>
+      <td>25</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>469762049</td>
+      <td>7</td>
+      <td>26</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>998244353</td>
+      <td>119</td>
+      <td>23</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>1004535809</td>
+      <td>479</td>
+      <td>21</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>2013265921</td>
+      <td>15</td>
+      <td>27</td>
+      <td>31</td>
+    </tr>
+    <tr>
+      <td>2281701377</td>
+      <td>17</td>
+      <td>27</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>3221225473</td>
+      <td>3</td>
+      <td>30</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>75161927681</td>
+      <td>35</td>
+      <td>31</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>77309411329</td>
+      <td>9</td>
+      <td>33</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>206158430209</td>
+      <td>3</td>
+      <td>36</td>
+      <td>22</td>
+    </tr>
+    <tr>
+      <td>2061584302081</td>
+      <td>15</td>
+      <td>37</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>2748779069441</td>
+      <td>5</td>
+      <td>39</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>6597069766657</td>
+      <td>3</td>
+      <td>41</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>39582418599937</td>
+      <td>9</td>
+      <td>42</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>79164837199873</td>
+      <td>9</td>
+      <td>43</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>263882790666241</td>
+      <td>15</td>
+      <td>44</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>1231453023109121</td>
+      <td>35</td>
+      <td>45</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>1337006139375617</td>
+      <td>19</td>
+      <td>46</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>3799912185593857</td>
+      <td>27</td>
+      <td>47</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>4222124650659841</td>
+      <td>15</td>
+      <td>48</td>
+      <td>19</td>
+    </tr>
+    <tr>
+      <td>7881299347898369</td>
+      <td>7</td>
+      <td>50</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>31525197391593473</td>
+      <td>7</td>
+      <td>52</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>180143985094819841</td>
+      <td>5</td>
+      <td>55</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>1945555039024054273</td>
+      <td>27</td>
+      <td>56</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>4179340454199820289</td>
+      <td>29</td>
+      <td>57</td>
+      <td>3</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="快速沃尔什变换">快速沃尔什变换</h3>
+
+<p>如果要在同余系中进行运算，则下面代码需要修改。</p>
+
+<pre><code class="language-cpp">void fwt(vector&lt;ll&gt; &amp;x, void f(ll &amp;l, ll &amp;r))
+{
+	for (int i = 1; i &lt; x.size(); i &lt;&lt;= 1)
+		for (int j = 0; j &lt; i; ++j)
+			for (int k = j; k &lt; x.size(); k += i &lt;&lt; 1)
+				f(x[k], x[k + i]);
+}
+void fwt(ll *b, ll *e, void f(ll &amp;l, ll &amp;r)) //再给一个递归二分的代码便于理解
+{
+	if (e - b &lt; 2)
+		return;
+	ll *m = b + (e - b) / 2;
+	fwt(b, m, f), fwt(m, e, f);
+	while (m &lt; e)
+		f(*(b++), *(m++));
+}
+</code></pre>
+
+<h4 id="and">AND</h4>
+
+<pre><code class="language-cpp">void tf(ll &amp;l, ll &amp;r) { l += r; }
+void utf(ll &amp;l, ll &amp;r) { l -= r; }
+</code></pre>
+
+<h4 id="or">OR</h4>
+
+<pre><code class="language-cpp">void tf(ll &amp;l, ll &amp;r) { r += l; }
+void utf(ll &amp;l, ll &amp;r) { r -= l; }
+</code></pre>
+
+<h4 id="xor">XOR</h4>
+
+<pre><code class="language-cpp">void tf(ll &amp;l, ll &amp;r)
+{
+	ll tl = l + r, tr = l - r;
+	l = tl, r = tr;
+}
+void utf(ll &amp;l, ll &amp;r) { tf(l, r), l &gt;&gt;= 1, r &gt;&gt;= 1; }
+</code></pre>
+
+<h4 id="xnornandnor">XNOR、NAND、NOR</h4>
+
+<p>直接用异或运算、与运算、或运算的方法求出来，然后将互反的两位交换即可。</p>
+
+<h2 id="pell方程">Pell方程</h2>
+
+<p>形如$x^2-Dy^2=1$（D为任意正整数）的方程称为佩尔方程，必有最小正整数解$(x_0,y_0)$，用</p>
+
+<p>$x_n=x_0x_{n-1}+Dy_0y_{n-1},y_n=y_0x_{n-1}+x_0y_{n-1}$</p>
+
+<p>可递推方程的第n小整数解（可用矩阵快速幂求），同时还有</p>
+
+<p>$2x_0x_n=x_{n-1}+x_{n+1},2x_0y_n=y_{n-1}+y_{n+1}$</p>
+
+<h2 id="bertrand猜想">Bertrand猜想</h2>
+
+<p>$\forall n&gt;3,\exist n&lt;p&lt;n\times 2$其中n为整数，p为质数。</p>
+
+<h2 id="威尔逊定理">威尔逊定理</h2>
+
+<p>当且仅当p为素数时：$(p-1)!\equiv -1\pmod p$，</p>
+
+<h2 id="jacobis-four-square-theorem">Jacobi’s Four Square Theorem</h2>
+
+<p>设$a^2+b^2+c^2+d^2=n$的自然数解个数为$r4(n)$，$d(n)$为$n$的约数和，由Jacobi’s Four Square Theorem可知，若$n$是奇数，则$r4(n)=8d(n)$，否则$r4(n)=24d(k)$，$k$是$n$去除所有$2$后的结果。</p>
+:ET
