@@ -4,7 +4,7 @@ title: 隐世半仙
 ---
 ## 联系方式
 
-- 地址: **Sun Yat-sen University - 132 Waihuan East Rd. - Guangzhou, China**
+- 地址: 1**Sun Yat-sen University - 132 Waihuan East Rd. - Guangzhou, China**
 - Phone: **+86 18756280097**
 - E-mail:
   - **wu.kan@foxmail.com**
