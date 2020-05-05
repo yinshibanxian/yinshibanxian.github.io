@@ -1,16 +1,0 @@
-I"<p><a href="https://github.com/wu-kan/ACM_Template/tree/master/计算几何/三维">三维几何模板</a>
-<a href="https://github.com/wu-kan/ACM_Template/tree/master/高精度/分数">分数类模板</a>
-<a href="https://vjudge.net/problem/UVA-11275">题目链接</a></p>
-<pre><code class="language-cpp">int main()
-{
-	int t;
-	for(scanf("%d",&amp;t); t--;)
-	{
-		Coord3 p[6];
-		for(int i=0; i&lt;6; ++i)
-			scanf("%lf%lf%lf",&amp;p[i].X,&amp;p[i].Y,&amp;p[i].Z);
-		printf("%d\n",TriTriIntersection(p,p+3));
-	}
-}
-</code></pre>
-:ET

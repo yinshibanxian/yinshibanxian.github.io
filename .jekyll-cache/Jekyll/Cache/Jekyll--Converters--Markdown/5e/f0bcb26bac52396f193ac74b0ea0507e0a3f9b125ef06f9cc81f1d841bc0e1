@@ -1,0 +1,9 @@
+I"/<h4 id="一-支付">一、 支付</h4>
+<pre><code>微信小程序云开发实现支付，采用的是tenpay库。npm库链接为[tenpay]:https://www.npmjs.com/package/tenpay。云开发环境暂且不表，实现步骤如下：
+</code></pre>
+
+<ol>
+  <li>新建一个名称为pay的云函数</li>
+</ol>
+
+:ET

@@ -1,0 +1,71 @@
+I"�<h4 id="一-支付">一、 支付</h4>
+<pre><code>微信小程序云开发实现支付，采用的是tenpay库。npm库链接为[tenpay]:https://www.npmjs.com/package/tenpay。云开发环境暂且不表，实现步骤如下：
+</code></pre>
+
+<ol>
+  <li>新建一个名称为pay的云函数</li>
+  <li>终端打开云函数，分别执行如下两条命令：npm i wx-server-sdk npm i tenpay</li>
+  <li>云函数代码如下：</li>
+</ol>
+
+<pre><code>  //云开发实现支付
+  const cloud = require('wx-server-sdk')
+  cloud.init()
+  //1，引入支付的三方依赖
+  const tenpay = require('tenpay');
+  //2，配置支付信息
+  const config = {
+    appid: '这里填小程序的appid',
+    mchid: '这里填微信商户号id',
+    partnerKey: '这里填微信商户的支付密钥',
+    notify_url: 'https://mp.weixin.qq.com', // 这里填任意公网可访问的ip即可,如此处的https://mp.weixin.qq.com
+    spbill_create_ip: '127.0.0.1' //这里填这个就可以
+  };
+
+  exports.main = async (event, context) =&gt; {
+    const wxContext = cloud.getWXContext()
+    let {
+        total_fee
+    } = event;
+    //3，初始化支付
+    const api = tenpay.init(config);
+    const nonceStr = Math.random().toString(36).substr(2, 15)
+    const timeStamp = parseInt(Date.now() / 1000) + ''
+    const out_trade_no = "otn" + nonceStr + timeStamp
+    let result = await api.getPayParams({
+        out_trade_no: out_trade_no,  // 这里填的是商户号中的订单号
+        body: '牌位', // 这里填写的是付款信息
+        total_fee: total_fee, //订单金额(分),
+        openid: wxContext.OPENID //付款用户的openid
+    });
+    return result;
+  }
+</code></pre>
+<p>小程序端调用代码:</p>
+
+<pre><code>  pay(total_fee) {
+    wx.cloud.callFunction({
+      name: 'pay',
+      data: { total_fee: total_fee }, // 可传入相关参数。
+      success: res =&gt; {
+        console.log(res.result)
+        if (!res.result.appId) return
+        wx.requestPayment({
+          ...res.result,
+          success: res =&gt; {
+            console.log(res)
+          }
+        })
+      },
+      fail: err =&gt; {
+        console.log(err)
+      }
+    })
+  }
+</code></pre>
+
+<p>这样，就可以实现拉起支付页面，支付给对应的商户了。</p>
+
+<p>#### 二、退款</p>
+
+:ET
