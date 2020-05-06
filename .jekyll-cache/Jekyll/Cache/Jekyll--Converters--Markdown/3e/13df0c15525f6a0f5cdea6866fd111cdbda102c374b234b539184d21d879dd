@@ -1,0 +1,69 @@
+I"�<h3 id="一简介">一、简介</h3>
+<pre><code>队列是遵循先进先出(FIFO，也称为先来先服务)原则的一组有序的项。队列在尾部添加新元素，
+并从顶部移除元素。最新添加的元素必须排在队列的末尾。
+</code></pre>
+
+<h3 id="二代码实现">二、代码实现</h3>
+<pre><code>```
+class Queue {
+    constructor() {
+        this.count = 0; // 控制队列的长度
+        this.lowestCount = 0; // 控制队列中第一个元素的位置
+        this.items = {}; // 以对象的形式存储队列元素
+    }
+    /**
+    * 向队列增加新元素
+    */
+    enqueue(element) {
+        this.items[this.count] = element;
+        this.count ++;
+    }
+    /**
+    * 从队列中移除队首元素,并且返回队首元素
+    */
+    dequeue() {
+        if(this.isEmpty()) {
+            return undefined;
+        }
+        const element = this.items[this.lowestCount];
+        delete this.items[this.lowestCount];
+        this.lowestCount ++;
+        return element;
+    }
+    /**
+    * 判断队列是否为空
+    */
+    isEmpty() {
+        return this.count - this.lowestCount === 0;
+    }
+    /**
+    * 查看队首元素
+    */
+    peek() {
+        if(this.isEmpty()) {
+            return undefined;
+        }
+        return this.items[this.lowestCount];
+    }
+    /**
+    * 查看队列长度
+    */
+    size() {
+        return this.count - this.lowestCount;
+    }
+    /**
+    * 清空队列
+    */
+    clear() {
+        this.count = 0;
+        this.lowestCount = 0;
+        this.items = {};
+    }
+}
+const queue = new Queue();
+console.log(queue.isEmpty()) // true
+queue.enqueue('John');
+console.log(queue.dequeue()) // Jhon
+```
+</code></pre>
+:ET
