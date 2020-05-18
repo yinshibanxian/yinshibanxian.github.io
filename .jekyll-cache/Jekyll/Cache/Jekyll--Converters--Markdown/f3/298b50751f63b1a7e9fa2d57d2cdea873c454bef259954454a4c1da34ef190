@@ -1,0 +1,73 @@
+I"�<h4 id="什么是递归">什么是递归</h4>
+
+<p>递归是一种解决问题的方法，它从解决问题的各个小部分开始，直到解决最初的大问题。</p>
+
+<p>递归通常涉及函数调用自身。</p>
+
+<p>递归函数是像下面这样能够直接调用自身的方法或者函数:</p>
+
+<pre><code>function recursiveFunction(someParams) {
+    recursiveFunction(someParams);
+}
+</code></pre>
+
+<p>递归函数必须有基线条件，即一个不再递归调用的条件（停止点），以防止无限递归。</p>
+
+<p>递归的一般形式:</p>
+
+<pre><code>function understandRecursion(doIunderstandRecursion) {
+    const recursionAnswer = confirm('Do you understand recursion?');
+    if(recursionAnswer) {
+        return true
+    }
+    understandRecursion(recursionAnswer)
+}
+</code></pre>
+
+<h4 id="递归的经典应用">递归的经典应用</h4>
+
+<h5 id="1计算一个数的阶乘">1.计算一个数的阶乘</h5>
+
+<ol>
+  <li>迭代法</li>
+</ol>
+
+<pre><code>function factorial(num) {
+    if(num &lt; 0) {
+        return undefined;
+    }
+    let total = 1;
+    for(let i = num;i &gt; 1;i --) {
+        total *= i;
+    }
+    return total;
+}
+</code></pre>
+<ol>
+  <li>递归法</li>
+</ol>
+
+<p>可以发现,
+factorial(5) = 5 * factorial(4);
+factorial(4) = 4 * factorail(3);
+factorial(3) = 3 * factorial(2)
+factorial(2) = 2 * factorial(1);
+factorial(1) = 1
+factorial(0) = 0;
+可以发现，求阶乘的过程其实就是递归的过程，且基线条件为 num === 0 || num === 1</p>
+
+<pre><code>function factorial(num) {
+    if(num === 1 || num === 0) {
+        return 1;
+    }
+    return num * factorial(num - 1);
+}
+</code></pre>
+
+<h5 id="2斐波那契数列">2.斐波那契数列</h5>
+
+<ol>
+  <li>迭代法</li>
+</ol>
+
+:ET
