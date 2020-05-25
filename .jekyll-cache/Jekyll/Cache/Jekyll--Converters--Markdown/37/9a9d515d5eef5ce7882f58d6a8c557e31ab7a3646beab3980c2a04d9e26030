@@ -1,0 +1,370 @@
+I"4"<h4 id="什么是浏览器的同源策略">什么是浏览器的同源策略</h4>
+<p>同源指的是”协议+域名+端口”三者相同，即使两个不同的域名指向同一个ip地址，也非</p>
+
+<p>同源。同源策略是浏览器最核心也是最基本的安全功能，如果缺少了同源策略，浏览器很容易受到</p>
+
+<p>XSS，csrf攻击。</p>
+
+<p>同源策略限制以下几种行为:</p>
+<ul>
+  <li>Cookie、LocalStorage和IndexDB无法读取</li>
+  <li>Dom和JS对象无法获得</li>
+  <li>AJAX请求不能发送</li>
+</ul>
+
+<p>常见的跨域场景:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>URL</td>
+      <td>说明</td>
+      <td>是否允许通信</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/a.js</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/b.js</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/lab/c.js</td>
+      <td>同一域名，不同文件或路径</td>
+      <td>允许</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com:8000/a.js</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/b.js</td>
+      <td>同一域名，不同端口</td>
+      <td>不允许</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/a.js</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>https://www.domain.com/b.js</td>
+      <td>同一域名，不同协议</td>
+      <td>不允许</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/a.js</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://192.168.4.12/b.js</td>
+      <td>域名和域名对应相同ip</td>
+      <td>不允许</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain.com/a.js</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://x.domain.com/b.js</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://domain.com/c.js</td>
+      <td>主域相同，子域不同</td>
+      <td>不允许</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain1.com/a.js</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>http://www.domain2.com/b.js</td>
+      <td>不同域名</td>
+      <td>不允许</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>主域名和子域名:</p>
+
+<p>主域名: abc.com</p>
+
+<p>wwww.abc.com // www是子域名</p>
+
+<p>bbs.abc.com // bbs是主域名</p>
+
+<p>beijing.bbs.abc.com //beijing.bbs是子域名</p>
+
+<p>haidian.beijing.bbs.abc.com //haidian.beijing.bbs是子域名</p>
+
+<p>主域名是不带www的域名，例如a.com，主域名前面带前缀的通常都为二级域名或多级域名，例如www.a.com其实是二级域名。</p>
+
+<h4 id="跨域解决方案">跨域解决方案</h4>
+<ol>
+  <li>通过jsonp实现跨域</li>
+  <li>跨域资源共享(CORS)</li>
+  <li>document.domain+ iframe跨域</li>
+  <li>location.hash + iframe</li>
+  <li>window.name +iframe</li>
+  <li>postMessage跨域</li>
+  <li>nginx代理跨域</li>
+  <li>nodexjs中间件代理跨域</li>
+  <li>websocket协议跨域</li>
+</ol>
+
+<h5 id="一jsonp实现跨域">一、jsonp实现跨域</h5>
+
+<ol>
+  <li>
+    <p>原理</p>
+
+    <p>虽然浏览器默认禁止了跨域访问，但是并不禁止在页面中的script标签引用其他域下的JS文件。</p>
+
+    <p>根据这一点，可以方便地通过动态创建script节点的方法来实现完全跨域的通信。</p>
+  </li>
+  <li>
+    <p>代码实现</p>
+  </li>
+</ol>
+
+<ul>
+  <li>原生
+    <pre><code> &lt;script&gt;
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+
+  // 传参一个回调函数名给后端，方便后端返回时执行这个在前端定义的回调函数
+  script.src = 'http://www.domain2.com:8080/login?user=admin&amp;callback=handleCallback';
+  document.head.appendChild(script);
+
+  // 回调执行函数
+  function handleCallback(res) {
+      alert(JSON.stringify(res));
+  }
+ &lt;/script&gt;
+</code></pre>
+  </li>
+  <li>vue.js</li>
+</ul>
+
+<pre><code>    this.$http.jsonp('http://www.domain2.com:8080/login', {
+        params: {},
+        jsonp: 'handleCallback'
+    }).then((res) =&gt; {
+        console.log(res); 
+    })
+</code></pre>
+
+<ul>
+  <li>后端node.js实现</li>
+</ul>
+
+<pre><code>    var querystring = require('querystring');
+    var http = require('http');
+    var server = http.createServer();
+
+    server.on('request', function(req, res) {
+        var params = qs.parse(req.url.split('?')[1]);
+        var fn = params.callback;
+
+        // jsonp返回设置
+        res.writeHead(200, { 'Content-Type': 'text/javascript' });
+        res.write(fn + '(' + JSON.stringify(params) + ')');
+
+        res.end();
+    });
+
+    server.listen('8080');
+    console.log('Server is running at port 8080...');
+</code></pre>
+
+<ol>
+  <li>缺点</li>
+</ol>
+
+<p>只能实现get一种请求</p>
+
+<h4 id="跨域资源共享cors">跨域资源共享(CORS)</h4>
+
+<p>普通跨域请求只需服务端设置Access-Control-Allow-Origin即可，前端无需设置，若要</p>
+
+<p>带cookie请求，则前后端要要设置cookie相关配置。由于同源策略的限制，所读取的cookie为</p>
+
+<p>跨域请求接口所在的cookie，而非当前页。若想实现当前页cookie的写入，可以参考下面的方法:</p>
+
+<p>nginx反向代理中设置proxy_cookie_domain和NodeJs中间件代理中cookieDomainRewrite参数的设置。</p>
+
+<p>目前，所有的浏览器都支持该功能，cors已经成为主流的跨域解决方案。</p>
+
+<ol>
+  <li>前端设置</li>
+</ol>
+
+<pre><code>var xhr = new XMLHttpRequest(); // IE8/9需用window.XDomainRequest兼容
+
+// 前端设置是否带cookie
+xhr.withCredentials = true;
+
+xhr.open('post', 'http://www.domain2.com:8080/login', true);
+xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+xhr.send('user=admin');
+
+xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4 &amp;&amp; xhr.status == 200) {
+        alert(xhr.responseText);
+    }
+};
+</code></pre>
+
+<ol>
+  <li>后端设置</li>
+</ol>
+
+<pre><code>var http = require('http');
+var server = http.createServer();
+var qs = require('querystring');
+
+server.on('request', function(req, res) {
+    var postData = '';
+
+    // 数据块接收中
+    req.addListener('data', function(chunk) {
+        postData += chunk;
+    });
+
+    // 数据接收完毕
+    req.addListener('end', function() {
+        postData = qs.parse(postData);
+
+        // 跨域后台设置
+        res.writeHead(200, {
+            'Access-Control-Allow-Credentials': 'true',     // 后端允许发送Cookie
+            'Access-Control-Allow-Origin': 'http://www.domain1.com',    // 允许访问的域（协议+域名+端口）
+            /* 
+             * 此处设置的cookie还是domain2的而非domain1，因为后端也不能跨域写cookie(nginx反向代理可以实现)，
+             * 但只要domain2中写入一次cookie认证，后面的跨域接口都能从domain2中获取cookie，从而实现所有的接口都能跨域访问
+             */
+            'Set-Cookie': 'l=a123456;Path=/;Domain=www.domain2.com;HttpOnly'  // HttpOnly的作用是让js无法读取cookie
+        });
+
+        res.write(JSON.stringify(postData));
+        res.end();
+    });
+});
+
+server.listen('8080');
+console.log('Server is running at port 8080...');
+</code></pre>
+
+<h4 id="documentdomain--iframe跨域">document.domain + iframe跨域</h4>
+
+<p>此方案仅限主域相同，而子域不同的跨域应用场景.</p>
+
+<p>实现原理: 两个页面都通过js强制设置document.domain为基础主域，就实现了同域.</p>
+
+<ol>
+  <li>父窗口: （http://www.domain.com/a.html）</li>
+</ol>
+
+<pre><code>&lt;iframe id="iframe" src="http://child.domain.com/b.html"&gt;&lt;/iframe&gt;
+&lt;script&gt;
+    document.domain = 'domain.com';
+    var user = 'admin';
+&lt;/script&gt;
+</code></pre>
+
+<ol>
+  <li>子窗口: (http://www.child.domain.com/b.html)
+    <pre><code>&lt;script&gt;
+ document.domain = 'domain.com';
+ // 获取父窗口中变量
+ alert('get js data from parent ---&gt; ' + window.parent.user);
+&lt;/script&gt;
+</code></pre>
+  </li>
+</ol>
+
+<h4 id="参考文章">参考文章</h4>
+
+<ol>
+  <li>https://segmentfault.com/a/1190000015764619</li>
+  <li>https://segmentfault.com/a/1190000011145364</li>
+</ol>
+
+:ET
