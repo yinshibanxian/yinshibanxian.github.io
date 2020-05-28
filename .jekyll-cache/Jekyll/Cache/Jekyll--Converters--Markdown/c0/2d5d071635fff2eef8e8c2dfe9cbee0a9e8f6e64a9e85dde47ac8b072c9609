@@ -1,0 +1,9 @@
+I"�<h4 id="一原型">一、原型</h4>
+
+<ul>
+  <li>在Javascript中，每个对象都有一个<code>_proto_</code>内部属性，这个属性指向对象原型</li>
+  <li>在Javascript中，每个函数对象不仅有<code>_proto_</code>内部属性，还预置了<code>prototype</code>属性</li>
+  <li>当函数对象作为构造函数创建实例时，该<code>prototype</code>属性将被作为实例对象的</li>
+</ul>
+
+:ET

@@ -1,0 +1,8 @@
+I"�<h4 id="一原型">一、原型</h4>
+
+<ul>
+  <li>在Javascript中，每个对象都有一个 <code>_proto_</code>属性</li>
+  <li>水浇地</li>
+</ul>
+
+:ET
