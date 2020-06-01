@@ -1,0 +1,51 @@
+I"L<h4 id="一题目描述">一、题目描述</h4>
+
+<p>请实现一个函数，把字符串 s 中的每个空格替换成”%20”。</p>
+
+<p><strong>示例:</strong></p>
+
+<pre><code>输入：s = "We are happy."
+输出："We%20are%20happy."
+</code></pre>
+
+<p><strong>限制</strong></p>
+
+<pre><code>0 &lt;= s 的长度 &lt;= 10000
+</code></pre>
+
+<h4 id="二题目解析">二、题目解析</h4>
+
+<ol>
+  <li>
+    <p>遍历法</p>
+
+    <p>对字符串进行遍历，遍历到的字符如果是空格，则结果字符串拼接上<code>%20</code>，反之，结果字符串拼接原字符.</p>
+
+    <pre><code> /**
+ * @param {string} s
+ * @return {string}
+ */
+ var replaceSpace = function(s) {
+     let res = '';
+     for(let str of s) {
+         if(str === ' ') {
+             res += '%20';
+         } else {
+             res += str;
+         }
+     }
+     return res;
+ };
+</code></pre>
+
+    <ul>
+      <li>时间复杂度: O(n)</li>
+      <li>空间复杂度: O(n)</li>
+    </ul>
+  </li>
+</ol>
+
+<p>来源：力扣（LeetCode）</p>
+
+<p>链接：https://leetcode-cn.com/problems/ti-huan-kong-ge-lcof</p>
+:ET

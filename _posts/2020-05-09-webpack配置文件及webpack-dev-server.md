@@ -1,5 +1,5 @@
 ---
-title: 2020-05-09-webpack配置文件及webpack-dev-server
+title: webpack配置文件及webpack-dev-server
 categories: webpack
 ---
 ### 一、使用配置文件
