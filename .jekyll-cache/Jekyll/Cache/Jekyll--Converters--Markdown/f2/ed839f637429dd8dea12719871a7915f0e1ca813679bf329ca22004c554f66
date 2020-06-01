@@ -1,8 +1,0 @@
-I"�<h4 id="一原型">一、原型</h4>
-
-<ul>
-  <li>在Javascript中，每个对象都有一个<code>_proto_</code>内部属性，这个属性指向对象原型</li>
-  <li>在JA</li>
-</ul>
-
-:ET
