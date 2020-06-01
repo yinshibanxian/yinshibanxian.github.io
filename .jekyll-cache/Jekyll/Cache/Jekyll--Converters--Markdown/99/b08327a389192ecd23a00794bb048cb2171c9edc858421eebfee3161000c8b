@@ -1,0 +1,97 @@
+I"�
+<h4 id="一题目描述">一、题目描述</h4>
+
+<p>输入某二叉树的前序遍历和中序遍历的结果，请重建该二叉树。假设输入的前序遍历和中序遍历的结果中都不含重复的数字。</p>
+
+<p>例如，给出</p>
+
+<pre><code>前序遍历 preorder = [3,9,20,15,7]
+中序遍历 inorder = [9,3,15,20,7]
+</code></pre>
+
+<p>返回如下的二叉树</p>
+
+<pre><code>    3
+   / \
+  9  20
+    /  \
+   15   7
+</code></pre>
+
+<h4 id="二题目解析">二、题目解析</h4>
+
+<ol>
+  <li>
+    <p>递归法</p>
+
+    <p>根据前序遍历/后序遍历+中序遍历可以重建一棵二叉树，这道题考察的就是前序遍历+中序遍历重建二叉树.</p>
+
+    <p>对于:</p>
+
+    <pre><code> 前序遍历 preorder = [3,9,20,15,7]
+ 中序遍历 inorder = [9,3,15,20,7]
+</code></pre>
+
+    <p>前序遍历中的3即为根节点的值，由于输入的前序遍历和后序遍历的结果中都不含重复的数字，那么在中序遍历中，3</p>
+
+    <p>前面的节点都是左子树上的节点，3后面的节点都是右子树上的节点，这一步可以获得根节点和左右两个子树，再递归地对左右子树进行</p>
+
+    <p>重建，即可重建出整棵二叉树。</p>
+
+    <pre><code> /**
+ * Definition for a binary tree node.
+ * function TreeNode(val) {
+ *     this.val = val;
+ *     this.left = this.right = null;
+ * }
+ */
+ /**
+ * @param {number[]} preorder
+ * @param {number[]} inorder
+ * @return {TreeNode}
+ */
+ var buildTree = function(preorder, inorder) {
+     if(!preorder.length || !inorder.length) {
+         return null;
+     }
+     const rootVal = preorder[0];
+     const node = new TreeNode(rootVal);
+     // index有两层含义，一是根节点在中序遍历中的次序，二是左子树节点的数量
+     const index = inorder.indexOf(rootVal);
+     // preorder.slice(1,index+1)是左子树的前序遍历
+     // inorder.slice(0,index) 是左子树的中序遍历
+     // 这一步递归的对左子树进行重建
+     node.left = buildTree(preorder.slice(1,index+1),inorder.slice(0,index));
+     node.right = buildTree(preorder.slice(index+1),inorder.slice(index+1))
+     return node;
+ };
+
+</code></pre>
+  </li>
+</ol>
+
+<p>«««&lt; HEAD
+    - 时间复杂度: O(n)
+    - 空间复杂度: O(n)</p>
+
+<p>=======</p>
+<blockquote>
+  <blockquote>
+    <blockquote>
+      <blockquote>
+        <blockquote>
+          <blockquote>
+            <blockquote>
+              <p>5af9c8ca671d85ae4b2bfcbf7cb1ce078b62880f</p>
+            </blockquote>
+          </blockquote>
+        </blockquote>
+      </blockquote>
+    </blockquote>
+  </blockquote>
+</blockquote>
+
+<p>来源：力扣（LeetCode）</p>
+
+<p>链接：https://leetcode-cn.com/problems/zhong-jian-er-cha-shu-lcof</p>
+:ET
