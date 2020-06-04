@@ -1,0 +1,102 @@
+I"�<h4 id="一题目描述">一、题目描述</h4>
+
+<pre><code>实现函数double Power(double base, int exponent)，求base的exponent次方。不得使用库函数，同时不需要考虑大数问题。
+
+**示例 1:**
+
+```
+输入: 2.00000, 10
+输出: 1024.00000
+```
+
+**示例2:**
+
+```
+输入: 2.10000, 3
+输出: 9.26100
+```
+
+**示例3:**
+
+```
+输入: 2.00000, -2
+输出: 0.25000
+解释: 2-2 = 1/22 = 1/4 = 0.25
+```
+
+**说明**
+
+```
+-100.0 &lt; x &lt; 100.0
+n 是 32 位有符号整数，其数值范围是 [−231, 231 − 1] 。
+```
+</code></pre>
+
+<h4 id="二题目解析">二、题目解析</h4>
+
+<ol>
+  <li>
+    <p>暴力相乘法</p>
+
+    <p>最直接的方法是通过循环将n个x相乘，时间复杂度是O(n)。但是当n过大时，会超出时间限制。</p>
+
+    <pre><code> /**
+ * @param {number} x
+ * @param {number} n
+ * @return {number}
+ */
+ var myPow = function(x, n) {
+     if(x === 0) return 0;
+     if(n &lt; 0) {
+         x = 1 / x;
+         n = -n;
+     }
+     let res = 1.0;
+     while(n) {
+         res *= x;
+         n --;
+     }
+     return res;
+ };
+</code></pre>
+  </li>
+  <li>
+    <p>快速幂算法</p>
+
+    <p>快速幂实际上是二分算法的一种应用。题解链接:</p>
+
+    <p>https://leetcode-cn.com/problems/shu-zhi-de-zheng-shu-ci-fang-lcof/solution/mian-shi-ti-16-shu-zhi-de-zheng-shu-ci-fang-kuai-s/</p>
+
+    <pre><code> /**
+ * @param {number} x
+ * @param {number} n
+ * @return {number}
+ */
+ var myPow = function(x, n) {
+     if(x === 0) return 0;
+     if(n &lt; 0) {
+         x = 1 / x;
+         n = -n;
+     }
+     let res = 1.0;
+     while(n) {
+         if(n &amp; 1) { // 即 n % 2 === 1
+             res *= x;
+         }
+         x *= x;
+         n &gt;&gt;&gt;= 1; // 即 Math.floor(n/2)
+     }
+     return res;
+ };
+</code></pre>
+
+    <ul>
+      <li>时间复杂度: O(log)</li>
+    </ul>
+  </li>
+</ol>
+
+<p>来源：力扣（LeetCode）</p>
+
+<p>链接：https://leetcode-cn.com/problems/shu-zhi-de-zheng-shu-ci-fang-lcof</p>
+:ET
