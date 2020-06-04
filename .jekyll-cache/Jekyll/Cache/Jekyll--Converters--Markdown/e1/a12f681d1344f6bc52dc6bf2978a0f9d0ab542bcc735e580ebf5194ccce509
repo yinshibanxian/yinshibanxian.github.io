@@ -1,0 +1,74 @@
+I"u	<h3 id="一题目描述">一、题目描述</h3>
+
+<p>输入两个递增排序的链表，合并这两个链表并使新链表中的节点仍然是递增排序的。</p>
+
+<p><strong>示例1</strong></p>
+
+<pre><code>输入：1-&gt;2-&gt;4, 1-&gt;3-&gt;4
+输出：1-&gt;1-&gt;2-&gt;3-&gt;4-&gt;4
+</code></pre>
+
+<p><strong>限制</strong></p>
+
+<pre><code>0 &lt;= 链表长度 &lt;= 1000
+</code></pre>
+
+<h3 id="二题目解析">二、题目解析</h3>
+
+<ol>
+  <li>
+    <p>遍历两个有序链表</p>
+
+    <p>既然<code>l1</code>和<code>l2</code>均为有序链表，那么我们可以遍历这两个链表，并且创建一个哑节点作为新链表的前一个节点。</p>
+
+    <ul>
+      <li>当<code>l1</code>和<code>l2</code>均不为空时
+        <ul>
+          <li>若<code>l1.val &lt; l2.val</code>，以<code>l1.val</code>创建新链表的下一个节点，同时<code>l1</code>指向下一个节点</li>
+          <li>反之，以<code>l2.val</code>创建新链表的下一个节点，同时<code>l2</code>指向下一个节点</li>
+        </ul>
+      </li>
+      <li>当<code>l1</code>不为空时,以<code>l1.val</code>创建新链表的下一个节点，同时<code>l1</code>指向下一个节点</li>
+      <li>当<code>l2</code>不为空时,以<code>l2.val</code>创建新链表的下一个节点，同时<code>l2</code>指向下一个节点</li>
+      <li>最后返回哑节点的下一个节点即可</li>
+    </ul>
+
+    <pre><code> /**
+ * Definition for singly-linked list.
+ * function ListNode(val) {
+ *     this.val = val;
+ *     this.next = null;
+ * }
+ */
+ /**
+ * @param {ListNode} l1
+ * @param {ListNode} l2
+ * @return {ListNode}
+ */
+ var mergeTwoLists = function(l1, l2) {
+     const head = new ListNode(null);
+     let current = head;
+     while(l1 != null || l2 != null) {
+         if(l1 != null &amp;&amp; l2 != null) {
+             if(l1.val &lt;  l2.val) {
+                 current.next = new ListNode(l1.val);
+                 l1 = l1.next;
+             } else {
+                 current.next = new ListNode(l2.val);
+                 l2 = l2.next;
+             }
+         } else if(l1 != null) {
+             current.next = new ListNode(l1.val);
+             l1 = l1.next;
+         } else if(l2 != null) {
+             current.next = new ListNode(l2.val);
+             l2 = l2.next;
+         }
+         current = current.next;
+     }
+     return head.next;
+ };
+</code></pre>
+  </li>
+</ol>
+:ET
