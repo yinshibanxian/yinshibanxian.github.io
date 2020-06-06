@@ -1,0 +1,62 @@
+I"�<h4 id="一题目描述">一、题目描述</h4>
+
+<p>定义一个函数，输入一个链表的头节点，反转该链表并输出反转后链表的头节点。</p>
+
+<p><strong>示例</strong></p>
+
+<pre><code>输入: 1-&gt;2-&gt;3-&gt;4-&gt;5-&gt;NULL
+输出: 5-&gt;4-&gt;3-&gt;2-&gt;1-&gt;NULL
+</code></pre>
+
+<p><strong>限制</strong></p>
+
+<pre><code>0 &lt;= 节点个数 &lt;= 5000
+</code></pre>
+
+<h4 id="二题目解析">二、题目解析</h4>
+
+<ol>
+  <li>遍历法</li>
+</ol>
+
+<p>遍历该链表，用一个结果数组来逆序保存遍历到的链表元素，再根据数组生成逆序的链表。</p>
+
+<pre><code>/**
+ * Definition for singly-linked list.
+ * function ListNode(val) {
+ *     this.val = val;
+ *     this.next = null;
+ * }
+ */
+/**
+ * @param {ListNode} head
+ * @return {ListNode}
+ */
+var reverseList = function(head) {
+    let current = head;
+    const result = [];
+    while(current != null) {
+        result.unshift(current.val);
+        current = current.next;
+    }
+    const resultHead = new ListNode(null);
+    current = resultHead;
+    for(let i = 0;i &lt; result.length;i ++) {
+        current.next = new ListNode(result[i]);
+        current = current.next;
+    }
+    return resultHead.next;
+
+};
+</code></pre>
+<ul>
+  <li>时间复杂度: <code>O(n)</code>,<code>n</code>为链表长度</li>
+  <li>空间复杂度: <code>O(n)</code>，<code>n</code>为链表长度</li>
+</ul>
+
+<ol>
+  <li>双指针法</li>
+</ol>
+
+<p>定义<code>prev</code>,<code>current</code>两个指针，刚开始</p>
+:ET
