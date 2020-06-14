@@ -1,0 +1,73 @@
+I"3<h3 id="call">Call</h3>
+
+<p>一句话介绍<code>call</code>:</p>
+
+<p><code>call() 方法在使用一个指定的 this 值和若干个指定的参数值的前提下调用某个函数或方法。</code></p>
+
+<p>例如:</p>
+
+<pre><code>var foo = {
+    value: 1
+};
+
+function bar() {
+    console.log(this.value);
+}
+
+bar.call(foo); // 1
+</code></pre>
+
+<p>注意两点:</p>
+
+<ol>
+  <li><code>call</code>改变了<code>this</code>的指向，指向了<code>foo</code></li>
+  <li><code>bar</code>函数执行了</li>
+</ol>
+
+<p>那我们如何模拟实现以上两点效果呢？不妨试想当调用<code>call</code>时，将<code>foo</code>对象改造成如下形式:</p>
+
+<pre><code>var foo = {
+    value: 1,
+    bar: function() {
+        console.log(this.value)
+    }
+};
+
+foo.bar(); // 1
+</code></pre>
+
+<p>这样<code>bar</code>函数中的<code>this</code>就指向了<code>foo</code>，我们最后再从<code>foo</code>函数当中删除<code>bar</code>这个方法即可.</p>
+
+<p>综上，我们模拟的步骤可以分为:</p>
+
+<ol>
+  <li>将函数设置为要指向的对象的属性</li>
+  <li>执行该函数</li>
+  <li>删除该函数</li>
+</ol>
+
+<h4 id="第一版">第一版</h4>
+
+<pre><code>var value = 2;
+const foo = {
+    value: 1
+}
+
+function bar() {
+   console.log(this.value);
+}
+
+Function.prototype.myCall = function(context) {
+    // 获取调用call的函数
+    context.fn = this;
+    context.fn();
+    delete context.fn;
+}
+bar.call(foo); // 1
+</code></pre>
+
+<h4 id="第二版带参数">第二版(带参数)</h4>
+
+<p>call函数还能给定参数执行函数，例如:</p>
+
+:ET
