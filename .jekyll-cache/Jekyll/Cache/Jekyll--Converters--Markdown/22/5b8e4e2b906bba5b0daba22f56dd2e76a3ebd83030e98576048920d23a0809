@@ -1,0 +1,29 @@
+I"�<h3 id="一关键字new做了什么">一、关键字new做了什么</h3>
+
+<p>在面试中，我们常常会被问及<code>new</code>的作用，如下列代码:</p>
+
+<pre><code>const obj = new Base();
+</code></pre>
+
+<p><code>new</code>实际上做了三步工作，以代码来说明:</p>
+
+<pre><code>const obj = {}; // 创建一个空对象
+obj.__proto__ = Base.prototype; // 将空对象的__proto__指向构造函数的prototype属性
+Base.call(obj); // 将构造函数的this指向obj，并调用构造函数
+</code></pre>
+
+<p>总结一下：</p>
+<ol>
+  <li>创建一个空对象</li>
+  <li>将空对象的<code>__proto__</code>属性指向构造函数的<code>prototype</code></li>
+  <li>将构造函数中的<code>this</code>指向空对象并且调用构造函数</li>
+  <li>如果构造函数有返回对象，则<code>new</code>返回这个对象，反之，则返回新创建的对象</li>
+</ol>
+
+<p>new创建的新对象可以:</p>
+
+<ol>
+  <li>访问到<code>Person</code></li>
+</ol>
+
+:ET

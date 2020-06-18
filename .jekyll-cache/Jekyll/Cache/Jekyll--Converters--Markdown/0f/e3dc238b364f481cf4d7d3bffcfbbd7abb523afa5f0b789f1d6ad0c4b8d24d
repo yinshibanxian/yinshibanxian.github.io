@@ -1,0 +1,109 @@
+I"<h3 id="一关键字new做了什么">一、关键字new做了什么</h3>
+
+<p>在面试中，我们常常会被问及<code>new</code>的作用，如下列代码:</p>
+
+<pre><code>const obj = new Base();
+</code></pre>
+
+<p><code>new</code>实际上做了三步工作，以代码来说明:</p>
+
+<pre><code>const obj = {}; // 创建一个空对象
+obj.__proto__ = Base.prototype; // 将空对象的__proto__指向构造函数的prototype属性
+Base.call(obj); // 将构造函数的this指向obj，并调用构造函数
+</code></pre>
+
+<p>总结一下：</p>
+<ol>
+  <li>创建一个空对象</li>
+  <li>将空对象的<code>__proto__</code>属性指向构造函数的<code>prototype</code></li>
+  <li>将构造函数中的<code>this</code>指向空对象并且调用构造函数</li>
+  <li>如果构造函数有返回对象，则<code>new</code>返回这个对象，反之，则返回新创建的对象</li>
+</ol>
+
+<p>new创建的新对象可以:</p>
+
+<ol>
+  <li>访问到构造函数中的属性</li>
+  <li>访问到构造函数原型链上的属性</li>
+</ol>
+
+<pre><code>function Person(name,age){
+  this.name = name;
+  this.age = age;
+  
+  this.sex = 'male';
+}
+
+Person.prototype.isHandsome = true;
+
+Person.prototype.sayName = function(){
+  console.log(`Hello , my name is ${this.name}`);
+}
+
+let handsomeBoy = new Person('Nealyang',25);
+
+console.log(handsomeBoy.name) // Nealyang
+console.log(handsomeBoy.sex) // male
+console.log(handsomeBoy.isHandsome) // true
+
+handsomeBoy.sayName(); // Hello , my name is Nealyang
+
+</code></pre>
+
+<h3 id="二模拟实现new">二、模拟实现new</h3>
+
+<pre><code>function objectFactory() {
+    let obj = new Object(); // 创建一个空对象
+    Constructor = Array.prototype.shift.call(arguments); // 获取传入的第一个参数，即构造器
+    const fNOP = function(){};
+    fNOP.prototype = Constructor.prototype;
+    obj = new fNOP(); 
+    const ret = Constructor.apply(obj,arguments); // 构造函数的this指向obj并调用构造函数
+    return typeof ret === 'object'? ret:obj; 
+}
+</code></pre>
+
+<ul>
+  <li>以<code>new Object()</code>的方式新建一个对象<code>obj</code></li>
+  <li>取出第一个参数，就是我们要传入的构造函数，因为此处<code>shift</code>会修改原数组，所以<code>arguments</code>会去除第一个参数</li>
+  <li>将<code>obj</code>的原型指向构造函数，这样<code>obj</code>就可以访问构造函数原型上的方法</li>
+  <li>将构造函数的<code>this</code>指向<code>obj</code>，并执行构造函数，接受返回结果</li>
+  <li>如果构造函数返回一个对象，那么返回这个对象，否则返回新建的对象</li>
+</ul>
+
+<p>来测试一下</p>
+
+<pre><code>function Person(name,age){
+  this.name = name;
+  this.age = age;
+  
+  this.sex = 'male';
+}
+
+Person.prototype.isHandsome = true;
+
+Person.prototype.sayName = function(){
+  console.log(`Hello , my name is ${this.name}`);
+}
+
+function objectFactory() {
+    let obj = new Object(); // 创建一个空对象
+    Constructor = Array.prototype.shift.call(arguments); // 获取传入的第一个参数，即构造器
+    const fNOP = function(){};
+    fNOP.prototype = Constructor.prototype;
+    obj = new fNOP(); 
+    const ret = Constructor.apply(obj,arguments); // 构造函数的this指向obj并调用构造函数
+    return typeof ret === 'object'? ret:obj; 
+}
+
+let handsomeBoy = objectFactory(Person,'Nealyang',25);
+
+console.log(handsomeBoy.name) // Nealyang
+console.log(handsomeBoy.sex) // male
+console.log(handsomeBoy.isHandsome) // true
+
+handsomeBoy.sayName(); // Hello , my name is Nealyang
+
+</code></pre>
+
+:ET
