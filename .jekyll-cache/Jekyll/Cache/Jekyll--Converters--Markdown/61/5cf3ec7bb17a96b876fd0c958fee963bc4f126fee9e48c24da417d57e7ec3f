@@ -1,0 +1,106 @@
+I",<h3 id="一防抖">一、防抖</h3>
+
+<blockquote>
+  <p>所谓防抖，就是指触发事件后在n秒内函数只能执行一次，如果在n秒内又触发了事件，则会重新计算函数执行时间.</p>
+</blockquote>
+
+<p>举个例子，在下列代码中,div绑定了mousemove事件，当鼠标在div区域中移动的时候会持续的去触发该事件导致频繁执行函数。</p>
+<pre><code>&lt;div id="content" style="height:150px;line-height:150px;text-align:center; color: #fff;background-color:#ccc;font-size:80px;"&gt;&lt;/div&gt;
+&lt;script&gt;
+    let num = 1;
+    let content = document.getElementById('content');
+
+    function count() {
+        content.innerHTML = num++;
+    };
+    content.onmousemove = count;
+&lt;/script&gt;
+</code></pre>
+
+<p><strong>防抖函数</strong></p>
+
+<pre><code>function debounce(func,wait) {
+        let timer;
+        return function() {
+            // 获取this和参数
+            // 让返回的函数this指向不变以及依旧能接收到e参数
+            let context = this;
+            let args = arguments;
+            if(timer) clearTimeout(timer);
+            timer = setTimeout(() =&gt; {
+                func.apply(context,args);
+            },wait)
+        }
+    }
+</code></pre>
+
+<p>我们依然使用上述绑定mousemove事件的例子，通过上面的防抖函数，我们可以这么使用</p>
+
+<pre><code>content.onmousemove = debounce(count,1000);
+</code></pre>
+
+<p>可以看到，在触发事件1s后，函数才执行，如果我在触发事件1s内又触发了该事件，则会重新计算函数执行时间。</p>
+
+<h3 id="二节流">二、节流</h3>
+
+<blockquote>
+  <p>所谓节流，是指连续触发事件但是在n秒内只执行一次函数。节流会稀释函数的执行频率。</p>
+</blockquote>
+
+<p>对于节流，一般有两种方式可以实现，分别是时间戳版和定时器版。</p>
+
+<p><strong>时间戳版</strong></p>
+
+<pre><code>function throttle(func,wait) {
+        let previous = 0;
+        return function() {
+            let context = this;
+            let args = arguments;
+            let now = Date.now();
+            if(now - previous &gt; wait) {
+                func.apply(content,args);
+                previous = now;
+            }
+        }
+    }
+</code></pre>
+
+<p>使用方法:</p>
+
+<pre><code>content.onmousemove = throttle(count,1000);
+</code></pre>
+
+<p>可以看到，在持续触发事件的过程中，函数会立即执行，并且每1s执行一次。</p>
+
+<p><strong>定时器版</strong></p>
+
+<pre><code>    function throttle(func,wait) {
+        let timer;
+        return function() {
+            let context = this;
+            let args = arguments;
+            if(!timer) {
+                timer = setTimeout(() =&gt; {
+                    timer = null;
+                    func.apply(context,args);
+                },wait)
+            }
+        }
+    }
+</code></pre>
+
+<p>使用方法同上，可以看到，在持续触发事件的过程中，函数不会立即执行，并且每1s执行一次，</p>
+
+<p>在停止触发事件后，函数还会再执行一次。</p>
+
+<h3 id="三防抖和节流的应用场景">三、防抖和节流的应用场景</h3>
+
+<ul>
+  <li>节流
+    <ul>
+      <li>search搜索联想，用户在不断输入值时，用防抖来节约请求资源</li>
+      <li>window触发on</li>
+    </ul>
+  </li>
+</ul>
+:ET

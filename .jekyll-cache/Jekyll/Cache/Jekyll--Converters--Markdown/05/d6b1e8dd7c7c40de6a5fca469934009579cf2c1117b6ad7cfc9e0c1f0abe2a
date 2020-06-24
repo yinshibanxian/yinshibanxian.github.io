@@ -1,0 +1,19 @@
+I"~<h3 id="一防抖">一、防抖</h3>
+
+<blockquote>
+  <p>所谓防抖，就是指触发事件后在n秒内函数只能执行一次，如果在n秒内又触发了事件，则会重新计算函数执行时间.</p>
+</blockquote>
+
+<p>举个例子，在下列代码中</p>
+<pre><code>&lt;div id="content" style="height:150px;line-height:150px;text-align:center; color: #fff;background-color:#ccc;font-size:80px;"&gt;&lt;/div&gt;
+&lt;script&gt;
+    let num = 1;
+    let content = document.getElementById('content');
+
+    function count() {
+        content.innerHTML = num++;
+    };
+    content.onmousemove = count;
+&lt;/script&gt;
+</code></pre>
+:ET
