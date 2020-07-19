@@ -1,0 +1,180 @@
+I"�<h3 id="一冒泡排序">一、冒泡排序</h3>
+
+<ol>
+  <li>
+    <p>实现原理:</p>
+
+    <p>数组中有n个数，每比较相邻的两个数，如果前者大于后者，就把两个数交换位置。</p>
+
+    <p>这样一来，第一轮可以选出一个最大的数放在最后面，那么经过n-1轮，就完成了</p>
+
+    <p>所有数的排序</p>
+  </li>
+  <li>
+    <p>性能:</p>
+
+    <p>时间复杂度: 平均复杂度:O(n^2),最好情况O(n)，最坏情况O(n^2)</p>
+
+    <p>稳定性: 稳定</p>
+
+    <p>(什么是稳定性?对于数组中的两个元素a和b，且有a=b，若排序后a,b的相对位置没有发生变化，</p>
+
+    <p>（比如排序前a在b的前面，排序后a仍在b的前面），则称该排序算法是稳定的，反之则称该排序算法不稳定)</p>
+
+    <p>空间复杂度: O(1)</p>
+  </li>
+  <li>
+    <p>代码实现</p>
+
+    <p>首先实现超出数组中的最大数，并把它放到数组的最后方</p>
+    <pre><code> const arr = [4,3,2,1];
+ for(let j = 0;j &lt; arr.length - 1;j ++) {
+     if(arr[j] &gt; arr[j+1]) {
+         [arr[j],arr[j+1]] = [arr[j+1],arr[j]]; 
+     }
+ }
+ console.log(arr); // [ 3, 2, 1, 4 ]
+</code></pre>
+    <p>这样的过程进行n-1轮</p>
+    <pre><code> const arr = [4,3,2,1];
+
+ function bubbleSort(arr) {
+     for(let i = 0;i &lt; arr.length - 1;i ++) {
+         for(let j = 0;j &lt; arr.length - 1;j ++) {
+             if(arr[j] &gt; arr[j+1]) {
+                 [arr[j],arr[j+1]] = [arr[j+1],arr[j]];  // 交换两个元素的位置
+             }
+         }
+     }
+ }
+
+ bubbleSort(arr);
+ console.log(arr); // [1,2,3,4]
+</code></pre>
+
+    <p>实际上，第一次已经找到数组中最大的元素了，因此在下一次循环，不需要再考虑最后一个元素，</p>
+
+    <p>以此类推，内层循环当中可以减去外层循环的次数，优化如下:</p>
+    <pre><code> const arr = [4,3,2,1];
+
+ function bubbleSort(arr) {
+     for(let i = 0;i &lt; arr.length - 1;i ++) {
+         for(let j = 0;j &lt; arr.length - 1 - i;j ++) { // 减去外层循环次数
+             if(arr[j] &gt; arr[j+1]) {
+                 [arr[j],arr[j+1]] = [arr[j+1],arr[j]]; 
+             }
+         }
+     }
+ }
+
+ bubbleSort(arr);
+ console.log(arr); // [1,2,3,4]
+</code></pre>
+  </li>
+</ol>
+
+<h3 id="二选择排序">二、选择排序</h3>
+
+<ol>
+  <li>实现原理</li>
+</ol>
+
+<ul>
+  <li>
+    <p>第一次遍历中，找到最小的数组元素然后用第一个数组元素交换它。</p>
+  </li>
+  <li>
+    <p>第二次遍历中，找到第二小的数组元素然后用第二个数组元素交换它。</p>
+  </li>
+  <li>
+    <p>依次类推。如果包含N个元素，那么将在最多N-1次遍历之后完成排序。</p>
+  </li>
+</ul>
+
+<ol>
+  <li>性能</li>
+</ol>
+
+<ul>
+  <li>时间复杂度: 最好情况O(n)，最坏情况O(n^2)，平均复杂度O(n^2)</li>
+  <li>稳定性: 不稳定</li>
+  <li>空间复杂度：  O(1)</li>
+</ul>
+
+<ol>
+  <li>代码实现</li>
+</ol>
+
+<pre><code>const arr = [4,3,2,1];
+
+function selectionSort(arr) {
+    let minIdex;
+    for(let i = 0;i &lt; arr.length - 1;i ++) {
+        minIdex = i;
+        // 找出最小的元素序号
+        for(let j = i + 1;j &lt; arr.length;j ++) {
+            if(arr[j] &lt; arr[minIdex]) {
+                minIdex = j;
+            }
+        }
+        if(i !== minIdex) {
+            [arr[minIdex],arr[i]] = [arr[i],arr[minIdex]];
+        }
+    }
+}
+selectionSort(arr);
+console.log(arr); // [1,2,3,4]
+</code></pre>
+
+<h3 id="三插入排序">三、插入排序</h3>
+
+<ol>
+  <li>
+    <p>实现原理
+ 从待排序数组的第二个元素开始，依次与待插入元素前面的元素比较，若前面的元素</p>
+
+    <p>比待插入元素大，则把前一个元素往后移动，一直到待插入元素大于或等于前一个元素为止。</p>
+  </li>
+  <li>
+    <p>性能</p>
+
+    <ul>
+      <li>时间复杂度: 最好情况(数组已正序)O(n)，最坏情况(数组逆序)O(n^2),平均复杂度O(n^2)</li>
+      <li>稳定性： 稳定</li>
+      <li>空间复杂度: O(1)</li>
+    </ul>
+  </li>
+  <li>
+    <p>实现代码</p>
+  </li>
+</ol>
+
+<pre><code>const arr = [4,3,2,1];
+
+function insertionSort(arr) {
+    let temp;
+    for(let i = 1;i &lt; arr.length;i ++) {
+        let j = i;
+        temp = arr[i];
+        while(j &gt; 0 &amp;&amp; arr[j-1] &gt; temp) {
+            arr[j] = arr[j-1];
+            j --;
+        }
+        arr[j] = temp;
+    }
+}
+insertionSort(arr);
+console.log(arr); // [1,2,3,4]
+</code></pre>
+
+<h3 id="四归并排序">四、归并排序</h3>
+
+<ol>
+  <li>
+    <p>实现原理</p>
+
+    <p>归并排序是一种分而治之的算法。其原理是将原始数组切分成较小的数组，直到每个小数组只有一个位置，接着将小数组</p>
+  </li>
+</ol>
+
+:ET
