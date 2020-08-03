@@ -1,4 +1,4 @@
-I"<h3 id="一关键字new做了什么">一、关键字new做了什么</h3>
+I"<h3 id="一关键字new做了什么">一、关键字new做了什么</h3>
 
 <p>在面试中，我们常常会被问及<code>new</code>的作用，如下列代码:</p>
 
@@ -53,7 +53,7 @@ handsomeBoy.sayName(); // Hello , my name is Nealyang
 <h3 id="二模拟实现new">二、模拟实现new</h3>
 
 <pre><code>function objectFactory() {
-    let obj = new Object(); // 创建一个空对象
+    let obj = new Object(); // 创建一个空对象.
     Constructor = Array.prototype.shift.call(arguments); // 获取传入的第一个参数，即构造器
     const fNOP = function(){};
     fNOP.prototype = Constructor.prototype;
